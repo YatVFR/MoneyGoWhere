@@ -17,7 +17,14 @@
         <p class="eyebrow">MoneyGoWhere</p>
         <h1 id="pageTitle">Dashboard</h1>
       </div>
-      <button class="icon-btn" id="alertBtn" aria-label="Budget alerts">🔔<span id="alertDot" class="alert-dot hidden"></span></button>
+      <div class="top-actions">
+        <button class="refresh-btn" id="refreshBtn" aria-label="Check for app updates" title="Check for updates">
+          <span class="refresh-icon">↻</span>
+          <span class="refresh-copy"><b id="updateStatus">Latest</b><small id="updateSub">Tap to check</small></span>
+          <span id="updateDot" class="update-dot hidden"></span>
+        </button>
+        <button class="icon-btn" id="alertBtn" aria-label="Budget alerts">🔔<span id="alertDot" class="alert-dot hidden"></span></button>
+      </div>
     </header>
 
     <main>
@@ -118,6 +125,45 @@
 
   <div id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script>
+    (() => {
+      const btn = document.getElementById('refreshBtn');
+      const status = document.getElementById('updateStatus');
+      const sub = document.getElementById('updateSub');
+      const dot = document.getElementById('updateDot');
+      let reg = null;
+      let updateReady = false;
+      const setState = (label, detail, available=false) => {
+        status.textContent = label; sub.textContent = detail;
+        dot.classList.toggle('hidden', !available);
+        btn.classList.toggle('update-available', available);
+      };
+      async function checkForUpdates(manual=false) {
+        if (!('serviceWorker' in navigator)) { setState('Latest','Refresh page'); if (manual) location.reload(); return; }
+        try {
+          setState('Checking…','Looking for update');
+          reg = reg || await navigator.serviceWorker.getRegistration();
+          if (!reg) reg = await navigator.serviceWorker.register('./service-worker.js');
+          await reg.update();
+          if (reg.waiting) { updateReady=true; setState('Update available','Tap to update',true); return; }
+          const installing = reg.installing;
+          if (installing) {
+            installing.addEventListener('statechange',()=>{
+              if (installing.state==='installed' && navigator.serviceWorker.controller) { updateReady=true; setState('Update available','Tap to update',true); }
+            });
+            setState('Checking…','Update detected');
+          } else setState('Latest','App is up to date');
+        } catch (e) { setState('Refresh','Check failed'); }
+      }
+      btn.addEventListener('click', async()=>{
+        if (updateReady && reg?.waiting) { reg.waiting.postMessage({type:'SKIP_WAITING'}); setState('Updating…','Applying latest version'); return; }
+        await checkForUpdates(true); if (!updateReady) setTimeout(()=>location.reload(),500);
+      });
+      navigator.serviceWorker?.addEventListener('controllerchange',()=>location.reload());
+      window.addEventListener('load',()=>checkForUpdates(false));
+      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkForUpdates(false); });
+    })();
+  </script>
   <script src="app.js"></script>
   <script src="finance-fix.js"></script>
 </body>
