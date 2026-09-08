@@ -76,4 +76,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Replace the basic backup action with a versioned backup while preserving restore compatibility.
   const exportBtn=document.querySelector('#exportBtn');
   exportBtn?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCompleteBackup()},{capture:true});
+
+  // When an update is ready to install, remind the user to back up before allowing activation.
+  const refreshBtn=document.querySelector('#refreshBtn');
+  refreshBtn?.addEventListener('click',e=>{
+    if(!refreshBtn.classList.contains('update-available')) return;
+    const proceed=window.confirm('Backup recommended before updating MoneyGoWhere. Export your database and preferences first if you have not done so. Continue installing the update?');
+    if(!proceed){e.preventDefault();e.stopImmediatePropagation();if(typeof toast==='function')toast('Update paused — create a backup first');}
+  },{capture:true});
 });
