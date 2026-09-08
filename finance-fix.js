@@ -1,10 +1,11 @@
 // MoneyGoWhere compatibility + detailed drill-down.
 // Release metadata is intentionally separate from DB schema version.
-const MGW_RELEASE = Object.freeze({ appVersion: '1.3.0', schemaVersion: 1, dataVersion: 4, cacheVersion: '1.3.0' });
+const MGW_RELEASE = Object.freeze({ appVersion: '1.3.1', schemaVersion: 1, dataVersion: 4, cacheVersion: '1.3.1' });
 
 // Category extensions are additive and keep the existing local DB schema compatible.
 MGW.cats['Installments'] = '🧾';
 MGW.cats['Healthcare'] = '🏥';
+MGW.cats['Savings'] = '💰';
 
 function mgwNormalizedVendor(x={}){return String(x.vendor||'').trim().toLowerCase()}
 function mgwEffectiveCategory(x={}){
@@ -52,6 +53,7 @@ if (typeof money === 'function') {
 function mgwEsc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
 const MGW_PLATFORM_NAMES=['Shopee','TikTok Shop','Lazada','Amazon','Qoo10','Carousell'];
+const MGW_UTILITY_PROVIDERS=['Singtel','SP Services','Town Council'];
 function mgwDetectPlatform(vendor=''){
   const v=String(vendor).toLowerCase();
   if(v.includes('shopee'))return 'Shopee';
@@ -90,11 +92,16 @@ function mgwIsDuplicateCandidate(x,candidate){
   return sameAmount&&sameDate&&sameVendor;
 }
 
-// Extend expense forms with platform/payment-source fields and optional category suggestion.
+// Extend expense forms with album-friendly receipt upload, platform/payment-source fields and category suggestion.
 if (typeof expenseForm === 'function') {
   const mgwBaseExpenseForm=expenseForm;
   expenseForm=function(type,d={}){
     let html=mgwBaseExpenseForm(type,d);
+    if(type==='receipt'){
+      html=html.replace('<b>Receipt photo</b>','<b>Receipt / invoice image</b>')
+        .replace('accept="image/*" capture="environment"','accept="image/*"')
+        .replace('Choose or take a receipt photo. OCR runs locally in your browser.','Choose from Photos/album or take a new picture. OCR runs locally in your browser.');
+    }
     const platform=`<div class="field full"><label>Online Platform / Channel</label><input name="platform" list="mgwPlatformSuggestions" value="${mgwEsc(d.platform||'')}" placeholder="Optional — e.g. Shopee"><datalist id="mgwPlatformSuggestions">${MGW_PLATFORM_NAMES.map(x=>`<option value="${x}">`).join('')}</datalist><small>Keep the spending type as what you bought; this records where you bought it.</small></div>`;
     const payment=`<div class="field"><label>Payment Method</label><input name="paymentMethod" value="${mgwEsc(d.paymentMethod||'')}" placeholder="e.g. Apple Pay"></div><div class="field"><label>Card / Payment Source</label><input name="card" value="${mgwEsc(d.card||'')}" placeholder="e.g. OCBC 365 Credit Card"></div>`;
     const suggestion=d.categorySuggestion?`<div class="field full"><div class="status"><b>Suggested category:</b> ${mgwEsc(d.categorySuggestion)}${d.categoryConfidence?` · ${Number(d.categoryConfidence)}% confidence`:''}<br><small>${mgwEsc(d.categoryReason||'Please review before saving.')}</small></div></div>`:'';
@@ -123,15 +130,30 @@ function mgwPaymentGroups(list){
   });
   return Object.entries(groups).sort((a,b)=>sum(b[1])-sum(a[1]));
 }
+function mgwUtilityRows(list){
+  const matched=new Set();
+  const rows=MGW_UTILITY_PROVIDERS.map(provider=>{
+    const providerList=list.filter((x,i)=>{
+      const hit=mgwNormalizedVendor(x).includes(provider.toLowerCase());
+      if(hit)matched.add(i);
+      return hit;
+    });
+    return `<div class="mgw-detail-row"><div><b>${mgwEsc(provider)}</b><small>Utilities</small></div><strong>${money(sum(providerList))}</strong></div>`;
+  });
+  list.forEach((x,i)=>{if(!matched.has(i))rows.push(mgwDetailRows([x]));});
+  return rows.join('');
+}
 
 function renderMonthlyDetails(){
   const host=document.querySelector('#monthlyDetails'); if(!host)return;
   const d=MGW.state.month, ex=monthExpenses(d), inc=monthIncome(d), groups={};
   ex.forEach(x=>{const cat=mgwEffectiveCategory(x);(groups[cat]||(groups[cat]=[])).push(x)});
-  const groupHtml=Object.entries(groups).sort((a,b)=>sum(b[1])-sum(a[1])).map(([cat,list])=>`<details class="mgw-detail-group"><summary><span>${MGW.cats[cat]||'📦'} ${mgwEsc(cat)}</span><strong>${money(sum(list))}<i>›</i></strong></summary><div class="mgw-detail-body">${mgwDetailRows(list)}</div></details>`).join('');
+  const utilityList=groups.Utilities||[];
+  const utilityHtml=`<details class="mgw-detail-group"><summary><span>${MGW.cats.Utilities||'💡'} Utilities</span><strong>${money(sum(utilityList))}<i>›</i></strong></summary><div class="mgw-detail-body">${mgwUtilityRows(utilityList)}</div></details>`;
+  const groupHtml=utilityHtml+Object.entries(groups).filter(([cat])=>cat!=='Utilities').sort((a,b)=>sum(b[1])-sum(a[1])).map(([cat,list])=>`<details class="mgw-detail-group"><summary><span>${MGW.cats[cat]||'📦'} ${mgwEsc(cat)}</span><strong>${money(sum(list))}<i>›</i></strong></summary><div class="mgw-detail-body">${mgwDetailRows(list)}</div></details>`).join('');
   const platformHtml=mgwPlatformGroups(ex).map(([platform,list])=>`<details class="mgw-detail-group"><summary><span>🛍️ ${mgwEsc(platform)}</span><strong>${money(sum(list))}<i>›</i></strong></summary><div class="mgw-detail-body">${mgwDetailRows(list)}</div></details>`).join('');
   const paymentHtml=mgwPaymentGroups(ex).map(([card,list])=>`<details class="mgw-detail-group"><summary><span>💳 ${mgwEsc(card)}</span><strong>${money(sum(list))}<i>›</i></strong></summary><div class="mgw-detail-body">${mgwDetailRows(list)}</div></details>`).join('');
-  host.innerHTML=`<details class="mgw-month-details"><summary><span><b>Monthly Details</b><small>Tap to expand income, bills, shopping channels & payment sources</small></span><strong>${ex.length} records <i>›</i></strong></summary><div class="mgw-month-body"><section><h3>💰 Income</h3>${inc.length?mgwIncomeRows(inc):'<p class="empty-state">No income recorded this month.</p>'}</section><section><h3>🧾 Payments & Allocations</h3>${groupHtml||'<p class="empty-state">No payments recorded this month.</p>'}</section><section><h3>🛍️ Online Platforms</h3>${platformHtml||'<p class="empty-state">No online platform spending tagged this month.</p>'}</section><section><h3>💳 Payment Sources</h3>${paymentHtml||'<p class="empty-state">No payment source information recorded this month.</p>'}</section></div></details>`;
+  host.innerHTML=`<details class="mgw-month-details"><summary><span><b>Monthly Details</b><small>Tap to expand income, bills, shopping channels & payment sources</small></span><strong>${ex.length} records <i>›</i></strong></summary><div class="mgw-month-body"><section><h3>💰 Income</h3>${inc.length?mgwIncomeRows(inc):'<p class="empty-state">No income recorded this month.</p>'}</section><section><h3>🧾 Payments & Allocations</h3>${groupHtml}</section><section><h3>🛍️ Online Platforms</h3>${platformHtml||'<p class="empty-state">No online platform spending tagged this month.</p>'}</section><section><h3>💳 Payment Sources</h3>${paymentHtml||'<p class="empty-state">No payment source information recorded this month.</p>'}</section></div></details>`;
 }
 
 // Extend the existing renderer without forcing a second full render during initial load.
