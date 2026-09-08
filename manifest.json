@@ -1,0 +1,18 @@
+{
+  "name": "MoneyGoWhere",
+  "short_name": "MGW",
+  "description": "Your money. Your spending. Now you know where.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8f7",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
