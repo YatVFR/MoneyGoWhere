@@ -131,37 +131,120 @@
       const status = document.getElementById('updateStatus');
       const sub = document.getElementById('updateSub');
       const dot = document.getElementById('updateDot');
+      const icon = btn.querySelector('.refresh-icon');
       let reg = null;
       let updateReady = false;
-      const setState = (label, detail, available=false) => {
-        status.textContent = label; sub.textContent = detail;
+      let busy = false;
+      let reloading = false;
+
+      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+      const setState = (label, detail, available=false, spinning=false) => {
+        status.textContent = label;
+        sub.textContent = detail;
         dot.classList.toggle('hidden', !available);
         btn.classList.toggle('update-available', available);
+        btn.classList.toggle('is-checking', spinning);
+        btn.setAttribute('aria-busy', spinning ? 'true' : 'false');
       };
+      const progress = async (step, label, detail) => {
+        setState(`${step}/3 ${label}`, detail, false, true);
+        await wait(280);
+      };
+      const detectWaiting = registration => {
+        if (registration?.waiting) {
+          updateReady = true;
+          setState('Update available', 'Tap to install', true, false);
+          return true;
+        }
+        return false;
+      };
+      const watchInstalling = worker => {
+        if (!worker) return;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            updateReady = true;
+            busy = false;
+            setState('Update available', 'Tap to install', true, false);
+          }
+        });
+      };
+
       async function checkForUpdates(manual=false) {
-        if (!('serviceWorker' in navigator)) { setState('Latest','Refresh page'); if (manual) location.reload(); return; }
+        if (busy) return;
+        if (!('serviceWorker' in navigator)) {
+          setState('Refresh', 'Service worker unavailable');
+          return;
+        }
+        busy = true;
         try {
-          setState('Checking…','Looking for update');
+          if (manual) await progress(1, 'Checking', 'Contacting app service');
           reg = reg || await navigator.serviceWorker.getRegistration();
           if (!reg) reg = await navigator.serviceWorker.register('./service-worker.js');
+
+          if (detectWaiting(reg)) { busy = false; return; }
+          if (manual) await progress(2, 'Comparing', 'Checking latest files');
+
           await reg.update();
-          if (reg.waiting) { updateReady=true; setState('Update available','Tap to update',true); return; }
-          const installing = reg.installing;
-          if (installing) {
-            installing.addEventListener('statechange',()=>{
-              if (installing.state==='installed' && navigator.serviceWorker.controller) { updateReady=true; setState('Update available','Tap to update',true); }
-            });
-            setState('Checking…','Update detected');
-          } else setState('Latest','App is up to date');
-        } catch (e) { setState('Refresh','Check failed'); }
+          if (detectWaiting(reg)) { busy = false; return; }
+
+          if (reg.installing) {
+            watchInstalling(reg.installing);
+            if (manual) await progress(3, 'Preparing', 'Downloading update');
+            busy = false;
+            return;
+          }
+
+          if (manual) {
+            await progress(3, 'Complete', 'No new update found');
+            setState('Latest', 'App is up to date');
+          }
+        } catch (e) {
+          setState('Refresh', 'Update check failed');
+        } finally {
+          busy = false;
+        }
       }
-      btn.addEventListener('click', async()=>{
-        if (updateReady && reg?.waiting) { reg.waiting.postMessage({type:'SKIP_WAITING'}); setState('Updating…','Applying latest version'); return; }
-        await checkForUpdates(true); if (!updateReady) setTimeout(()=>location.reload(),500);
+
+      async function applyUpdate() {
+        if (!reg?.waiting || busy) return;
+        busy = true;
+        try {
+          await progress(1, 'Installing', 'Applying new version');
+          reg.waiting.postMessage({type:'SKIP_WAITING'});
+          await progress(2, 'Activating', 'Switching to latest files');
+          setState('3/3 Reloading', 'Opening latest version', false, true);
+          reloading = true;
+          setTimeout(() => location.reload(), 700);
+        } catch (e) {
+          busy = false;
+          setState('Refresh', 'Update install failed');
+        }
+      }
+
+      btn.addEventListener('click', async () => {
+        if (updateReady && reg?.waiting) return applyUpdate();
+        return checkForUpdates(true);
       });
-      navigator.serviceWorker?.addEventListener('controllerchange',()=>location.reload());
-      window.addEventListener('load',()=>checkForUpdates(false));
-      document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkForUpdates(false); });
+
+      navigator.serviceWorker?.addEventListener('controllerchange', () => {
+        if (!reloading) {
+          reloading = true;
+          setState('3/3 Reloading', 'Opening latest version', false, true);
+          setTimeout(() => location.reload(), 450);
+        }
+      });
+
+      window.addEventListener('load', async () => {
+        try {
+          reg = await navigator.serviceWorker.getRegistration();
+          if (reg?.waiting) detectWaiting(reg);
+          else {
+            await reg?.update();
+            if (reg?.waiting) detectWaiting(reg);
+            else if (reg?.installing) watchInstalling(reg.installing);
+          }
+        } catch (_) {}
+      });
     })();
   </script>
   <script src="app.js"></script>
