@@ -1,4 +1,4 @@
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.0';
 const CACHE=`moneygowhere-v${APP_VERSION}`;
 const CORE=['./','./index.html','./style.css','./app.js','./finance-fix.js','./manifest.json','./assets/icons/icon.svg'];
 
