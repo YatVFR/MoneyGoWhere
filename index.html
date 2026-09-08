@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="description" content="MoneyGoWhere — understand where your money went." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <title>MoneyGoWhere</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">MoneyGoWhere</p>
+        <h1 id="pageTitle">Dashboard</h1>
+      </div>
+      <button class="icon-btn" id="alertBtn" aria-label="Budget alerts">🔔<span id="alertDot" class="alert-dot hidden"></span></button>
+    </header>
+
+    <main>
+      <section class="view active" id="view-dashboard">
+        <div class="month-row">
+          <button class="ghost-btn" id="prevMonth">‹</button>
+          <button class="month-chip" id="monthLabel"></button>
+          <button class="ghost-btn" id="nextMonth">›</button>
+        </div>
+
+        <div class="metric-grid">
+          <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">No comparison yet</small></article>
+          <article class="card metric"><span>Spent</span><strong id="spentTotal">$0.00</strong><small id="spentDelta">No comparison yet</small></article>
+          <article class="card metric"><span>Remaining</span><strong id="remainingTotal">$0.00</strong><small>Income minus tracked spending</small></article>
+          <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">No budget set</small></article>
+        </div>
+
+        <article class="card budget-card">
+          <div class="card-head"><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><button class="text-btn" data-open="budget">Edit</button></div>
+          <div class="progress"><div id="budgetBar"></div></div>
+          <div class="budget-copy"><span id="budgetCopy">Set a monthly budget to start monitoring.</span><strong id="budgetRemaining"></strong></div>
+        </article>
+
+        <article class="card" id="budgetAlertCard">
+          <div class="card-head"><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div></div>
+          <p id="budgetAlertText">Add a few expenses and MoneyGoWhere will start surfacing useful insights here.</p>
+        </article>
+
+        <article class="card">
+          <div class="card-head"><div><span class="section-icon">🏆</span><b>Top Spending</b></div><button class="text-btn" data-nav="insights">View details</button></div>
+          <div id="topCategories" class="category-list empty-state">No expenses for this month yet.</div>
+        </article>
+
+        <article class="card">
+          <div class="card-head"><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div></div>
+          <div id="trendBars" class="trend-bars"></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-add">
+        <div class="action-grid">
+          <button class="action-card" data-open="receipt"><span>📷</span><b>Scan Receipt</b><small>Photo → editable details</small></button>
+          <button class="action-card" data-open="expense"><span>✍️</span><b>Manual Expense</b><small>Quick entry</small></button>
+          <button class="action-card" data-open="income"><span>💰</span><b>Add Income</b><small>Salary, bonus, one-off</small></button>
+          <button class="action-card" data-open="budget"><span>🎯</span><b>Set Budget</b><small>Monthly & category limits</small></button>
+        </div>
+
+        <article class="card">
+          <div class="card-head"><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div></div>
+          <div id="recentTransactions" class="transaction-list empty-state">Nothing recorded yet.</div>
+        </article>
+      </section>
+
+      <section class="view" id="view-insights">
+        <div class="segmented" id="insightRange">
+          <button data-range="1" class="active">1 Month</button>
+          <button data-range="6">6 Months</button>
+          <button data-range="12">12 Months</button>
+        </div>
+        <article class="card">
+          <div class="card-head"><div><span class="section-icon">🔎</span><b>Spending Breakdown</b></div></div>
+          <div id="insightSummary" class="insight-summary"></div>
+          <div id="insightCategories" class="category-list"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><span class="section-icon">💼</span><b>Salary & Bonus Trends</b></div></div>
+          <div id="salaryTrend" class="trend-bars salary"></div>
+          <div id="bonusHistory" class="bonus-list"></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-settings">
+        <article class="card settings-list">
+          <button data-open="budget"><span>🎯</span><div><b>Budgets</b><small>Monthly and category thresholds</small></div><i>›</i></button>
+          <button id="exportBtn"><span>💾</span><div><b>Backup Data</b><small>Export your local MoneyGoWhere database</small></div><i>›</i></button>
+          <label class="settings-button"><span>♻️</span><div><b>Restore Data</b><small>Import a MoneyGoWhere backup</small></div><i>›</i><input id="importInput" type="file" accept="application/json" hidden /></label>
+          <button id="integrityBtn"><span>🩺</span><div><b>Data Integrity Check</b><small>Validate transactions and detect duplicates</small></div><i>›</i></button>
+          <button id="resetBtn" class="danger"><span>🗑️</span><div><b>Reset Local Data</b><small>Delete all MoneyGoWhere records on this device</small></div><i>›</i></button>
+        </article>
+        <p class="privacy-note">🔒 MoneyGoWhere is local-first. Your finance data stays in this browser unless you export it yourself. Receipt OCR runs in-browser when available.</p>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Primary navigation">
+      <button class="active" data-nav="dashboard"><span>⌂</span><small>Dashboard</small></button>
+      <button data-nav="add"><span>＋</span><small>Add</small></button>
+      <button data-nav="insights"><span>▥</span><small>Insights</small></button>
+      <button data-nav="settings"><span>⚙</span><small>Settings</small></button>
+    </nav>
+  </div>
+
+  <dialog id="modal">
+    <div class="modal-shell">
+      <div class="modal-head"><div><p class="eyebrow">MoneyGoWhere</p><h2 id="modalTitle"></h2></div><button class="icon-btn" id="closeModal">✕</button></div>
+      <div id="modalBody"></div>
+    </div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
