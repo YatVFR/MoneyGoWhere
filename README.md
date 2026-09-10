@@ -72,6 +72,50 @@ MoneyGoWhere can suggest a spending category from known vendor/category rules. E
 
 Duplicate checks help detect transactions with matching date, vendor and amount.
 
+### 🍎 Apple Pay / iOS Shortcuts Integration
+
+MoneyGoWhere includes an iOS Shortcuts bridge for bringing Apple Pay transaction details into the expense-entry workflow.
+
+Because a browser/PWA cannot directly read Apple Wallet transaction history, the integration uses an iOS Shortcut automation:
+
+```text
+Apple Pay transaction
+        ↓
+iOS Shortcuts automation
+        ↓
+MoneyGoWhere URL bridge
+        ↓
+Pre-filled expense
+        ↓
+Category suggestion + duplicate check
+        ↓
+User review
+        ↓
+Save
+```
+
+The bridge can receive:
+
+- Merchant / vendor
+- Amount
+- Card / payment source
+- Transaction date
+- Transaction time
+- Optional categorisation hint
+
+MoneyGoWhere then:
+
+- Marks the payment method as Apple Pay
+- Suggests a spending category from local merchant rules
+- Detects supported shopping platforms where possible
+- Checks for a possible duplicate transaction using date, vendor and amount
+- Opens the normal expense form with the transaction pre-filled
+- Requires user review before the expense is saved
+
+The bridge is invoked using the `mgw=applepay` URL parameter together with the transaction fields supplied by the Shortcut. Personal transaction data is not embedded in the public application repository.
+
+> **Status:** The Apple Pay/iOS Shortcuts bridge is implemented in MoneyGoWhere. Real-device Apple Pay UAT remains to be completed, so it should not yet be considered fully production-validated.
+
 ### Income Tracking
 
 Track:
@@ -194,7 +238,7 @@ Dashboard + local calculations
 Optional user-controlled JSON backup
 ```
 
-Personal finance records are not committed to this public repository. Receipt OCR, debt calculations, recurring schedules and Smart Spending Advisor calculations run locally in the browser.
+Personal finance records are not committed to this public repository. Receipt OCR, Apple Pay bridge processing, debt calculations, recurring schedules and Smart Spending Advisor calculations run locally in the browser.
 
 ## PWA & Update Handling
 
@@ -251,6 +295,7 @@ payLaterPayments
 - Recurring income/commitment engine
 - Recurrence-aware Budget After Commitments
 - Performance and rendering cleanup
+- Apple Pay/iOS Shortcuts bridge retained and documented
 - Data version 9
 - PWA cache v1.5.3
 
