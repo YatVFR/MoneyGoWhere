@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.3 runtime compatibility layer.
 // IMPORTANT: No personal finance records are bundled with the app.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.3',schemaVersion:1,dataVersion:9,cacheVersion:'1.5.3'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.3',schemaVersion:1,dataVersion:9,cacheVersion:'1.5.3-r1'});
 
 function mgwCycleSettings(){const p=db?.settings?.payCycle||{};return{mode:p.mode==='payday'?'payday':'calendar',day:Math.min(31,Math.max(1,Number(p.day)||25))}}
 function mgwSafeMonthDay(y,m,d){return new Date(y,m,Math.min(d,new Date(y,m+1,0).getDate()))}
@@ -20,7 +20,19 @@ function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if
 if(typeof renderAll==='function'){const base=renderAll;renderAll=function(){base();mgwUpdateCycleUI()}}
 function mgwExportV153(){const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MoneyGoWhere-backup-v${MGW_RUNTIME_RELEASE.appVersion}-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);if(typeof toast==='function')toast('Complete backup exported')}
 
-// Load additive feature modules after the existing app compatibility layers.
-for(const src of ['./ocr-enhance.js','./credit-manager.js','./credit-accounting-fix.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js']){const s=document.createElement('script');s.src=src;s.async=false;document.head.appendChild(s)}
+// Load additive feature modules in a deterministic dependency order.
+// Dynamic script insertion is async by nature across browsers; chaining onload avoids
+// iOS/PWA timing races where v1.5.3 UI modules could be present in the repo but never boot.
+const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-accounting-fix.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js'];
+function mgwLoadFeatureModules(index=0){
+  if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();return;}
+  const src=MGW_FEATURE_MODULES[index];
+  if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}
+  const s=document.createElement('script');
+  s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);
+  s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};
+  document.head.appendChild(s);
+}
+mgwLoadFeatureModules();
 
 document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion}`;badge.title=`App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV153()},true);if(typeof renderAll==='function')renderAll()});
