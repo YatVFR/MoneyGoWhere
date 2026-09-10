@@ -11,9 +11,7 @@
   const netIncome=()=>incomes().reduce((t,x)=>t+num(x.netSalary),0);
   const spend=()=>expenses().reduce((t,x)=>t+num(x.amount),0);
 
-  function ensureStore(){
-    db.monthlyCommitments=Array.isArray(db.monthlyCommitments)?db.monthlyCommitments:[];
-  }
+  function ensureStore(){db.monthlyCommitments=Array.isArray(db.monthlyCommitments)?db.monthlyCommitments:[];}
   function paidInCycle(type,accountId){
     const rows=type==='card'?(db.creditPayments||[]):(db.payLaterPayments||[]);
     return rows.filter(x=>x.accountId===accountId&&(typeof mgwInCycle!=='function'||mgwInCycle(x,MGW.state.month))).reduce((t,x)=>t+num(x.amount),0);
@@ -24,8 +22,9 @@
   function reserve(){return num(db.settings?.safeSpend?.reserve)}
   function budgetPosition(){
     const income=netIncome(),fixed=fixedCommitments(),debt=debtCommitments(),later=payLaterCommitments(),held=reserve();
-    const after=Math.max(0,income-fixed-debt-later-held);
-    return {income,fixed,debt,later,held,after,spent:spend(),remaining:Math.max(0,after-spend())};
+    const after=Math.max(0,income-fixed-debt-later-held),tracked=spend();
+    const monthlyBudget=num(db.budgets?.monthly),budgetLeft=monthlyBudget?Math.max(0,monthlyBudget-tracked):null;
+    return {income,fixed,debt,later,held,after,tracked,monthlyBudget,budgetLeft};
   }
 
   function addStyles(){
@@ -35,20 +34,17 @@
   }
 
   function moveInsightToTop(){
-    const view=document.querySelector('#view-dashboard'),insight=document.querySelector('#budgetAlertCard'),month=document.querySelector('.month-row');
-    if(!view||!insight||!month)return;
-    if(month.nextElementSibling!==insight)month.insertAdjacentElement('afterend',insight);
-    const head=insight.querySelector('.card-head b');if(head)head.textContent='Smart Spending Advisor';
-    const icon=insight.querySelector('.section-icon');if(icon)icon.textContent='🧠';
+    const insight=document.querySelector('#budgetAlertCard'),month=document.querySelector('.month-row');
+    if(!insight||!month)return;if(month.nextElementSibling!==insight)month.insertAdjacentElement('afterend',insight);
+    const head=insight.querySelector('.card-head b');if(head)head.textContent='Smart Spending Advisor';const icon=insight.querySelector('.section-icon');if(icon)icon.textContent='🧠';
   }
-
   function installBudgetCard(){
     const insight=document.querySelector('#budgetAlertCard');if(!insight||document.querySelector('#mgwBudgetAfterCommitments'))return;
     const card=document.createElement('article');card.className='card mgw-budget-after';card.id='mgwBudgetAfterCommitments';insight.insertAdjacentElement('afterend',card);
   }
   function renderBudgetCard(){
     const card=document.querySelector('#mgwBudgetAfterCommitments');if(!card)return;const p=budgetPosition();
-    card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available after planned monthly obligations</small><strong>${money(p.after)}</strong><small>${money(p.remaining)} left after tracked spending</small></div><div class="mgw-budget-grid"><span>Net income</span><strong>${money(p.income)}</strong><span>Fixed monthly commitments</span><strong>−${money(p.fixed)}</strong><span>Debt repayments</span><strong>−${money(p.debt)}</strong><span>Pay-Later commitments</span><strong>−${money(p.later)}</strong><span>Reserved money</span><strong>−${money(p.held)}</strong><span>Tracked spending</span><strong>−${money(p.spent)}</strong></div><p class="mgw-muted">Credit limits are excluded. Add only fixed obligations here; card debt and Pay-Later dues are included automatically.</p>`;
+    card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available before variable / discretionary spending</small><strong>${money(p.after)}</strong><small>Safe to Spend below remains the live post-spending figure</small></div><div class="mgw-budget-grid"><span>Net income</span><strong>${money(p.income)}</strong><span>Fixed monthly commitments</span><strong>−${money(p.fixed)}</strong><span>Debt repayments</span><strong>−${money(p.debt)}</strong><span>Pay-Later commitments</span><strong>−${money(p.later)}</strong><span>Reserved money</span><strong>−${money(p.held)}</strong></div><p class="mgw-muted">Fixed commitments are deducted once as planned obligations. Tracked expenses are intentionally not deducted again here, preventing double-counting. Credit limits are excluded.</p>`;
   }
 
   function previousAnchors(n=3){const out=[];const base=MGW.state.month;for(let i=1;i<=n;i++)out.push(new Date(base.getFullYear(),base.getMonth()-i,1));return out}
@@ -60,13 +56,10 @@
     else if(ratio>=.8)status('🔴','Commitments are very high',`${Math.round(ratio*100)}% of this cycle’s income is reserved for fixed commitments, debt, installments and reserves.`);
     else if(ratio>=.6)status('🟠','Commitment pressure is elevated',`${Math.round(ratio*100)}% of this cycle’s income is already committed before day-to-day spending.`);
     else status('🟢','Commitments are manageable',`${Math.round(ratio*100)}% of this cycle’s income is currently reserved for commitments and reserves.`);
-    if(income&&p.remaining===0&&p.spent>0)status('🔴','Available budget has been used','Tracked spending has reached or exceeded the budget remaining after commitments.');
-    else if(p.after&&p.remaining/p.after<.2)status('🟠','Low discretionary buffer',`Only ${money(p.remaining)} remains after commitments and tracked spending.`);
+    if(p.monthlyBudget&&p.budgetLeft===0&&p.tracked>0)status('🔴','Personal spending budget reached',`Tracked spending of ${money(p.tracked)} has used the configured spending budget for this cycle.`);
+    else if(p.monthlyBudget&&p.budgetLeft/p.monthlyBudget<.2)status('🟠','Personal spending budget is running low',`Only ${money(p.budgetLeft)} remains in the configured spending budget.`);
     const current=categoryTotals(expenses()),prev=previousAnchors(3).map(a=>categoryTotals(typeof monthExpenses==='function'?monthExpenses(a):[]));
-    Object.entries(current).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([cat,val])=>{
-      const hist=prev.map(x=>num(x[cat])).filter(v=>v>0);if(hist.length<2)return;const avg=hist.reduce((a,b)=>a+b,0)/hist.length;
-      if(avg>0&&val>avg*1.25)status('🟡',`${cat} is above your recent pattern`,`${money(val)} this cycle is ${Math.round((val/avg-1)*100)}% above your recent ${hist.length}-cycle average.`);
-    });
+    Object.entries(current).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([cat,val])=>{const hist=prev.map(x=>num(x[cat])).filter(v=>v>0);if(hist.length<2)return;const avg=hist.reduce((a,b)=>a+b,0)/hist.length;if(avg>0&&val>avg*1.25)status('🟡',`${cat} is above your recent pattern`,`${money(val)} this cycle is ${Math.round((val/avg-1)*100)}% above your recent ${hist.length}-cycle average.`);});
     const due=p.debt+p.later;if(due>0)status('🟢','Debt and installment allocation protected',`${money(due)} is being kept aside for card debt and Pay-Later commitments this cycle.`);
     return items.slice(0,4);
   }
