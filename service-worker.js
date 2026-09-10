@@ -1,6 +1,6 @@
-const APP_VERSION='1.5.1';
+const APP_VERSION='1.5.2';
 const CACHE=`moneygowhere-v${APP_VERSION}`;
-const CORE=['./','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js','./ocr-enhance.js','./credit-manager.js','./credit-accounting-fix.js','./manifest.json','./assets/icons/icon.svg'];
+const CORE=['./','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js','./ocr-enhance.js','./credit-manager.js','./credit-accounting-fix.js','./smart-budget-insights.js','./manifest.json','./assets/icons/icon.svg'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));
