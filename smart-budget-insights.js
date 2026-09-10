@@ -1,9 +1,9 @@
 // MoneyGoWhere v1.5.2 — Smart Budget & Insights
-// Optimized local-first deterministic advisor. No finance data leaves the browser.
+// Performance-optimized local-first deterministic advisor. No finance data leaves the browser.
 (() => {
   const RELEASE='1.5.2';
   const num=v=>Math.max(0,Number(v)||0);
-  const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const id=()=>`COMMIT-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
   const sum=(rows,getter)=>rows.reduce((t,x)=>t+num(getter(x)),0);
   const setHTML=(el,html)=>{if(el&&el.innerHTML!==html)el.innerHTML=html};
@@ -11,19 +11,22 @@
   let lastSettingsSignature='';
 
   function ensureStore(){db.monthlyCommitments=Array.isArray(db.monthlyCommitments)?db.monthlyCommitments:[]}
-  function paidInCycle(rows,accountId){return rows.filter(x=>x.accountId===accountId&&(typeof mgwInCycle!=='function'||mgwInCycle(x,MGW.state.month))).reduce((t,x)=>t+num(x.amount),0)}
   function categoryTotals(list){return list.reduce((m,x)=>{const k=x.category||'Other';m[k]=(m[k]||0)+num(x.amount);return m},{})}
+  function cyclePaymentMap(rows){
+    const out=new Map();
+    for(const x of rows){if(typeof mgwInCycle==='function'&&!mgwInCycle(x,MGW.state.month))continue;out.set(x.accountId,(out.get(x.accountId)||0)+num(x.amount));}
+    return out;
+  }
   function buildContext(){
     const expenses=typeof monthExpenses==='function'?monthExpenses(MGW.state.month):[];
     const incomes=typeof monthIncome==='function'?monthIncome(MGW.state.month):[];
-    const cardPayments=db.creditPayments||[],laterPayments=db.payLaterPayments||[];
+    const cardPaid=cyclePaymentMap(db.creditPayments||[]),laterPaid=cyclePaymentMap(db.payLaterPayments||[]);
     const income=sum(incomes,x=>x.netSalary),spent=sum(expenses,x=>x.amount);
-    const fixed=db.monthlyCommitments.filter(x=>x.active!==false).reduce((t,x)=>t+num(x.amount),0);
-    const debt=(db.creditAccounts||[]).filter(a=>a.role==='debt'||a.role==='emergency-debt').reduce((t,a)=>t+Math.max(num(a.plannedPayment),paidInCycle(cardPayments,a.id)),0);
-    const later=(db.payLaterAccounts||[]).reduce((t,a)=>t+num(a.cycleDue)+paidInCycle(laterPayments,a.id),0);
-    const held=num(db.settings?.safeSpend?.reserve);
-    const after=Math.max(0,income-fixed-debt-later-held);
-    return {expenses,incomes,income,spent,fixed,debt,later,held,after,currentCats:categoryTotals(expenses)};
+    const fixed=db.monthlyCommitments.reduce((t,x)=>x.active===false?t:t+num(x.amount),0);
+    const debt=(db.creditAccounts||[]).reduce((t,a)=>(a.role==='debt'||a.role==='emergency-debt')?t+Math.max(num(a.plannedPayment),cardPaid.get(a.id)||0):t,0);
+    const later=(db.payLaterAccounts||[]).reduce((t,a)=>t+num(a.cycleDue)+(laterPaid.get(a.id)||0),0);
+    const held=num(db.settings?.safeSpend?.reserve),after=Math.max(0,income-fixed-debt-later-held);
+    return {expenses,income,spent,fixed,debt,later,held,after,currentCats:categoryTotals(expenses)};
   }
 
   function addStyles(){
@@ -34,23 +37,23 @@
   function installStaticUI(){
     const view=document.querySelector('#view-dashboard'),insight=document.querySelector('#budgetAlertCard'),month=document.querySelector('.month-row');
     if(view&&insight&&month&&month.nextElementSibling!==insight)month.insertAdjacentElement('afterend',insight);
-    if(insight){const head=insight.querySelector('.card-head b'),icon=insight.querySelector('.section-icon');if(head)head.textContent='Smart Spending Advisor';if(icon)icon.textContent='🧠'}
+    if(insight){const head=insight.querySelector('.card-head b'),icon=insight.querySelector('.section-icon');if(head&&head.textContent!=='Smart Spending Advisor')head.textContent='Smart Spending Advisor';if(icon&&icon.textContent!=='🧠')icon.textContent='🧠'}
     if(insight&&!document.querySelector('#mgwBudgetAfterCommitments')){const card=document.createElement('article');card.className='card mgw-budget-after';card.id='mgwBudgetAfterCommitments';insight.insertAdjacentElement('afterend',card)}
     const settings=document.querySelector('#view-settings');if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
   }
   function renderBudgetCard(p){
     const card=document.querySelector('#mgwBudgetAfterCommitments');if(!card)return;
-    const html=`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available after planned monthly obligations</small><strong>${money(p.after)}</strong></div><div class="mgw-budget-grid"><span>Net income</span><strong>${money(p.income)}</strong><span>Fixed monthly commitments</span><strong>−${money(p.fixed)}</strong><span>Debt repayments</span><strong>−${money(p.debt)}</strong><span>Pay-Later commitments</span><strong>−${money(p.later)}</strong><span>Reserved money</span><strong>−${money(p.held)}</strong></div><p class="mgw-muted">Planning figure before day-to-day spending. Safe to Spend remains the live post-spending figure. Credit limits are excluded.</p>`;
-    setHTML(card,html);
+    setHTML(card,`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available after planned monthly obligations</small><strong>${money(p.after)}</strong></div><div class="mgw-budget-grid"><span>Net income</span><strong>${money(p.income)}</strong><span>Fixed monthly commitments</span><strong>−${money(p.fixed)}</strong><span>Debt repayments</span><strong>−${money(p.debt)}</strong><span>Pay-Later commitments</span><strong>−${money(p.later)}</strong><span>Reserved money</span><strong>−${money(p.held)}</strong></div><p class="mgw-muted">Planning figure before day-to-day spending. Safe to Spend remains the live post-spending figure. Credit limits are excluded.</p>`);
   }
   function previousCategoryTotals(n=3){
-    const base=MGW.state.month,out=[];
-    for(let i=1;i<=n;i++){const a=new Date(base.getFullYear(),base.getMonth()-i,1),rows=typeof monthExpenses==='function'?monthExpenses(a):[];out.push(categoryTotals(rows))}
+    const base=MGW.state.month,bounds=[];
+    for(let i=1;i<=n;i++){const a=new Date(base.getFullYear(),base.getMonth()-i,1);if(typeof mgwCycleBounds==='function'){const b=mgwCycleBounds(a);bounds.push([mgwDateKey(b.start),mgwDateKey(b.end)])}else{const m=`${a.getFullYear()}-${String(a.getMonth()+1).padStart(2,'0')}`;bounds.push([m+'-01',`${a.getFullYear()}-${String(a.getMonth()+2).padStart(2,'0')}-01`])}}
+    const out=Array.from({length:n},()=>({}));
+    for(const x of db.expenses||[]){const k=String(x.date||'').slice(0,10);if(!k)continue;for(let i=0;i<bounds.length;i++){const [start,end]=bounds[i];if(k>=start&&k<end){const c=x.category||'Other';out[i][c]=(out[i][c]||0)+num(x.amount);break;}}}
     return out;
   }
   function buildAdvice(p){
-    const items=[],commit=p.fixed+p.debt+p.later+p.held,ratio=p.income?commit/p.income:0;
-    const add=(level,title,text)=>items.push({level,title,text});
+    const items=[],commit=p.fixed+p.debt+p.later+p.held,ratio=p.income?commit/p.income:0,add=(level,title,text)=>items.push({level,title,text});
     if(!p.income)add('🟡','Add income for this cycle','MoneyGoWhere needs net income to calculate affordability guidance.');
     else if(ratio>=.8)add('🔴','Commitments are very high',`${Math.round(ratio*100)}% of this cycle’s income is reserved for commitments, debt, installments and reserves.`);
     else if(ratio>=.6)add('🟠','Commitment pressure is elevated',`${Math.round(ratio*100)}% of this cycle’s income is already committed before day-to-day spending.`);
@@ -63,10 +66,7 @@
     const protectedAmount=p.debt+p.later;if(protectedAmount>0)add('🟢','Debt and installment allocation protected',`${money(protectedAmount)} is being kept aside for card debt and Pay-Later commitments this cycle.`);
     return items.slice(0,4);
   }
-  function renderAdvisor(p){
-    const text=document.querySelector('#budgetAlertText');if(!text)return;const items=buildAdvice(p);
-    setHTML(text,`<div class="mgw-advice">${items.map(x=>`<div class="mgw-advice-item"><b>${x.level} ${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('')}</div><p class="mgw-muted">Local advisor: recommendations are rule-based from your MoneyGoWhere data and are not financial advice.</p>`);
-  }
+  function renderAdvisor(p){const text=document.querySelector('#budgetAlertText');if(!text)return;const items=buildAdvice(p);setHTML(text,`<div class="mgw-advice">${items.map(x=>`<div class="mgw-advice-item"><b>${x.level} ${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('')}</div><p class="mgw-muted">Local advisor: recommendations are rule-based from your MoneyGoWhere data and are not financial advice.</p>`)}
   function renderCommitment(x){return `<div class="mgw-commit"><div><b>${esc(x.name)}</b><small>${esc(x.type||'Fixed commitment')}${x.dueDay?` · due day ${x.dueDay}`:''}<span class="mgw-pill">${x.active===false?'Paused':'Active'}</span></small></div><div><strong>${money(num(x.amount))}</strong><div class="mgw-commit-actions"><button data-commit-edit="${x.id}">Edit</button><button data-commit-toggle="${x.id}">${x.active===false?'Resume':'Pause'}</button></div></div></div>`}
   function renderSettings(){
     const host=document.querySelector('#mgwCommitmentSettings');if(!host)return;
