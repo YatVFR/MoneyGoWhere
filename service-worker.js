@@ -1,6 +1,6 @@
 const APP_VERSION='1.5.5-dev';
-const CACHE='moneygowhere-v1.5.5-dev-2';
-const CORE=['./','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js','./ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./credit-accounting-fix.js','./recurring-bills.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js','./manifest.json','./assets/icons/icon.svg'];
+const CACHE='moneygowhere-v1.5.5-dev-3';
+const CORE=['./','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js','./ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./credit-accounting-fix.js','./recurring-bills.js','./dashboard-breakdown.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js','./manifest.json','./assets/icons/icon.svg'];
 
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)));
