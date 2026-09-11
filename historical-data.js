@@ -24,7 +24,7 @@ const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-ac
 function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
 mgwLoadFeatureModules();
 
-// v1.5.4 UAT refresh stability fix: own the refresh click in capture phase so the
+// v1.5.4 refresh stability fix: own the refresh click in capture phase so the
 // legacy handler cannot schedule a second reload while the service worker is activating.
 function mgwInstallStableRefresh(){
   const btn=document.querySelector('#refreshBtn'),status=document.querySelector('#updateStatus'),sub=document.querySelector('#updateSub'),dot=document.querySelector('#updateDot');
@@ -62,4 +62,4 @@ function mgwInstallStableRefresh(){
   },true);
 }
 
-document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();mgwInstallStableRefresh();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · PREVIEW/UAT`;badge.title=`Preview/UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
+document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();mgwInstallStableRefresh();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion}`;badge.title=`Production · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
