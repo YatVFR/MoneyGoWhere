@@ -1,4 +1,4 @@
-name: Deploy MoneyGoWhere Preview UAT to GitHub Pages
+name: Deploy MoneyGoWhere UAT to GitHub Pages
 
 on:
   push:
@@ -11,28 +11,52 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-preview-uat"
+  group: "pages-shared-preview"
   cancel-in-progress: true
 
 jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}uat/
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Preview UAT
+      - name: Checkout Production snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          path: prod-src
+
+      - name: Checkout UAT snapshot
         uses: actions/checkout@v6
         with:
           ref: preview/uat
+          path: uat-src
+
+      - name: Checkout Dev snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          path: dev-src
+
+      - name: Assemble shared Pages site
+        run: |
+          mkdir -p site site/uat site/dev
+          rsync -a --delete --exclude='.git' --exclude='.github' prod-src/ site/
+          mkdir -p site/uat site/dev
+          rsync -a --delete --exclude='.git' --exclude='.github' uat-src/ site/uat/
+          rsync -a --delete --exclude='.git' --exclude='.github' dev-src/ site/dev/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload Preview UAT artifact
+
+      - name: Upload shared Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
+          path: site
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Deploy Preview UAT to GitHub Pages
+
+      - name: Deploy UAT snapshot
         id: deployment
         uses: actions/deploy-pages@v4
         with:
