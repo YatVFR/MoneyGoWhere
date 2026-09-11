@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev runtime compatibility layer.
+// MoneyGoWhere v1.5.5-dev.5 runtime compatibility layer.
 // IMPORTANT: No personal finance records are bundled with the app.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev',schemaVersion:1,dataVersion:10,cacheVersion:'1.5.5-dev2'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.5',schemaVersion:1,dataVersion:10,cacheVersion:'1.5.5-dev-5'});
 
 // The application runtime is the only owner of the visible version badge.
 function mgwInstallRuntimeBadge(){
@@ -11,7 +11,7 @@ function mgwInstallRuntimeBadge(){
   let badge=document.querySelector('#mgwRuntimeVersionBadge');
   if(!badge){badge=document.createElement('span');badge.id='mgwRuntimeVersionBadge';badge.className='app-version-badge';header.appendChild(badge)}
   badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · DEV`;
-  badge.title=`Development · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`;
+  badge.title=`Development · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion} · Cache ${MGW_RUNTIME_RELEASE.cacheVersion}`;
 }
 mgwInstallRuntimeBadge();
 
