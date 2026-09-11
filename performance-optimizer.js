@@ -1,4 +1,4 @@
-// MoneyGoWhere v1.5.2 — lightweight performance optimizer
+// MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
 (() => {
   // Cache currency formatters instead of creating Intl.NumberFormat for every value.
@@ -15,9 +15,14 @@
   }
 
   // Avoid recomputing category totals for every rendered category row.
+  // Preserve any feature-specific renderer already installed for Top Spending.
   if(typeof renderCats==='function'&&!renderCats.__mgwOptimized){
+    const priorRenderCats=renderCats;
     const optimizedRenderCats=function(el,cats){
       if(!el)return;
+      if(el.id==='topCategories'&&priorRenderCats.__mgwDashboardBreakdown){
+        return priorRenderCats(el,cats);
+      }
       if(!cats.length){el.className='category-list empty-state';if(el.textContent!=='No spending data yet.')el.textContent='No spending data yet.';return}
       el.className='category-list';
       const total=cats.reduce((t,x)=>t+(Number(x[1])||0),0)||1,max=cats[0][1]||1;
@@ -25,6 +30,7 @@
       if(el.innerHTML!==html)el.innerHTML=html;
     };
     optimizedRenderCats.__mgwOptimized=true;
+    optimizedRenderCats.__mgwDashboardBreakdown=Boolean(priorRenderCats.__mgwDashboardBreakdown);
     renderCats=optimizedRenderCats;
   }
 
