@@ -2,6 +2,22 @@
 // IMPORTANT: No personal finance records are bundled with the app.
 const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.4',schemaVersion:1,dataVersion:9,cacheVersion:'1.5.4'});
 
+// The application runtime is the only owner of the visible version badge.
+// Older feature modules still contain their own module versions and may look for
+// #appVersionBadge. Remove that legacy target before feature modules load so
+// module versions can never overwrite the visible application version.
+function mgwInstallRuntimeBadge(){
+  const legacy=document.querySelector('#appVersionBadge');
+  if(legacy) legacy.remove();
+  const header=document.querySelector('.topbar > div:first-child');
+  if(!header)return;
+  let badge=document.querySelector('#mgwRuntimeVersionBadge');
+  if(!badge){badge=document.createElement('span');badge.id='mgwRuntimeVersionBadge';badge.className='app-version-badge';header.appendChild(badge)}
+  badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · PREVIEW/UAT`;
+  badge.title=`Preview/UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`;
+}
+mgwInstallRuntimeBadge();
+
 function mgwCycleSettings(){const p=db?.settings?.payCycle||{};return{mode:p.mode==='payday'?'payday':'calendar',day:Math.min(31,Math.max(1,Number(p.day)||25))}}
 function mgwSafeMonthDay(y,m,d){return new Date(y,m,Math.min(d,new Date(y,m+1,0).getDate()))}
 function mgwDateKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
@@ -21,7 +37,7 @@ if(typeof renderAll==='function'){const base=renderAll;renderAll=function(){base
 function mgwExportV154(){const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MoneyGoWhere-backup-v${MGW_RUNTIME_RELEASE.appVersion}-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);if(typeof toast==='function')toast('Complete backup exported')}
 
 const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./credit-accounting-fix.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js'];
-function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
+function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();mgwInstallRuntimeBadge();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
 mgwLoadFeatureModules();
 
 // v1.5.4 UAT refresh stability fix: own the refresh click in capture phase so the
@@ -62,4 +78,4 @@ function mgwInstallStableRefresh(){
   },true);
 }
 
-document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();mgwInstallStableRefresh();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · PREVIEW/UAT`;badge.title=`Preview/UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
+document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();mgwInstallStableRefresh();mgwInstallRuntimeBadge();const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
