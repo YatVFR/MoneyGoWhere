@@ -40,7 +40,7 @@ const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-co
 function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();mgwInstallRuntimeBadge();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
 mgwLoadFeatureModules();
 
-// v1.5.4 UAT refresh stability fix: own the refresh click in capture phase so the
+// v1.5.4 refresh stability fix: own the refresh click in capture phase so the
 // legacy handler cannot schedule a second reload while the service worker is activating.
 function mgwInstallStableRefresh(){
   const btn=document.querySelector('#refreshBtn'),status=document.querySelector('#updateStatus'),sub=document.querySelector('#updateSub'),dot=document.querySelector('#updateDot');

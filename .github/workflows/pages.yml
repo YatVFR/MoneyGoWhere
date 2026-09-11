@@ -1,8 +1,8 @@
-name: Deploy MoneyGoWhere Preview UAT to GitHub Pages
+name: Deploy MoneyGoWhere Production to GitHub Pages
 
 on:
   push:
-    branches: ["preview/uat"]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-preview-uat"
+  group: "pages-production"
   cancel-in-progress: true
 
 jobs:
@@ -21,18 +21,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Preview UAT
+      - name: Checkout Production
         uses: actions/checkout@v6
         with:
-          ref: preview/uat
+          ref: main
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload Preview UAT artifact
+      - name: Upload Production artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: '.'
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Deploy Preview UAT to GitHub Pages
+      - name: Deploy Production to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
