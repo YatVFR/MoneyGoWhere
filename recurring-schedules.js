@@ -33,6 +33,13 @@ function installStyles(){
   s.textContent='.mgw-collapse-btn{margin-left:auto;border:0;background:rgba(15,118,110,.08);color:inherit;width:34px;height:34px;border-radius:999px;font:700 1.15rem/1 system-ui;display:inline-grid;place-items:center;cursor:pointer;flex:0 0 auto}.mgw-collapse-btn:active{transform:scale(.96)}.mgw-collapse-head{display:flex;align-items:center;gap:8px}.mgw-recurring-badge{display:inline-block;padding:2px 7px;border-radius:999px;background:rgba(19,122,111,.1);color:#137a6f;font-size:.72rem;font-weight:700}.mgw-rec-grid{display:grid;gap:8px;margin-top:10px}.mgw-rec-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border,#e4e9ea)}';
   document.head.appendChild(s);
 }
+function syncAppVersionBadge(){
+  const badge=document.querySelector('#appVersionBadge');if(!badge)return;
+  const appVersion=typeof MGW_RUNTIME_RELEASE!=='undefined'&&MGW_RUNTIME_RELEASE?.appVersion?MGW_RUNTIME_RELEASE.appVersion:RELEASE;
+  const isPreview=/preview\s*\/\s*uat/i.test(badge.title||'')||/preview\s*\/\s*uat/i.test(badge.textContent||'');
+  const text=isPreview?`v${appVersion} · PREVIEW/UAT`:`v${appVersion}`;
+  if(badge.textContent!==text)badge.textContent=text;
+}
 function slug(v){return String(v||'section').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,64)||'section'}
 function directHeader(el){return Array.from(el.children).find(x=>x.matches?.('.card-head,h1,h2,h3,h4'))||el.querySelector('.card-head,h1,h2,h3,h4')}
 function stableKey(el,head,index){
@@ -63,7 +70,7 @@ function installCollapse(){
 }
 function installRecurringSettings(){const settings=document.querySelector('#view-settings');if(!settings||document.querySelector('#mgwRecurringSettings'))return;const card=document.createElement('article');card.className='card';card.id='mgwRecurringSettings';card.innerHTML='<div class="card-head"><div><span class="section-icon">🔁</span><b>Recurring Schedules</b></div></div><p class="mgw-muted">Create one schedule for salary or repeating commitments instead of entering every month. Supports monthly, every 2 months, quarterly, half-yearly and yearly recurrence, with an optional end month.</p><div class="mgw-rec-grid" id="mgwRecurringSummary"></div>';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
 function renderSummary(){const host=document.querySelector('#mgwRecurringSummary');if(!host||!ensure())return;const sig=JSON.stringify([db.recurringIncome,db.recurringCommitments]);if(sig===summarySignature)return;summarySignature=sig;const rows=[];for(const x of db.recurringIncome)rows.push({name:x.name||'Salary',amount:num(x.netSalary),kind:'Income',x});for(const x of db.recurringCommitments)rows.push({name:x.name||'Commitment',amount:num(x.amount),kind:'Commitment',x});host.innerHTML=rows.length?rows.map(r=>`<div class="mgw-rec-row"><div><b>${esc(r.name)}</b><br><small>${r.kind} · ${esc(r.x.frequency||'monthly')} · ${esc(r.x.startMonth||'now')} → ${esc(r.x.endMonth||'no end date')}</small></div><div><strong>${money(r.amount)}</strong><br><span class="mgw-recurring-badge">🔁 Recurring</span></div></div>`).join(''):'<p class="mgw-muted">No recurring schedules configured yet.</p>'}
-function render(){if(!ensure())return;installRecurringSettings();renderSummary();installCollapse()}
+function render(){if(!ensure())return;installRecurringSettings();renderSummary();installCollapse();syncAppVersionBadge()}
 function boot(){
   if(!ensure())return;installStyles();render();
   const root=document.querySelector('#view-dashboard');if(root&&window.MutationObserver){observer=new MutationObserver(installCollapse);observer.observe(root,{childList:true,subtree:true})}
