@@ -1,8 +1,8 @@
-name: Deploy MoneyGoWhere to GitHub Pages
+name: Deploy MoneyGoWhere Preview UAT to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["preview/uat"]
   workflow_dispatch:
 
 permissions:
@@ -21,14 +21,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Preview UAT
         uses: actions/checkout@v6
+        with:
+          ref: preview/uat
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload artifact
+      - name: Upload Preview UAT artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: '.'
-      - name: Deploy to GitHub Pages
+      - name: Deploy Preview UAT to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
