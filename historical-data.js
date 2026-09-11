@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.5-dev runtime compatibility layer.
 // IMPORTANT: No personal finance records are bundled with the app.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev',schemaVersion:1,dataVersion:10,cacheVersion:'1.5.5-dev1'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev',schemaVersion:1,dataVersion:10,cacheVersion:'1.5.5-dev2'});
 
 // The application runtime is the only owner of the visible version badge.
 function mgwInstallRuntimeBadge(){
@@ -33,7 +33,7 @@ function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if
 if(typeof renderAll==='function'){const base=renderAll;renderAll=function(){base();mgwUpdateCycleUI()}}
 function mgwExportCurrent(){const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MoneyGoWhere-backup-v${MGW_RUNTIME_RELEASE.appVersion}-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);if(typeof toast==='function')toast('Complete backup exported')}
 
-const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./credit-accounting-fix.js','./recurring-bills.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js'];
+const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./credit-accounting-fix.js','./recurring-bills.js','./dashboard-breakdown.js','./smart-budget-insights.js','./performance-optimizer.js','./recurring-schedules.js'];
 function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();mgwInstallRuntimeBadge();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
 mgwLoadFeatureModules();
 
