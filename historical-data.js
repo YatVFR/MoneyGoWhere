@@ -24,4 +24,42 @@ const MGW_FEATURE_MODULES=['./ocr-enhance.js','./credit-manager.js','./credit-ac
 function mgwLoadFeatureModules(index=0){if(index>=MGW_FEATURE_MODULES.length){if(typeof renderAll==='function')renderAll();return;}const src=MGW_FEATURE_MODULES[index];if(document.querySelector(`script[data-mgw-module="${src}"]`)){mgwLoadFeatureModules(index+1);return;}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>mgwLoadFeatureModules(index+1);s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);mgwLoadFeatureModules(index+1)};document.head.appendChild(s)}
 mgwLoadFeatureModules();
 
-document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · PREVIEW/UAT`;badge.title=`Preview/UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
+// v1.5.4 UAT refresh stability fix: own the refresh click in capture phase so the
+// legacy handler cannot schedule a second reload while the service worker is activating.
+function mgwInstallStableRefresh(){
+  const btn=document.querySelector('#refreshBtn'),status=document.querySelector('#updateStatus'),sub=document.querySelector('#updateSub'),dot=document.querySelector('#updateDot');
+  if(!btn||btn.dataset.mgwStableRefresh==='1')return;
+  btn.dataset.mgwStableRefresh='1';
+  let busy=false;
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const state=(label,detail,available=false,spinning=false)=>{status.textContent=label;sub.textContent=detail;dot?.classList.toggle('hidden',!available);btn.classList.toggle('update-available',available);btn.classList.toggle('is-checking',spinning);btn.setAttribute('aria-busy',spinning?'true':'false')};
+  const step=async(n,label,detail)=>{state(`${n}/3 ${label}`,detail,false,true);await wait(260)};
+  const waitForInstalled=worker=>new Promise((resolve,reject)=>{if(!worker)return reject(new Error('No worker'));if(worker.state==='installed')return resolve(worker);const timer=setTimeout(()=>reject(new Error('Install timeout')),12000);worker.addEventListener('statechange',()=>{if(worker.state==='installed'){clearTimeout(timer);resolve(worker)}else if(worker.state==='redundant'){clearTimeout(timer);reject(new Error('Worker redundant'))}})});
+  btn.addEventListener('click',async e=>{
+    e.preventDefault();e.stopImmediatePropagation();
+    if(busy)return;
+    if(!('serviceWorker' in navigator)){state('Refresh','Service worker unavailable');return;}
+    busy=true;
+    try{
+      await step(1,'Checking','Contacting app service');
+      let reg=await navigator.serviceWorker.getRegistration();
+      if(!reg)reg=await navigator.serviceWorker.register('./service-worker.js');
+      await step(2,'Comparing','Checking latest files');
+      await reg.update();
+      let worker=reg.waiting;
+      if(!worker&&reg.installing){state('3/3 Preparing','Downloading update',false,true);worker=await waitForInstalled(reg.installing);reg=await navigator.serviceWorker.getRegistration();worker=reg?.waiting||worker}
+      if(worker&&navigator.serviceWorker.controller){
+        state('3/3 Installing','Opening latest version',false,true);
+        // No location.reload() here. The existing controllerchange listener performs
+        // the single reload after activation, preventing the visible double-refresh.
+        worker.postMessage({type:'SKIP_WAITING'});
+        return;
+      }
+      await step(3,'Complete','No new update found');
+      state('Latest','App is up to date');
+      busy=false;
+    }catch(err){console.error('MoneyGoWhere refresh check failed',err);state('Refresh','Update check failed');busy=false}
+  },true);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{db.settings=db.settings||{currency:'SGD'};db.recurringIncome=Array.isArray(db.recurringIncome)?db.recurringIncome:[];db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];mgwCycleCard();mgwUpdateCycleUI();mgwInstallStableRefresh();const badge=document.querySelector('#appVersionBadge');if(badge){badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · PREVIEW/UAT`;badge.title=`Preview/UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion}`};const exportBtn=document.querySelector('#exportBtn');if(exportBtn)exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportV154()},true);if(typeof renderAll==='function')renderAll()});
