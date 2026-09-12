@@ -1,7 +1,6 @@
-// MoneyGoWhere v1.5.2 — lightweight performance optimizer
+// MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
 (() => {
-  // Cache currency formatters instead of creating Intl.NumberFormat for every value.
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimizedMoney=function(v){
@@ -13,11 +12,11 @@
     optimizedMoney.__mgwOptimized=true;
     money=optimizedMoney;
   }
-
-  // Avoid recomputing category totals for every rendered category row.
   if(typeof renderCats==='function'&&!renderCats.__mgwOptimized){
+    const priorRenderCats=renderCats;
     const optimizedRenderCats=function(el,cats){
       if(!el)return;
+      if(el.id==='topCategories'&&priorRenderCats.__mgwDashboardBreakdown)return priorRenderCats(el,cats);
       if(!cats.length){el.className='category-list empty-state';if(el.textContent!=='No spending data yet.')el.textContent='No spending data yet.';return}
       el.className='category-list';
       const total=cats.reduce((t,x)=>t+(Number(x[1])||0),0)||1,max=cats[0][1]||1;
@@ -25,21 +24,15 @@
       if(el.innerHTML!==html)el.innerHTML=html;
     };
     optimizedRenderCats.__mgwOptimized=true;
+    optimizedRenderCats.__mgwDashboardBreakdown=Boolean(priorRenderCats.__mgwDashboardBreakdown);
     renderCats=optimizedRenderCats;
   }
-
-  // Collapse multiple synchronous render requests into one animation frame.
-  // This is especially useful because several compatibility layers can request renderAll.
   if(typeof renderAll==='function'&&!renderAll.__mgwFrameScheduled){
-    const fullRender=renderAll;
-    let queued=false;
-    const scheduled=function(){
-      if(queued)return;
-      queued=true;
-      const run=()=>{queued=false;fullRender()};
-      if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);
-    };
-    scheduled.__mgwFrameScheduled=true;
-    renderAll=scheduled;
+    const fullRender=renderAll;let queued=false;
+    const scheduled=function(){if(queued)return;queued=true;const run=()=>{queued=false;fullRender()};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0)};
+    scheduled.__mgwFrameScheduled=true;renderAll=scheduled;
   }
 })();
+
+// Dev foundation modules. They contain no personal finance records.
+(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
