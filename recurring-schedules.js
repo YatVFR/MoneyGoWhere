@@ -89,3 +89,6 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
+// Dev-only UI extension loader. Keeps personal finance data local and outside the repository.
+(()=>{const src='./ui-navigation-history.js';if(document.querySelector(`script[data-mgw-module="${src}"]`))return;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)})();
