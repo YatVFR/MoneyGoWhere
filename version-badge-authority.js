@@ -1,7 +1,7 @@
 // MoneyGoWhere DEV — single authoritative visible build badge
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.20';
+  const RELEASE='1.5.5-dev.21';
   const TEXT=`v${RELEASE} · DEV`;
   function apply(){
     const header=document.querySelector('.topbar > div:first-child');
