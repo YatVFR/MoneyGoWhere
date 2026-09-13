@@ -35,4 +35,4 @@
 })();
 
 // Dev foundation modules. They contain no personal finance records.
-(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
+(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js','./paylater-recurrence.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
