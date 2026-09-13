@@ -2,7 +2,7 @@
 // Generic app configuration only. No personal card/account data is bundled here.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.15';
+  const RELEASE='1.5.5-dev.16';
   const TYPES={credit:'Credit Card',debit:'Debit Card',wallet:'Multi-Currency / Travel Wallet',prepaid:'Prepaid / Stored Value',other:'Other'};
   const CATALOG={
     credit:{
@@ -46,6 +46,7 @@
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
   const persist=()=>localStorage.setItem(MGW.key,JSON.stringify(db));
   const opts=(xs,sel='')=>xs.map(x=>`<option value="${esc(x)}" ${x===sel?'selected':''}>${esc(x)}</option>`).join('');
+  const typeOptions=sel=>Object.entries(TYPES).map(([k,label])=>`<option value="${k}" ${k===sel?'selected':''}>${esc(label)}</option>`).join('');
   const issuerList=type=>Object.keys(CATALOG[type]||CATALOG.other);
   const products=(type,issuer)=>CATALOG[type]?.[issuer]||['Other / Custom Card'];
   const displayName=a=>a.nickname||a.name||a.cardProduct||'Card / Wallet';
@@ -57,9 +58,9 @@
     ensure();const edit=Boolean(a.id);let type=a.accountType||(source==='wallet'?'wallet':'credit');if(!TYPES[type])type='credit';
     const legacy=source==='credit'&&!a.accountType;
     const knownIssuer=issuerList(type).includes(a.issuer);const issuer=knownIssuer?a.issuer:issuerList(type)[0];
-    const knownProduct=products(type,issuer).includes(a.cardProduct);const product=knownProduct?a.cardProduct:'Other / Custom Card';
+    const knownProduct=products(type,issuer).includes(a.cardProduct);
     const body=showModal(edit?'Edit Card / Wallet':'Add Card / Wallet',`<form id="mgwCardWalletForm" class="form-grid">
-      <div class="field"><label>Card type</label><select name="accountType">${opts(Object.entries(TYPES).map(([k,v])=>`${k}|${v}`),`${type}|${TYPES[type]}`)}</select></div>
+      <div class="field"><label>Card type</label><select name="accountType">${typeOptions(type)}</select></div>
       <div class="field"><label>Bank / provider</label><select name="issuer"></select></div>
       <div class="field full"><label>Card product</label><select name="cardProduct"></select></div>
       <div class="field full" id="mgwCustomProductWrap"><label>Custom card / product</label><input name="customProduct" value="${esc(a.customProduct||(!knownProduct&&a.cardProduct?a.cardProduct:''))}" placeholder="Card or wallet product"></div>
@@ -80,9 +81,14 @@
       ${edit?'<div class="field full"><button type="button" class="danger" id="mgwDeleteCardWallet">Delete Card / Wallet</button></div>':''}
     </form>`);if(!body)return;
     const f=body.querySelector('form'),typeEl=f.elements.accountType,issuerEl=f.elements.issuer,productEl=f.elements.cardProduct,creditOnly=body.querySelector('#mgwCreditOnly'),walletOnly=body.querySelector('#mgwWalletOnly'),customWrap=body.querySelector('#mgwCustomProductWrap');
-    [...typeEl.options].forEach(o=>{const [k,label]=o.value.split('|');o.value=k;o.textContent=label});typeEl.value=type;f.elements.role.value=a.role||'spending';
-    const refreshProducts=(keep=true)=>{const t=typeEl.value,issuers=issuerList(t),want=keep&&(issuerEl.value||a.issuer);issuerEl.innerHTML=opts(issuers,issuers.includes(want)?want:issuers[0]);const ps=products(t,issuerEl.value),wantP=keep&&(productEl.value||a.cardProduct);productEl.innerHTML=opts(ps,ps.includes(wantP)?wantP:ps[0]);const isCredit=t==='credit';creditOnly.style.display=isCredit?'':'none';walletOnly.style.display=isCredit?'none':'';customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'};
-    typeEl.addEventListener('change',()=>refreshProducts(false));issuerEl.addEventListener('change',()=>refreshProducts(false));productEl.addEventListener('change',()=>{customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'});refreshProducts(true);
+    f.elements.role.value=a.role||'spending';
+    const setCreditVisibility=()=>{const isCredit=typeEl.value==='credit';creditOnly.style.display=isCredit?'':'none';walletOnly.style.display=isCredit?'none':''};
+    const refreshProducts=(preferredProduct='')=>{const ps=products(typeEl.value,issuerEl.value),selected=ps.includes(preferredProduct)?preferredProduct:ps[0];productEl.innerHTML=opts(ps,selected);customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none';setCreditVisibility()};
+    const refreshIssuers=(preferredIssuer='',preferredProduct='')=>{const issuers=issuerList(typeEl.value),selected=issuers.includes(preferredIssuer)?preferredIssuer:issuers[0];issuerEl.innerHTML=opts(issuers,selected);refreshProducts(preferredProduct)};
+    typeEl.addEventListener('change',()=>refreshIssuers());
+    issuerEl.addEventListener('change',()=>refreshProducts());
+    productEl.addEventListener('change',()=>{customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'});
+    refreshIssuers(issuer,a.cardProduct||'');
     f.addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
       if(accountType==='credit'){
         const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
