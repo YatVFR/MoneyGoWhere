@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.5 runtime compatibility layer.
+// MoneyGoWhere v1.5.5-dev.15 runtime compatibility layer.
 // IMPORTANT: No personal finance records are bundled with the app.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.5',schemaVersion:1,dataVersion:10,cacheVersion:'1.5.5-dev-5'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.15',schemaVersion:1,dataVersion:11,cacheVersion:'1.5.5-dev-15'});
 
 // The application runtime is the only owner of the visible version badge.
 function mgwInstallRuntimeBadge(){
