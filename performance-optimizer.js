@@ -1,12 +1,12 @@
 // MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
 (()=>{
-  const DEV_RELEASE='1.5.5-dev.17';
+  const DEV_RELEASE='1.5.5-dev.18';
   const syncDevBadge=()=>{
     const badge=document.querySelector('#mgwRuntimeVersionBadge');
     if(!badge)return;
     badge.textContent=`v${DEV_RELEASE} · DEV`;
-    badge.title=`Development · App ${DEV_RELEASE} · Pay-Later start-rule hotfix`;
+    badge.title=`Development · App ${DEV_RELEASE} · Expandable history sections`;
   };
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
@@ -45,4 +45,4 @@
 })();
 
 // Dev foundation modules. They contain no personal finance records.
-(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js','./paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
+(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js','./paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js','./history-collapse.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
