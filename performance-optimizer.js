@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
-(() => {
+(()=>{
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimizedMoney=function(v){
@@ -35,4 +35,4 @@
 })();
 
 // Dev foundation modules. They contain no personal finance records.
-(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js','./paylater-recurrence.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
+(()=>{for(const src of ['./onboarding-dev.js','./wallet-import-queue.js','./paylater-recurrence.js','./cards-wallets.js']){if(document.querySelector(`script[data-mgw-module="${src}"]`))continue;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)}})();
