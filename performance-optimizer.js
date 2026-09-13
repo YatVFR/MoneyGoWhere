@@ -1,12 +1,12 @@
 // MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
 (()=>{
-  const DEV_RELEASE='1.5.5-dev.20';
+  const DEV_RELEASE='1.5.5-dev.21';
   const syncDevBadge=()=>{
     const badge=document.querySelector('#mgwRuntimeVersionBadge');
     if(!badge)return;
     badge.textContent=`v${DEV_RELEASE} · DEV`;
-    badge.title=`Development · App ${DEV_RELEASE} · Salary progression trends`;
+    badge.title=`Development · App ${DEV_RELEASE} · Salary values and separate bonus history`;
   };
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
