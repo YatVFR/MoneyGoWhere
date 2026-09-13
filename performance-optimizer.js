@@ -1,6 +1,13 @@
 // MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
 // Keeps behavior unchanged while reducing repeated work during UI renders.
 (()=>{
+  const DEV_RELEASE='1.5.5-dev.16';
+  const syncDevBadge=()=>{
+    const badge=document.querySelector('#mgwRuntimeVersionBadge');
+    if(!badge)return;
+    badge.textContent=`v${DEV_RELEASE} · DEV`;
+    badge.title=`Development · App ${DEV_RELEASE} · Cards & Wallets hotfix`;
+  };
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimizedMoney=function(v){
@@ -29,9 +36,12 @@
   }
   if(typeof renderAll==='function'&&!renderAll.__mgwFrameScheduled){
     const fullRender=renderAll;let queued=false;
-    const scheduled=function(){if(queued)return;queued=true;const run=()=>{queued=false;fullRender()};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0)};
+    const scheduled=function(){if(queued)return;queued=true;const run=()=>{queued=false;fullRender();syncDevBadge()};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0)};
     scheduled.__mgwFrameScheduled=true;renderAll=scheduled;
   }
+  syncDevBadge();
+  window.addEventListener('load',syncDevBadge,{once:true});
+  setTimeout(syncDevBadge,500);
 })();
 
 // Dev foundation modules. They contain no personal finance records.
