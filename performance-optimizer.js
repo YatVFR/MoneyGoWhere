@@ -1,8 +1,8 @@
-// MoneyGoWhere v1.5.5-dev.40 — lightweight formatter optimization.
-// Core feature ordering is owned by historical-data.js; this module only adds the startup import assistant once.
+// MoneyGoWhere v1.5.5-dev.41 — lightweight formatter optimization.
+// Module loading and render scheduling are owned by historical-data.js to avoid duplicate loaders and render races.
 (()=>{
   'use strict';
-  const DEV_RELEASE='1.5.5-dev.40';
+  const DEV_RELEASE='1.5.5-dev.41';
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimized=function(v){
@@ -28,9 +28,6 @@
     optimized.__mgwOptimized=true;
     optimized.__mgwDashboardBreakdown=Boolean(prior.__mgwDashboardBreakdown);
     renderCats=optimized;
-  }
-  if(!document.querySelector('script[data-mgw-module="./startup-import-assistant.js"]')){
-    const s=document.createElement('script');s.src='./startup-import-assistant.js';s.async=false;s.dataset.mgwModule='./startup-import-assistant.js';s.onload=()=>{s.dataset.mgwReady='1'};document.head.appendChild(s);
   }
   window.MGWPerformance={version:DEV_RELEASE};
 })();
