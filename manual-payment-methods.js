@@ -3,9 +3,9 @@
 (()=>{'use strict';
 const RELEASE='1.5.5-dev.44';
 const BANKS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','Trust Bank','GXS Bank','MariBank','Other bank'];
-const APPS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','YouTrip','Revolut','Wise','Alipay+','WeChat Pay','Other app / wallet'];
+const APPS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','DBS PayLah!','YouTrip','Revolut','Wise','Alipay+','WeChat Pay','Other app / wallet'];
 const METHODS=[
- ['cash','Cash'],['card','Card'],['paynow','PayNow'],['ewallet','E-Wallet / App'],['bank_transfer','Bank Transfer'],['nets','NETS'],['voucher','Voucher / Gift Card'],['other','Other']
+ ['cash','Cash'],['card','Card'],['apple_pay','Apple Pay'],['paynow','PayNow'],['ewallet','E-Wallet / App'],['bank_transfer','Bank Transfer'],['nets','NETS'],['voucher','Voucher / Gift Card'],['other','Other']
 ];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function ensure(){db.creditAccounts=Array.isArray(db.creditAccounts)?db.creditAccounts:[];db.walletAccounts=Array.isArray(db.walletAccounts)?db.walletAccounts:[]}
@@ -14,9 +14,9 @@ function accountLabel(a){return [a.nickname||a.name||a.cardProduct,a.issuer].fil
 function methodOptions(){return METHODS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}
 function option(value,label){return `<option value="${esc(value)}">${esc(label)}</option>`}
 function sourceOptions(method){
-  if(method==='card'){
+  if(method==='card'||method==='apple_pay'){
     const rows=accounts();
-    return option('','Select card / wallet')+rows.map(a=>option(`acct:${a.id}`,accountLabel(a))).join('')+option('custom:','Other / unlinked card');
+    return option('',method==='apple_pay'?'Select Apple Pay card / wallet':'Select card / wallet')+rows.map(a=>option(`acct:${a.id}`,accountLabel(a))).join('')+option('custom:',method==='apple_pay'?'Other / unlinked Apple Pay card':'Other / unlinked card');
   }
   if(method==='paynow'||method==='bank_transfer'||method==='nets')return option('','Select bank')+BANKS.map(x=>option(`bank:${x}`,x)).join('');
   if(method==='ewallet'){
@@ -33,19 +33,19 @@ function enhance(){
   if(!form||form.dataset.mgwPaymentMethods==='1'||document.querySelector('#receiptFile'))return;
   form.dataset.mgwPaymentMethods='1';ensure();
   const notes=form.elements.notes?.closest('.field');if(!notes)return;
-  const methodField=document.createElement('div');methodField.className='field';methodField.innerHTML=`<label>Payment Method</label><select name="mgwPaymentMethod">${methodOptions()}</select>`;
-  const sourceField=document.createElement('div');sourceField.className='field';sourceField.innerHTML='<label>Payment Source</label><select name="mgwPaymentSource"></select>';
-  const customField=document.createElement('div');customField.className='field full';customField.hidden=true;customField.innerHTML='<label>Payment Source Details</label><input name="mgwPaymentCustom" placeholder="Bank, card, wallet or other payment source">';
+  const methodField=document.createElement('div');methodField.className='field';methodField.innerHTML=`<label for="mgwPaymentMethodSelect">Payment Method</label><select id="mgwPaymentMethodSelect">${methodOptions()}</select>`;
+  const sourceField=document.createElement('div');sourceField.className='field';sourceField.innerHTML='<label for="mgwPaymentSourceSelect">Payment Source</label><select id="mgwPaymentSourceSelect"></select>';
+  const customField=document.createElement('div');customField.className='field full';customField.hidden=true;customField.innerHTML='<label for="mgwPaymentCustomInput">Payment Source Details</label><input id="mgwPaymentCustomInput" placeholder="Bank, card, wallet or other payment source">';
   const note=document.createElement('div');note.className='field full';note.innerHTML='<small class="mgw-form-note">Configured cards and wallets can be linked directly so MGW can attribute the spending to the correct payment source.</small>';
   form.insertBefore(methodField,notes);form.insertBefore(sourceField,notes);form.insertBefore(customField,notes);form.insertBefore(note,notes);
   for(const name of ['paymentMethod','paymentSource','paymentAccountId','paymentSourceType']){const h=document.createElement('input');h.type='hidden';h.name=name;form.appendChild(h)}
-  const method=form.elements.mgwPaymentMethod,source=form.elements.mgwPaymentSource,custom=form.elements.mgwPaymentCustom;
+  const method=methodField.querySelector('select'),source=sourceField.querySelector('select'),custom=customField.querySelector('input');
   const sync=()=>{
     const m=method.value,choice=source.value||'',customValue=custom.value.trim();let label='',accountId='',sourceType='';
     if(choice.startsWith('acct:')){accountId=choice.slice(5);const a=accounts().find(x=>x.id===accountId);label=a?accountLabel(a):'';sourceType=a?._kind==='credit'?'card':'wallet'}
     else if(choice.startsWith('bank:')){label=choice.slice(5);sourceType='bank'}
     else if(choice.startsWith('app:')){label=choice.slice(4);sourceType='wallet'}
-    else if(choice.startsWith('custom:')){label=customValue;sourceType=m==='card'?'card':m==='ewallet'?'wallet':m==='voucher'?'voucher':'other'}
+    else if(choice.startsWith('custom:')){label=customValue;sourceType=(m==='card'||m==='apple_pay')?'card':m==='ewallet'?'wallet':m==='voucher'?'voucher':'other'}
     if(m==='cash'){label='Cash';sourceType='cash'}
     form.elements.paymentMethod.value=methodLabel(m);
     form.elements.paymentSource.value=label;
