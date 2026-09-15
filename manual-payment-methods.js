@@ -2,9 +2,9 @@
 // Generic payment providers/banks only; user account choices remain local in the MGW database.
 (()=>{'use strict';
 const RELEASE='1.5.5-dev.46';
-const BANKS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','Trust Bank','GXS Bank','MariBank','Other bank'];
-const CARD_PROVIDERS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','American Express','Trust Bank','ICBC Singapore','Other card'];
-const APPS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','DBS PayLah!','YouTrip','Revolut','Wise','Alipay+','WeChat Pay','Other app / wallet'];
+const BANKS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','Trust Bank','GXS Bank','MariBank'];
+const CARD_PROVIDERS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','American Express','Trust Bank','ICBC Singapore'];
+const APPS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','DBS PayLah!','YouTrip','Revolut','Wise','Alipay+','WeChat Pay'];
 const METHODS=[['cash','Cash'],['card','Card'],['apple_pay','Apple Pay'],['paynow','PayNow'],['ewallet','E-Wallet / App'],['bank_transfer','Bank Transfer'],['nets','NETS'],['voucher','Voucher / Gift Card'],['other','Other']];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function ensure(){db.creditAccounts=Array.isArray(db.creditAccounts)?db.creditAccounts:[];db.walletAccounts=Array.isArray(db.walletAccounts)?db.walletAccounts:[];db.bankAccounts=Array.isArray(db.bankAccounts)?db.bankAccounts:[];db.settings=db.settings||{};db.settings.paymentMethods=db.settings.paymentMethods||{}}
@@ -22,27 +22,30 @@ function sourceOptions(method){
   if(method==='card'){
     return option('','Select card')+
       group('My Cards & Wallets',configuredCardOptions())+
-      group('Card issuer',CARD_PROVIDERS.map(x=>option(`cardprovider:${x}`,x==='Other card'?'Other / Custom Card':`${x} Card`)).join(''));
+      group('Card issuer',CARD_PROVIDERS.map(x=>option(`cardprovider:${x}`,`${x} Card`)).join(''))+
+      group('Other',option('custom:card','Other / Custom Card'));
   }
   if(method==='apple_pay'){
     return option('','Select Apple Pay source')+
       group('My Cards & Wallets',configuredCardOptions())+
-      group('Card issuer',CARD_PROVIDERS.filter(x=>x!=='Other card').map(x=>option(`applecard:${x}`,`${x} via Apple Pay`)).join(''))+
-      group('Wallet / App',APPS.filter(x=>x!=='Other app / wallet').map(x=>option(`appleapp:${x}`,`${x} via Apple Pay`)).join(''))+
-      group('Other',option('custom:','Other / Custom Apple Pay source'));
+      group('Card issuer',CARD_PROVIDERS.map(x=>option(`applecard:${x}`,`${x} via Apple Pay`)).join(''))+
+      group('Wallet / App',APPS.map(x=>option(`appleapp:${x}`,`${x} via Apple Pay`)).join(''))+
+      group('Other',option('custom:card','Other / Custom Apple Pay source'));
   }
   if(method==='paynow'||method==='bank_transfer'||method==='nets'){
     return option('',method==='paynow'?'Select PayNow bank':'Select bank')+
       group('My Bank Accounts',configuredBankOptions())+
-      group('Bank',BANKS.map(x=>option(`bank:${x}`,x)).join(''));
+      group('Bank',BANKS.map(x=>option(`bank:${x}`,x)).join(''))+
+      group('Other',option('custom:bank','Other / Custom Bank'));
   }
   if(method==='ewallet'){
     return option('','Select app / wallet')+
       group('My Wallets',configuredWalletOptions())+
-      group('Wallet / App',APPS.map(x=>option(`app:${x}`,x)).join(''));
+      group('Wallet / App',APPS.map(x=>option(`app:${x}`,x)).join(''))+
+      group('Other',option('custom:wallet','Other / Custom App or Wallet'));
   }
-  if(method==='voucher')return option('','Select voucher source')+option('custom:','Enter voucher / gift card');
-  if(method==='other')return option('custom:','Enter payment source');
+  if(method==='voucher')return option('','Select voucher source')+option('custom:voucher','Other / Custom Voucher');
+  if(method==='other')return option('custom:other','Other / Custom Payment Source');
   return '';
 }
 function methodLabel(method){return METHODS.find(x=>x[0]===method)?.[1]||'Other'}
@@ -63,10 +66,10 @@ function enhance(){
     else if(choice.startsWith('applecard:')){label=`${choice.slice(10)} via Apple Pay`;sourceType='card'}
     else if(choice.startsWith('appleapp:')){label=`${choice.slice(9)} via Apple Pay`;sourceType='wallet'}
     else if(choice.startsWith('app:')){label=choice.slice(4);sourceType='wallet'}
-    else if(choice.startsWith('custom:')){label=customValue;sourceType=(m==='card'||m==='apple_pay')?'card':m==='ewallet'?'wallet':m==='voucher'?'voucher':'other'}
+    else if(choice.startsWith('custom:')){label=customValue;sourceType=choice.slice(7)||'other'}
     if(m==='cash'){label='Cash';sourceType='cash'}
     form.elements.paymentMethod.value=methodLabel(m);form.elements.paymentSource.value=label;form.elements.paymentAccountId.value=accountId;form.elements.paymentBankAccountId.value=bankAccountId;form.elements.paymentSourceType.value=sourceType||m};
-  const refresh=()=>{const m=method.value;source.innerHTML=sourceOptions(m);sourceField.hidden=m==='cash';customField.hidden=true;if(m==='cash'){sync();return}const updateCustom=()=>{const customChoice=source.value.startsWith('custom:')||source.value==='cardprovider:Other card'||source.value==='app:Other app / wallet'||source.value==='bank:Other bank';customField.hidden=!customChoice;sync()};source.onchange=updateCustom;updateCustom()};
+  const refresh=()=>{const m=method.value;source.innerHTML=sourceOptions(m);sourceField.hidden=m==='cash';customField.hidden=true;if(m==='cash'){sync();return}const updateCustom=()=>{customField.hidden=!source.value.startsWith('custom:');sync()};source.onchange=updateCustom;updateCustom()};
   const preferred=db.settings.paymentMethods.default;if(preferred&&[...method.options].some(o=>o.value===preferred))method.value=preferred;
   method.addEventListener('change',refresh);custom.addEventListener('input',sync);form.addEventListener('submit',sync,true);refresh();
 }
