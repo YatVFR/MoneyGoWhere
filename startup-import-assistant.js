@@ -1,12 +1,14 @@
 // MoneyGoWhere DEV — optional startup import assistant + calibrated local batch receipt OCR.
 // Receipt images are processed locally and are never persisted or uploaded by this module.
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.41';
+const RELEASE='1.5.5-dev.43';
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const num=v=>{const n=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0};
 const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toUpperCase();
 const persist=()=>localStorage.setItem(MGW.key,JSON.stringify(db));
 let shownThisLoad=false,processing=false;
+if(typeof window.MGWStartupImportDone!=='boolean')window.MGWStartupImportDone=false;
+function markStartupImportDone(){if(window.MGWStartupImportDone)return;window.MGWStartupImportDone=true;document.dispatchEvent(new CustomEvent('mgw:startup-import:done'))}
 function ensure(){
   db.settings=db.settings||{};
   db.settings.startupImport=db.settings.startupImport&&typeof db.settings.startupImport==='object'?db.settings.startupImport:{};
@@ -110,10 +112,14 @@ function openApplePay(){
   if(typeof toast==='function')toast('Apple Pay importer is still loading');
 }
 function showPrompt({manual=false}={}){
-  ensure();style();makeReceiptInput();if(!manual&&(!db.settings.startupImport.enabled||shownThisLoad))return;
+  ensure();style();makeReceiptInput();
+  if(!manual&&(!db.settings.startupImport.enabled||shownThisLoad)){markStartupImportDone();return}
   let d=document.querySelector('#mgwStartupImportDialog');if(!d){d=document.createElement('dialog');d.id='mgwStartupImportDialog';d.className='mgw-startup-import';document.body.appendChild(d)}
   d.innerHTML=`<div class="mgw-startup-import-shell"><div class="eyebrow">Quick Import</div><h2>Anything to add?</h2><p>Add several receipt images for calibrated local OCR, scan your MGW Apple Pay folder, or continue without importing.</p><div class="mgw-startup-import-actions"><button class="secondary-btn" data-receipts><b>🧾 Add Receipt Images</b><small>Select multiple receipt photos. MGW checks orientation, totals, dates, merchant and currency before review.</small></button><button class="secondary-btn" data-apple><b>🍎 Scan Apple Pay Folder</b><small>Check MGW JSON/TXT transaction files and queue new transactions.</small></button><button class="primary-btn" data-done><b>Continue to MoneyGoWhere</b></button></div><div class="mgw-startup-import-status" id="mgwStartupImportStatus"></div></div>`;
-  d.querySelector('[data-receipts]').addEventListener('click',()=>makeReceiptInput().click());d.querySelector('[data-apple]').addEventListener('click',openApplePay);d.querySelector('[data-done]').addEventListener('click',()=>d.close());shownThisLoad=true;try{d.showModal()}catch{}
+  d.querySelector('[data-receipts]').addEventListener('click',()=>makeReceiptInput().click());d.querySelector('[data-apple]').addEventListener('click',openApplePay);d.querySelector('[data-done]').addEventListener('click',()=>d.close());
+  if(!manual&&!d.dataset.mgwStartupSequenceBound){d.dataset.mgwStartupSequenceBound='1';d.addEventListener('close',markStartupImportDone,{once:true})}
+  shownThisLoad=true;
+  try{d.showModal()}catch{if(!manual)markStartupImportDone()}
 }
 function installSettings(){
   ensure();const list=document.querySelector('#view-settings .settings-list');if(!list||document.querySelector('#mgwStartupImportToggle'))return;
@@ -123,10 +129,18 @@ function installSettings(){
   const integrity=[...list.querySelectorAll('button')].find(b=>/Data Integrity Check/i.test(b.textContent||''));list.insertBefore(toggle,integrity||null);list.insertBefore(run,integrity||null);
 }
 function startup(){
-  ensure();if(!db.settings.startupImport.enabled)return;
-  let tries=0;const wait=()=>{tries++;const sync=document.querySelector('#mgwStartupSyncDialog'),onboarding=document.querySelector('#mgwOnboarding'),blocking=[...document.querySelectorAll('dialog[open]')].some(x=>x.id!=='mgwStartupImportDialog');if(sync?.open||onboarding||blocking){if(tries<180)setTimeout(wait,500);return}showPrompt()};setTimeout(wait,1300);
+  ensure();if(!db.settings.startupImport.enabled){markStartupImportDone();return}
+  const wait=()=>{
+    const syncPending=window.MGWStartupSyncDone!==true;
+    const onboarding=document.querySelector('#mgwOnboarding');
+    const tour=document.querySelector('.mgw-walk-bubble,.mgw-walk-mask');
+    const blocking=[...document.querySelectorAll('dialog[open]')].some(x=>x.id!=='mgwStartupImportDialog');
+    if(syncPending||onboarding||tour||blocking){setTimeout(wait,250);return}
+    showPrompt();
+  };
+  setTimeout(wait,300);
 }
 function boot(){ensure();style();makeReceiptInput();renderQueue();installSettings();startup();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.MGWStartupImport={version:RELEASE,show:()=>showPrompt({manual:true}),processReceipts,renderQueue};
+window.MGWStartupImport={version:RELEASE,show:()=>showPrompt({manual:true}),processReceipts,renderQueue,startupDone:()=>window.MGWStartupImportDone};
 })();
