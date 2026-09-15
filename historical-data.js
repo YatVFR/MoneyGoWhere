@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.42 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.43 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.42',schemaVersion:1,dataVersion:12,cacheVersion:'1.5.5-dev-42'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.43',schemaVersion:1,dataVersion:12,cacheVersion:'1.5.5-dev-43'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -105,11 +105,11 @@ const MGW_FEATURE_MODULES=[
   './apple-pay-inbox.js',
   './history-collapse.js',
   './salary-collapse.js',
-  './guided-walkthrough.js',
   './transaction-editor.js',
   './currency-ui.js',
   './icloud-folder-scanner.js',
   './startup-import-assistant.js',
+  './guided-walkthrough.js',
   './receipt-match-hint.js',
   './payment-source-linker.js',
   './ui-db-scan-button.js',
