@@ -1,12 +1,33 @@
-// MoneyGoWhere v1.5.5-dev — lightweight performance optimizer
-// Keeps behavior unchanged while reducing repeated work during UI renders.
+// MoneyGoWhere v1.5.5-dev.39 — lightweight formatter optimization.
+// Module loading and render scheduling are owned by historical-data.js to avoid duplicate loaders and render races.
 (()=>{
-  const DEV_RELEASE='1.5.5-dev.38';
-  const syncDevBadge=()=>{const badge=document.querySelector('#mgwRuntimeVersionBadge');if(!badge)return;badge.textContent=`v${DEV_RELEASE} · DEV`;badge.title=`Development · App ${DEV_RELEASE} · commitment accounting and mobile navigation fixes`};
-  if(typeof money==='function'&&!money.__mgwOptimized){const formatters=new Map();const optimizedMoney=function(v){const currency=db?.settings?.currency||'SGD';let fmt=formatters.get(currency);if(!fmt){fmt=new Intl.NumberFormat('en-SG',{style:'currency',currency});formatters.set(currency,fmt)}return fmt.format(Number(v)||0)};optimizedMoney.__mgwOptimized=true;money=optimizedMoney}
-  if(typeof renderCats==='function'&&!renderCats.__mgwOptimized){const priorRenderCats=renderCats;const optimizedRenderCats=function(el,cats){if(!el)return;if(el.id==='topCategories'&&priorRenderCats.__mgwDashboardBreakdown)return priorRenderCats(el,cats);if(!cats.length){el.className='category-list empty-state';if(el.textContent!=='No spending data yet.')el.textContent='No spending data yet.';return}el.className='category-list';const total=cats.reduce((t,x)=>t+(Number(x[1])||0),0)||1,max=cats[0][1]||1;const html=cats.map(([n,v])=>`<div class="category-row"><div class="category-main"><span class="cat-icon">${MGW.cats[n]||'📦'}</span><div><strong>${n}</strong><small>${((v/total)*100).toFixed(0)}% of spending</small></div></div><strong>${money(v)}</strong><div class="mini-bar"><i style="width:${v/max*100}%"></i></div></div>`).join('');if(el.innerHTML!==html)el.innerHTML=html};optimizedRenderCats.__mgwOptimized=true;optimizedRenderCats.__mgwDashboardBreakdown=Boolean(priorRenderCats.__mgwDashboardBreakdown);renderCats=optimizedRenderCats}
-  if(typeof renderAll==='function'&&!renderAll.__mgwFrameScheduled){const fullRender=renderAll;let queued=false;const scheduled=function(){if(queued)return;queued=true;const run=()=>{queued=false;fullRender();syncDevBadge()};if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0)};scheduled.__mgwFrameScheduled=true;renderAll=scheduled}
-  syncDevBadge();window.addEventListener('load',syncDevBadge,{once:true});setTimeout(syncDevBadge,500);
+  'use strict';
+  const DEV_RELEASE='1.5.5-dev.39';
+  if(typeof money==='function'&&!money.__mgwOptimized){
+    const formatters=new Map();
+    const optimized=function(v){
+      const currency=db?.settings?.currency||'SGD';
+      let fmt=formatters.get(currency);
+      if(!fmt){fmt=new Intl.NumberFormat('en-SG',{style:'currency',currency});formatters.set(currency,fmt)}
+      return fmt.format(Number(v)||0);
+    };
+    optimized.__mgwOptimized=true;
+    money=optimized;
+  }
+  if(typeof renderCats==='function'&&!renderCats.__mgwOptimized){
+    const prior=renderCats;
+    const optimized=function(el,cats){
+      if(!el)return;
+      if(el.id==='topCategories'&&prior.__mgwDashboardBreakdown)return prior(el,cats);
+      if(!cats.length){el.className='category-list empty-state';if(el.textContent!=='No spending data yet.')el.textContent='No spending data yet.';return}
+      el.className='category-list';
+      const total=cats.reduce((t,x)=>t+(Number(x[1])||0),0)||1,max=cats[0][1]||1;
+      const html=cats.map(([n,v])=>`<div class="category-row"><div class="category-main"><span class="cat-icon">${MGW.cats[n]||'📦'}</span><div><strong>${n}</strong><small>${((v/total)*100).toFixed(0)}% of spending</small></div></div><strong>${money(v)}</strong><div class="mini-bar"><i style="width:${v/max*100}%"></i></div></div>`).join('');
+      if(el.innerHTML!==html)el.innerHTML=html;
+    };
+    optimized.__mgwOptimized=true;
+    optimized.__mgwDashboardBreakdown=Boolean(prior.__mgwDashboardBreakdown);
+    renderCats=optimized;
+  }
+  window.MGWPerformance={version:DEV_RELEASE};
 })();
-// Remaining foundation modules not already loaded by the sequential runtime loader.
-(()=>{const modules=['./currency-normalization.js','./onboarding-dev.js','./dashboard-cycle-focus.js','./wallet-import-queue.js','./apple-pay-inbox.js','./paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js','./history-collapse.js','./salary-collapse.js','./guided-walkthrough.js','./transaction-editor.js','./currency-ui.js','./commitment-accounting.js','./budget-commitments.js','./icloud-folder-scanner.js','./receipt-match-hint.js','./payment-source-linker.js','./ui-db-scan-button.js','./mobile-nav-fix.js'];function load(i=0){if(i>=modules.length)return;const src=modules[i],existing=document.querySelector(`script[data-mgw-module="${src}"]`);if(existing){if(existing.dataset.mgwReady==='1')return load(i+1);existing.addEventListener('load',()=>load(i+1),{once:true});setTimeout(()=>load(i+1),500);return}const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.onload=()=>{s.dataset.mgwReady='1';load(i+1)};s.onerror=()=>load(i+1);document.head.appendChild(s)}load()})();
