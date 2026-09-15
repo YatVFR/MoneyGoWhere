@@ -2,7 +2,7 @@
 // Payment choices are rendered synchronously with the Manual Expense form so they cannot be missed by modal timing.
 (()=>{'use strict';
 if(window.MGWManualPaymentMethods?.coreIntegrated)return;
-const RELEASE='1.5.5-dev.47';
+const RELEASE='1.5.5-dev.48';
 const BANKS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','Trust Bank','GXS Bank','MariBank'];
 const CARD_PROVIDERS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','American Express','Trust Bank','ICBC Singapore'];
 const APPS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','DBS PayLah!','YouTrip','Revolut','Wise','Alipay+','WeChat Pay'];
@@ -30,10 +30,21 @@ function sourceOptions(method){
   return '';
 }
 function paymentFields(){return `<div class="field"><label>Payment Method</label><select id="mgwPaymentMethodSelect" name="paymentMethod">${methodOptions()}</select></div><div class="field" id="mgwPaymentSourceField"><label>Payment Source</label><select id="mgwPaymentSourceSelect" name="paymentSourcePicker"></select></div><div class="field full" id="mgwPaymentCustomField" hidden><label>Payment Source Details</label><input id="mgwPaymentCustomInput" name="paymentSourceCustom" placeholder="Enter the card, bank, wallet or payment source"></div><input type="hidden" name="paymentSource"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType"><div class="field full"><small class="mgw-form-note">Choose your configured account or a known bank/card/wallet. Manual typing is only used for Other / Custom.</small></div>`}
+function stripLegacyManualPaymentFields(html){
+  return html
+    .replace(/<div class="field"><label>Payment Method<\/label><input name="paymentMethod"[^>]*><\/div>/g,'')
+    .replace(/<div class="field"><label>Card \/ Payment Source<\/label><input name="card"[^>]*><\/div>/g,'');
+}
 function patchExpenseForm(){
   if(typeof expenseForm!=='function'||expenseForm.__mgwPaymentPatched)return;
   const base=expenseForm;
-  const patched=function(type,d={}){const html=base(type,d);if(type!=='expense'||html.includes('mgwPaymentMethodSelect'))return html;const marker='<div class="field full"><label>Notes</label>';return html.includes(marker)?html.replace(marker,paymentFields()+marker):html.replace('</form>',paymentFields()+'</form>')};
+  const patched=function(type,d={}){
+    let html=base(type,d);
+    if(type!=='expense'||html.includes('mgwPaymentMethodSelect'))return html;
+    html=stripLegacyManualPaymentFields(html);
+    const marker='<div class="field full"><label>Spending Type</label>';
+    return html.includes(marker)?html.replace(marker,paymentFields()+marker):html.replace('</form>',paymentFields()+'</form>');
+  };
   patched.__mgwPaymentPatched=true;patched.__mgwBase=base;expenseForm=patched;window.expenseForm=patched;
 }
 function bindPaymentForm(){
