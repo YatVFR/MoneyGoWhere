@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.41 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.42 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.41',schemaVersion:1,dataVersion:12,cacheVersion:'1.5.5-dev-41'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.42',schemaVersion:1,dataVersion:12,cacheVersion:'1.5.5-dev-42'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -14,15 +14,20 @@ function mgwActiveCycleAnchor(now=new Date()){
   const month=now.getDate()<c.day?now.getMonth()-1:now.getMonth();
   return new Date(now.getFullYear(),month,1);
 }
+let mgwCycleBoundsCache={key:'',value:null};
 function mgwCycleBounds(anchor=MGW.state.month){
-  const c=mgwCycleSettings(),y=anchor.getFullYear(),m=anchor.getMonth();
-  return c.mode==='payday'
+  const c=mgwCycleSettings(),y=anchor.getFullYear(),m=anchor.getMonth(),cacheKey=`${y}|${m}|${c.mode}|${c.day}`;
+  if(mgwCycleBoundsCache.key===cacheKey&&mgwCycleBoundsCache.value)return mgwCycleBoundsCache.value;
+  const value=c.mode==='payday'
     ? {start:mgwSafeMonthDay(y,m,c.day),end:mgwSafeMonthDay(y,m+1,c.day),mode:'payday'}
     : {start:new Date(y,m,1),end:new Date(y,m+1,1),mode:'calendar'};
+  value.startKey=mgwDateKey(value.start);value.endKey=mgwDateKey(value.end);
+  mgwCycleBoundsCache={key:cacheKey,value};
+  return value;
 }
 function mgwInCycle(x,anchor=MGW.state.month){
   const b=mgwCycleBounds(anchor),k=String(x?.date||'').slice(0,10);
-  return Boolean(k)&&k>=mgwDateKey(b.start)&&k<mgwDateKey(b.end);
+  return Boolean(k)&&k>=b.startKey&&k<b.endKey;
 }
 function mgwCycleLabel(anchor=MGW.state.month){
   const b=mgwCycleBounds(anchor);
@@ -71,6 +76,7 @@ function mgwCycleCard(){
   f.addEventListener('submit',e=>{
     e.preventDefault();
     db.settings.payCycle={mode:mode.value==='payday'?'payday':'calendar',day:Math.min(31,Math.max(1,Number(day.value)||25))};
+    mgwCycleBoundsCache={key:'',value:null};
     MGW.state.month=mgwActiveCycleAnchor(new Date());
     localStorage.setItem(MGW.key,JSON.stringify(db));
     if(typeof renderAll==='function')renderAll();
@@ -111,6 +117,14 @@ const MGW_FEATURE_MODULES=[
   './performance-optimizer.js',
   './version-badge-authority.js'
 ];
+function mgwPreloadFeatureModules(){
+  const frag=document.createDocumentFragment();let added=false;
+  for(const src of MGW_FEATURE_MODULES){
+    if(document.querySelector(`link[data-mgw-preload="${src}"]`))continue;
+    const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;link.dataset.mgwPreload=src;frag.appendChild(link);added=true;
+  }
+  if(added)document.head.appendChild(frag);
+}
 function mgwLoadModule(src){
   return new Promise(resolve=>{
     const existing=document.querySelector(`script[data-mgw-module="${src}"]`);
@@ -125,6 +139,7 @@ function mgwLoadModule(src){
   });
 }
 async function mgwLoadFeatureModules(){
+  mgwPreloadFeatureModules();
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
   if(typeof renderAll==='function')renderAll();
   mgwInstallRuntimeBadge();
