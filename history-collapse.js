@@ -2,8 +2,9 @@
 // UI-only behavior; no personal finance records are bundled here.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.18';
+  const RELEASE='1.5.5-dev.42';
   const state=new Map();
+  let installPending=false;
 
   function addStyles(){
     if(document.querySelector('#mgwHistoryCollapseStyles'))return;
@@ -22,7 +23,7 @@
 
   function wireCard(card,id,label){
     if(!card)return;
-    let head=card.querySelector(':scope > .card-head');
+    const head=card.querySelector(':scope > .card-head');
     if(!head)return;
     let body=card.querySelector(':scope > .mgw-history-section-body');
     if(!body){
@@ -65,15 +66,24 @@
     wireCard(document.querySelector('#mgwPurchaseHistory'),'purchases','Purchase History');
   }
 
+  function scheduleInstall(){
+    if(installPending)return;
+    installPending=true;
+    queueMicrotask(()=>{installPending=false;install()});
+  }
+
   function boot(){
     install();
     if(typeof renderAll==='function'&&!renderAll.__mgwHistoryCollapse){
       const base=renderAll;
-      renderAll=function(){base();queueMicrotask(install)};
+      renderAll=function(){base();scheduleInstall()};
       renderAll.__mgwHistoryCollapse=true;
     }
-    const observer=new MutationObserver(()=>queueMicrotask(install));
-    observer.observe(document.body,{childList:true,subtree:true});
+    const roots=[document.querySelector('#view-dashboard'),document.querySelector('#view-insights')].filter(Boolean);
+    if(roots.length){
+      const observer=new MutationObserver(scheduleInstall);
+      roots.forEach(root=>observer.observe(root,{childList:true,subtree:true}));
+    }
     window.MGWHistoryCollapse={version:RELEASE,refresh:install};
   }
 
