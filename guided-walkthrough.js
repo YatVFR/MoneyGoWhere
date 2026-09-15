@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — first-launch helping bubbles
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.24';let step=0,root=null,activeTarget=null;
+const RELEASE='1.5.5-dev.43';let step=0,root=null,activeTarget=null;
 const steps=[
  {sel:'#mgwCycleFocus',title:'Your current cycle',text:'MoneyGoWhere now starts with the active pay cycle, so the numbers you see belong to one clear period.'},
  {sel:'.metric-grid',title:'Three numbers first',text:'Income, Spent and Left are the main figures. Extra detail stays out of the way until you need it.'},
@@ -19,6 +19,16 @@ function finish(skipped=false){clearTarget();root?.remove();document.querySelect
 function pos(target,bubble){const r=target.getBoundingClientRect(),pad=10,bw=bubble.offsetWidth,bh=bubble.offsetHeight;let left=Math.max(14,Math.min(window.innerWidth-bw-14,r.left+r.width/2-bw/2));let top=r.bottom+pad;if(top+bh>window.innerHeight-14)top=Math.max(14,r.top-bh-pad);bubble.style.left=`${left}px`;bubble.style.top=`${top}px`}
 function show(i){clearTarget();step=i;if(step<0)step=0;if(step>=steps.length){finish(false);return}const x=steps[step],target=document.querySelector(x.sel);if(!target){show(step+1);return}target.scrollIntoView({block:'center',behavior:'smooth'});setTimeout(()=>{activeTarget=target;target.classList.add('mgw-walk-highlight');if(!document.querySelector('.mgw-walk-mask')){const m=document.createElement('div');m.className='mgw-walk-mask';document.body.appendChild(m)}if(!root){root=document.createElement('div');root.className='mgw-walk-bubble';document.body.appendChild(root)}root.innerHTML=`<div class="mgw-walk-count">Quick tour · ${step+1}/${steps.length}</div><b>${x.title}</b><p>${x.text}</p><div class="mgw-walk-actions">${step?'<button class="mgw-walk-back">Back</button>':'<button class="mgw-walk-skip">Skip</button>'}<button class="mgw-walk-next">${step===steps.length-1?'Done':'Next'}</button></div>`;root.querySelector('.mgw-walk-back')?.addEventListener('click',()=>show(step-1));root.querySelector('.mgw-walk-skip')?.addEventListener('click',()=>finish(true));root.querySelector('.mgw-walk-next').addEventListener('click',()=>show(step+1));pos(target,root)},260)}
 function installReplay(){const view=document.querySelector('#view-settings');if(!view||document.querySelector('#mgwWalkSettings'))return;const card=document.createElement('article');card.className='card';card.id='mgwWalkSettings';card.innerHTML='<div class="card-head"><div><span class="section-icon">💬</span><b>App Walk-through</b></div></div><p class="privacy-note" style="padding:0 0 10px">Replay the helping bubbles for the main MoneyGoWhere controls.</p><button class="secondary-btn" id="mgwReplayWalk">Replay walk-through</button>';view.insertBefore(card,view.querySelector('.privacy-note')||null);card.querySelector('#mgwReplayWalk').addEventListener('click',()=>{if(typeof nav==='function')nav('dashboard');setTimeout(()=>show(0),150)})}
-function maybeStart(){ensure();installReplay();if(db.settings.walkthrough.completed)return;let tries=0;const wait=()=>{if(document.querySelector('#mgwOnboarding')||document.querySelector('#modal')?.open){if(tries++<120)return setTimeout(wait,250)}if(typeof nav==='function')nav('dashboard');setTimeout(()=>show(0),350)};setTimeout(wait,700)}
+function maybeStart(){
+  ensure();installReplay();if(db.settings.walkthrough.completed)return;
+  const wait=()=>{
+    const onboarding=document.querySelector('#mgwOnboarding');
+    const startupPending=window.MGWStartupSyncDone!==true||window.MGWStartupImportDone!==true;
+    const blocking=[...document.querySelectorAll('dialog[open]')].length>0;
+    if(onboarding||startupPending||blocking){setTimeout(wait,250);return}
+    if(typeof nav==='function')nav('dashboard');setTimeout(()=>show(0),350);
+  };
+  setTimeout(wait,500);
+}
 function boot(){css();maybeStart();if(typeof renderAll==='function'&&!renderAll.__mgwWalk){const base=renderAll;renderAll=function(){base();queueMicrotask(installReplay)};renderAll.__mgwWalk=true}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.MGWGuidedWalkthrough={version:RELEASE,start:()=>show(0)};})();
