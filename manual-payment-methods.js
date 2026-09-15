@@ -33,15 +33,9 @@ function paymentFields(){return `<div class="field"><label>Payment Method</label
 function patchExpenseForm(){
   if(typeof expenseForm!=='function'||expenseForm.__mgwPaymentPatched)return;
   const base=expenseForm;
-  const patched=function(type,d={}){
-    const html=base(type,d);
-    if(type!=='expense'||html.includes('mgwPaymentMethodSelect'))return html;
-    const marker='<div class="field full"><label>Notes</label>';
-    return html.includes(marker)?html.replace(marker,paymentFields()+marker):html.replace('</form>',paymentFields()+'</form>');
-  };
+  const patched=function(type,d={}){const html=base(type,d);if(type!=='expense'||html.includes('mgwPaymentMethodSelect'))return html;const marker='<div class="field full"><label>Notes</label>';return html.includes(marker)?html.replace(marker,paymentFields()+marker):html.replace('</form>',paymentFields()+'</form>')};
   patched.__mgwPaymentPatched=true;patched.__mgwBase=base;expenseForm=patched;window.expenseForm=patched;
 }
-function methodLabel(method){return METHODS.find(x=>x[0]===method)?.[1]||'Other'}
 function bindPaymentForm(){
   const form=document.querySelector('#expenseForm'),method=document.querySelector('#mgwPaymentMethodSelect'),source=document.querySelector('#mgwPaymentSourceSelect'),sourceField=document.querySelector('#mgwPaymentSourceField'),customField=document.querySelector('#mgwPaymentCustomField'),custom=document.querySelector('#mgwPaymentCustomInput');
   if(!form||!method||!source||form.dataset.mgwPaymentBound==='1')return;form.dataset.mgwPaymentBound='1';ensure();
@@ -55,7 +49,7 @@ function bindPaymentForm(){
     else if(choice.startsWith('app:')){label=choice.slice(4);sourceType='wallet'}
     else if(choice.startsWith('custom:')){label=customValue;sourceType=choice.slice(7)||'other'}
     if(m==='cash'){label='Cash';sourceType='cash'}
-    form.elements.paymentMethod.value=methodLabel(m);form.elements.paymentSource.value=label;form.elements.paymentAccountId.value=accountId;form.elements.paymentBankAccountId.value=bankAccountId;form.elements.paymentSourceType.value=sourceType||m;
+    form.elements.paymentSource.value=label;form.elements.paymentAccountId.value=accountId;form.elements.paymentBankAccountId.value=bankAccountId;form.elements.paymentSourceType.value=sourceType||m;
   };
   const refresh=()=>{const m=method.value;source.innerHTML=sourceOptions(m);sourceField.hidden=m==='cash';customField.hidden=true;if(m==='cash'){sync();return}const update=()=>{customField.hidden=!source.value.startsWith('custom:');sync()};source.onchange=update;update()};
   method.addEventListener('change',refresh);custom?.addEventListener('input',sync);form.addEventListener('submit',sync,true);refresh();
