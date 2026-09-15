@@ -1,5 +1,5 @@
-const APP_VERSION='1.5.5-dev.45';
-const CACHE='moneygowhere-v1.5.5-dev-45';
+const APP_VERSION='1.5.5-dev.46';
+const CACHE='moneygowhere-v1.5.5-dev-46';
 const CORE=[
   './','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
