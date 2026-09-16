@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const RELEASE='1.5.5-dev.9';
-const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v)||0;
 const sum=rows=>rows.reduce((t,x)=>t+num(x.amount),0);
 const key=()=>`${MGW.state.month.getFullYear()}-${String(MGW.state.month.getMonth()+1).padStart(2,'0')}`;
