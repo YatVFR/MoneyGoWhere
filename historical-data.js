@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.56 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.57 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.56',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-56'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.57',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-57'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
