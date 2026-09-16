@@ -1,36 +1,116 @@
-const APP_VERSION='1.5.5-dev.54';
-const CACHE='moneygowhere-v1.5.5-dev-54';
-const CORE=[
-  './','./index.html','./style.css','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
-  './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
-  './paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js','./currency-normalization.js',
-  './dashboard-breakdown.js','./salary-trends.js','./onboarding-dev.js','./recurring-onboarding.js','./wallet-import-queue.js','./apple-pay-inbox.js',
-  './history-collapse.js','./salary-collapse.js','./guided-walkthrough.js','./transaction-editor.js','./currency-ui.js',
-  './icloud-folder-scanner.js','./startup-import-assistant.js','./receipt-match-hint.js','./payment-source-linker.js','./ui-db-scan-button.js',
-  './dashboard-core.js','./performance-optimizer.js','./version-badge-authority.js','./manifest.json','./assets/icons/icon.svg'
+const APP_VERSION='1.5.5-dev.55';
+const CACHE_PREFIX='moneygowhere-';
+const CACHE='moneygowhere-v1.5.5-dev-55';
+const versioned=path=>`${path}${path.includes('?')?'&':'?'}v=${encodeURIComponent(APP_VERSION)}`;
+
+// Keep the install cache intentionally small. Feature modules are loaded by the
+// runtime coordinator with release-versioned URLs and cached on first use.
+const SHELL=[
+  './',
+  './index.html',
+  versioned('./style.css'),
+  versioned('./app.js'),
+  versioned('./finance-fix.js'),
+  versioned('./payment-form-core.js'),
+  versioned('./historical-data.js'),
+  versioned('./manifest.json'),
+  './assets/icons/icon.svg'
 ];
-const CORE_URLS=new Set(CORE.map(x=>new URL(x,self.location.href).href));
-const CRITICAL=new Set(['app.js','finance-fix.js','historical-data.js','credit-manager.js','credit-collapse.js','cards-wallets.js','dashboard-core.js','version-badge-authority.js','recurring-onboarding.js','guided-walkthrough.js','startup-import-assistant.js','icloud-folder-scanner.js']);
-self.addEventListener('install',e=>{
-  e.waitUntil((async()=>{
+
+self.addEventListener('install',event=>{
+  event.waitUntil((async()=>{
     const cache=await caches.open(CACHE);
-    await Promise.allSettled(CORE.map(async url=>{
-      try{const response=await fetch(url,{cache:'reload'});if(response&&response.ok)await cache.put(url,response.clone())}catch(_){/* one optional asset must never block activation */}
-    }));
+    for(const url of SHELL){
+      try{
+        const response=await fetch(url,{cache:'reload'});
+        if(response&&response.ok)await cache.put(url,response.clone());
+      }catch(err){
+        console.warn('MoneyGoWhere shell cache skipped:',url,err);
+      }
+    }
     await self.skipWaiting();
   })());
 });
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
-self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
-async function networkFirst(request){
-  try{const response=await fetch(request,{cache:'no-store'}),copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{});return response}
-  catch(_){return caches.match(request).then(c=>c||caches.match('./index.html'))}
+
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    const keys=await caches.keys();
+    // CacheStorage is origin-wide on GitHub Pages. Only remove MoneyGoWhere
+    // caches; never delete caches that may belong to another app on the origin.
+    await Promise.all(keys
+      .filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE)
+      .map(key=>caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('message',event=>{
+  if(event.data?.type==='SKIP_WAITING')self.skipWaiting();
+  if(event.data?.type==='CLEAR_MGW_CACHES'){
+    event.waitUntil((async()=>{
+      const keys=await caches.keys();
+      await Promise.all(keys.filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE).map(key=>caches.delete(key)));
+    })());
+  }
+});
+
+async function navigationNetworkFirst(request){
+  const cache=await caches.open(CACHE);
+  try{
+    const response=await fetch(request,{cache:'no-store'});
+    if(response&&response.ok){
+      cache.put(request,response.clone()).catch(()=>{});
+      cache.put('./index.html',response.clone()).catch(()=>{});
+    }
+    return response;
+  }catch(err){
+    return (await cache.match(request))||(await cache.match('./index.html'))||new Response('MoneyGoWhere is offline and no cached app shell is available.',{status:503,headers:{'Content-Type':'text/plain'}});
+  }
 }
-async function coreStaleWhileRevalidate(event){const cache=await caches.open(CACHE),cached=await cache.match(event.request);const update=fetch(event.request).then(response=>{if(response&&response.ok)cache.put(event.request,response.clone()).catch(()=>{});return response});if(cached){event.waitUntil(update.catch(()=>{}));return cached}try{return await update}catch(_){return caches.match('./index.html')}}
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const url=new URL(e.request.url),file=url.pathname.split('/').pop();
-  if(e.request.mode==='navigate'||CRITICAL.has(file)){e.respondWith(networkFirst(e.request));return}
-  if(CORE_URLS.has(e.request.url)){e.respondWith(coreStaleWhileRevalidate(e));return}
-  e.respondWith(networkFirst(e.request));
+
+async function versionedCacheFirst(request){
+  const cache=await caches.open(CACHE);
+  const cached=await cache.match(request);
+  if(cached)return cached;
+  try{
+    const response=await fetch(request,{cache:'no-store'});
+    if(response&&response.ok)await cache.put(request,response.clone());
+    return response;
+  }catch(err){
+    return new Response('',{status:504,statusText:'MoneyGoWhere asset unavailable'});
+  }
+}
+
+async function assetNetworkFirst(request){
+  const cache=await caches.open(CACHE);
+  try{
+    const response=await fetch(request,{cache:'no-store'});
+    if(response&&response.ok)cache.put(request,response.clone()).catch(()=>{});
+    return response;
+  }catch(err){
+    return (await cache.match(request))||new Response('',{status:504,statusText:'MoneyGoWhere asset unavailable'});
+  }
+}
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const url=new URL(event.request.url);
+
+  // Do not intercept third-party libraries/CDNs. Their cache lifecycle is not
+  // owned by MoneyGoWhere and should not affect app stability.
+  if(url.origin!==self.location.origin)return;
+
+  if(event.request.mode==='navigate'){
+    event.respondWith(navigationNetworkFirst(event.request));
+    return;
+  }
+
+  // Release-versioned assets are immutable for that release, so cache-first is
+  // safe. Unversioned assets remain network-first to avoid mixed-build code.
+  if(url.searchParams.get('v')===APP_VERSION){
+    event.respondWith(versionedCacheFirst(event.request));
+    return;
+  }
+
+  event.respondWith(assetNetworkFirst(event.request));
 });
