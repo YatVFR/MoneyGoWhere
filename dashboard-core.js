@@ -1,8 +1,8 @@
-// MoneyGoWhere DEV — consolidated dashboard accounting and mobile layout.
+// MoneyGoWhere v1.5.5-dev.57 — consolidated dashboard accounting and mobile layout.
 // One source of truth for commitments, planned balance, safe-to-spend and cycle budget.
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.39';
+const RELEASE='1.5.5-dev.57';
 const STEPS={monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12};
 const num=v=>Math.max(0,Number(v)||0);
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -113,11 +113,6 @@ function installStyles(){
 .mgw-advice{display:grid;gap:9px}.mgw-advice-item{padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.07)}.mgw-advice-item b{display:block;margin-bottom:3px}
 .mgw-commit-list{display:grid;gap:10px;margin-top:12px}.mgw-commit{border:1px solid var(--line,#dbe4e4);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}.mgw-commit small{display:block;opacity:.7}.mgw-commit-actions{display:flex;gap:6px;flex-wrap:wrap}.mgw-commit-actions button{border:0;border-radius:9px;padding:7px 9px}
 @media(max-width:759px){
-  html,body{height:100%;overflow:hidden}
-  .app-shell{height:100dvh;min-height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;padding-bottom:0!important}
-  .topbar{position:relative;top:auto}
-  .app-shell>main{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:18px;overscroll-behavior-y:contain}
-  .bottom-nav{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:100%!important;margin:0!important;border-radius:22px 22px 0 0!important;padding:8px 12px calc(8px + env(safe-area-inset-bottom))!important}
   .metric-grid.mgw-core-metrics{gap:8px}.metric-grid.mgw-core-metrics .metric{padding:12px 9px}.metric-grid.mgw-core-metrics .metric span{font-size:.72rem}.metric-grid.mgw-core-metrics .metric strong{font-size:1.06rem}
 }
 `;
