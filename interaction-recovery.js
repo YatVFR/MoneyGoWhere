@@ -1,9 +1,10 @@
 // MoneyGoWhere interaction recovery guard.
-// Keeps core navigation usable even if an optional feature leaves an overlay or handler behind.
+// Keeps core controls usable even when feature modules replace DOM nodes or leave blocking residue.
 (()=>{
 'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const safeCall=(label,fn)=>{try{return fn()}catch(err){console.error(`MoneyGoWhere ${label} recovery failed`,err)}};
 
 function removeBlockingResidue(){
   // Startup/onboarding helpers must never be able to trap the whole app.
@@ -17,6 +18,10 @@ function removeBlockingResidue(){
   document.documentElement.style.pointerEvents='';
   document.body.style.pointerEvents='';
   document.body.classList.remove('modal-open','no-scroll','locked');
+  $$('button,[role="button"],.settings-button').forEach(el=>{
+    if(el.dataset.mgwKeepDisabled!=='1')el.disabled=false;
+    if(el.style.pointerEvents==='none')el.style.pointerEvents='';
+  });
 }
 
 function coreNav(name){
@@ -28,36 +33,87 @@ function coreNav(name){
   if(title)title.textContent={dashboard:'Dashboard',add:'Add',insights:'Insights',settings:'Settings'}[name]||name;
 }
 
+function fallbackMonth(delta){
+  if(typeof MGW==='undefined'||typeof monthShift!=='function'||typeof renderAll!=='function')return;
+  MGW.state.month=monthShift(MGW.state.month,delta);
+  renderAll();
+}
+
+function fallbackRange(button){
+  if(typeof MGW==='undefined'||typeof renderInsights!=='function')return;
+  $$('#insightRange button').forEach(x=>x.classList.remove('active'));
+  button.classList.add('active');
+  MGW.state.range=Number(button.dataset.range)||1;
+  renderInsights();
+}
+
+function fallbackRefresh(button){
+  const status=$('#updateStatus');
+  const before=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;
+  setTimeout(async()=>{
+    const after=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;
+    if(before!==after)return;
+    try{
+      if(!('serviceWorker' in navigator))return location.reload();
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg?.waiting){reg.waiting.postMessage({type:'SKIP_WAITING'});return}
+      if(reg)await reg.update();
+      if(status)status.textContent='Latest';
+      const sub=$('#updateSub');if(sub)sub.textContent=`v${RELEASE} checked`;
+    }catch(err){console.warn('MoneyGoWhere refresh recovery failed',err);location.reload()}
+  },160);
+}
+
 function installDelegatedRecovery(){
   if(document.documentElement.dataset.mgwInteractionRecovery==='1')return;
   document.documentElement.dataset.mgwInteractionRecovery='1';
+
   document.addEventListener('click',e=>{
-    const target=e.target.closest('button,[data-nav],[data-open],#closeModal');
+    const target=e.target.closest('button,[data-nav],[data-open],#closeModal,.settings-button');
     if(!target)return;
 
-    // Let existing handlers run first. Fallback only when state did not change.
+    // Navigation can be lost if another module replaces the button node.
     if(target.matches('[data-nav]')){
       const name=target.dataset.nav;
-      queueMicrotask(()=>{
-        if(!$(`#view-${name}`)?.classList.contains('active'))coreNav(name);
-      });
+      queueMicrotask(()=>{if(!$(`#view-${name}`)?.classList.contains('active'))coreNav(name)});
       return;
     }
 
+    // Modal launchers are recovered after existing handlers get first chance.
     if(target.matches('[data-open]')){
       const type=target.dataset.open;
       queueMicrotask(()=>{
         const modal=$('#modal');
-        if(!modal?.open&&typeof window.openModal==='function'){
-          try{window.openModal(type)}catch(err){console.error('MoneyGoWhere fallback modal open failed',err)}
-        }
+        if(!modal?.open&&typeof window.openModal==='function')safeCall('modal open',()=>window.openModal(type));
       });
       return;
     }
 
     if(target.id==='closeModal'){
       queueMicrotask(()=>{try{$('#modal')?.close()}catch{}});
+      return;
     }
+
+    if(target.id==='prevMonth' || target.id==='nextMonth'){
+      if(typeof target.onclick!=='function')safeCall('month switch',()=>fallbackMonth(target.id==='prevMonth'?-1:1));
+      return;
+    }
+
+    if(target.matches('#insightRange button')){
+      if(typeof target.onclick!=='function')safeCall('insight range',()=>fallbackRange(target));
+      return;
+    }
+
+    if(target.id==='exportBtn'&&typeof target.onclick!=='function'&&typeof window.exportData==='function')return safeCall('export',()=>window.exportData());
+    if(target.id==='integrityBtn'&&typeof target.onclick!=='function'&&typeof window.integrity==='function')return safeCall('integrity',()=>window.integrity());
+    if(target.id==='alertBtn'&&typeof target.onclick!=='function'&&typeof window.toast==='function')return safeCall('alert',()=>window.toast($('#budgetAlertText')?.textContent||'No active alert'));
+    if(target.id==='resetBtn'&&typeof target.onclick!=='function'){
+      if(typeof window.emptyDB==='function'&&typeof window.save==='function'&&confirm('Delete all MoneyGoWhere data on this device?')){
+        safeCall('reset',()=>{db=window.emptyDB();window.db=db;window.save();window.toast?.('Local data reset')});
+      }
+      return;
+    }
+    if(target.id==='refreshBtn')fallbackRefresh(target);
   },true);
 }
 
@@ -72,10 +128,21 @@ function markIntentionalModal(){
   }).observe(modal,{attributes:true,attributeFilter:['open']});
 }
 
+function observeDomRecovery(){
+  if(!window.MutationObserver||document.documentElement.dataset.mgwInteractionObserver==='1')return;
+  document.documentElement.dataset.mgwInteractionObserver='1';
+  let queued=false;
+  new MutationObserver(()=>{
+    if(queued)return;queued=true;
+    queueMicrotask(()=>{queued=false;removeBlockingResidue()});
+  }).observe(document.body,{childList:true,subtree:true});
+}
+
 function boot(){
   removeBlockingResidue();
   installDelegatedRecovery();
   markIntentionalModal();
+  observeDomRecovery();
   window.addEventListener('pageshow',removeBlockingResidue);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)removeBlockingResidue()});
 }
