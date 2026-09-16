@@ -13,7 +13,7 @@ for p in TEXT_FILES:
     except UnicodeDecodeError:
         continue
 
-ref_re = re.compile(r"(?:src\s*=\s*['\"]|['\"](?:\./)?)([A-Za-z0-9_.\-/]+\.js)(?:[?'"])")
+ref_re = re.compile(r'(?:src\s*=\s*["\']|["\'](?:\./)?)([A-Za-z0-9_.\-/]+\.js)(?:[?"\'])')
 refs = set()
 for p, text in texts.items():
     for m in ref_re.finditer(text):
@@ -22,7 +22,7 @@ for p, text in texts.items():
 entrypoints = {'app.js','service-worker.js'}
 unreferenced = sorted(p.name for p in TOP_JS if p.name not in refs and p.name not in entrypoints)
 
-release_re = re.compile(r"1\.5\.5-dev\.\d+(?:[-.][A-Za-z0-9]+)*")
+release_re = re.compile(r'1\.5\.5-dev\.\d+(?:[-.][A-Za-z0-9]+)*')
 release_hits = []
 for p, text in texts.items():
     if p.name == 'README.md':
