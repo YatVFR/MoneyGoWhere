@@ -1,6 +1,6 @@
-const APP_VERSION='1.5.5-dev.55';
+const APP_VERSION='1.5.5-dev.56';
 const CACHE_PREFIX='moneygowhere-';
-const CACHE='moneygowhere-v1.5.5-dev-55';
+const CACHE='moneygowhere-v1.5.5-dev-56';
 const versioned=path=>`${path}${path.includes('?')?'&':'?'}v=${encodeURIComponent(APP_VERSION)}`;
 
 // Keep the install cache intentionally small. Feature modules are loaded by the
@@ -10,9 +10,11 @@ const SHELL=[
   './index.html',
   versioned('./style.css'),
   versioned('./app.js'),
+  versioned('./version-badge-authority.js'),
   versioned('./finance-fix.js'),
   versioned('./payment-form-core.js'),
   versioned('./historical-data.js'),
+  versioned('./cards-wallets.js'),
   versioned('./manifest.json'),
   './assets/icons/icon.svg'
 ];
@@ -28,7 +30,8 @@ self.addEventListener('install',event=>{
         console.warn('MoneyGoWhere shell cache skipped:',url,err);
       }
     }
-    await self.skipWaiting();
+    // Do not call skipWaiting here. Updates must not replace the active worker
+    // while the app is booting. The refresh UI sends SKIP_WAITING explicitly.
   })());
 });
 
