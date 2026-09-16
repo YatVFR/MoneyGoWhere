@@ -1,8 +1,8 @@
-// MoneyGoWhere v1.5.5-dev.49 — lightweight formatter and render optimization.
+// MoneyGoWhere v1.5.5-dev.50 — lightweight formatter and render optimization.
 // Module loading and render scheduling are owned by historical-data.js to avoid duplicate loaders and render races.
 (()=>{
   'use strict';
-  const DEV_RELEASE='1.5.5-dev.49';
+  const DEV_RELEASE='1.5.5-dev.50';
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimized=function(v){
