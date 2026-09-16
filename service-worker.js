@@ -1,7 +1,7 @@
-const APP_VERSION='1.5.5-dev.48';
-const CACHE='moneygowhere-v1.5.5-dev-48';
+const APP_VERSION='1.5.5-dev.49';
+const CACHE='moneygowhere-v1.5.5-dev-49';
 const CORE=[
-  './','./index.html','./style.css','./app.js','./finance-fix.js','./historical-data.js',
+  './','./index.html','./style.css','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
   './paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js','./currency-normalization.js',
   './dashboard-breakdown.js','./salary-trends.js','./onboarding-dev.js','./wallet-import-queue.js','./apple-pay-inbox.js',
