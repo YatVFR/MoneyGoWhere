@@ -1,5 +1,5 @@
-const APP_VERSION='1.5.5-dev.52';
-const CACHE='moneygowhere-v1.5.5-dev-52';
+const APP_VERSION='1.5.5-dev.53';
+const CACHE='moneygowhere-v1.5.5-dev-53';
 const CORE=[
   './','./index.html','./style.css','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
@@ -10,9 +10,27 @@ const CORE=[
   './dashboard-core.js','./performance-optimizer.js','./version-badge-authority.js','./manifest.json','./assets/icons/icon.svg'
 ];
 const CORE_URLS=new Set(CORE.map(x=>new URL(x,self.location.href).href));
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)))});
+const CRITICAL=new Set(['app.js','finance-fix.js','historical-data.js','cards-wallets.js','version-badge-authority.js','recurring-onboarding.js','guided-walkthrough.js','startup-import-assistant.js','icloud-folder-scanner.js']);
+self.addEventListener('install',e=>{
+  e.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await Promise.allSettled(CORE.map(async url=>{
+      try{const response=await fetch(url,{cache:'reload'});if(response&&response.ok)await cache.put(url,response.clone())}catch(_){/* one optional asset must never block activation */}
+    }));
+    await self.skipWaiting();
+  })());
+});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
-async function networkFirst(request){try{const response=await fetch(request),copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{});return response}catch(_){return caches.match(request).then(c=>c||caches.match('./index.html'))}}
+async function networkFirst(request){
+  try{const response=await fetch(request,{cache:'no-store'}),copy=response.clone();caches.open(CACHE).then(c=>c.put(request,copy)).catch(()=>{});return response}
+  catch(_){return caches.match(request).then(c=>c||caches.match('./index.html'))}
+}
 async function coreStaleWhileRevalidate(event){const cache=await caches.open(CACHE),cached=await cache.match(event.request);const update=fetch(event.request).then(response=>{if(response&&response.ok)cache.put(event.request,response.clone()).catch(()=>{});return response});if(cached){event.waitUntil(update.catch(()=>{}));return cached}try{return await update}catch(_){return caches.match('./index.html')}}
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;if(e.request.mode==='navigate'){e.respondWith(networkFirst(e.request));return}if(CORE_URLS.has(e.request.url)){e.respondWith(coreStaleWhileRevalidate(e));return}e.respondWith(networkFirst(e.request))});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  const url=new URL(e.request.url),file=url.pathname.split('/').pop();
+  if(e.request.mode==='navigate'||CRITICAL.has(file)){e.respondWith(networkFirst(e.request));return}
+  if(CORE_URLS.has(e.request.url)){e.respondWith(coreStaleWhileRevalidate(e));return}
+  e.respondWith(networkFirst(e.request));
+});
