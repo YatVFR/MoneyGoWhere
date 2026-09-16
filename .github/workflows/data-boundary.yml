@@ -23,23 +23,23 @@ jobs:
       - name: Code hygiene audit
         run: python3 scripts/code-audit.py
 
-      - name: Reject tracked personal database/backup files
+      - name: Reject tracked personal database/import artifacts
         shell: bash
         run: |
           set -euo pipefail
-          bad=$(git ls-files | grep -Ei '(^|/)(private-data|local-data|user-data)(/|$)|(^|/)data/(private|imports)/|\.sqlite(3)?$|\.db$|(^|/).*backup.*\.json$|(^|/)MoneyGoWhere[_-].*\.json$' || true)
+          bad=$(git ls-files | grep -Ei '(^|/)(private-data|local-data|user-data)(/|$)|(^|/)data/(private|imports)/|\.sqlite(3)?$|\.db$|(^|/).*backup.*\.json$|(^|/)MoneyGoWhere[_-].*\.json$|\.(pdf|csv|xlsx?)$' || true)
           if [ -n "$bad" ]; then
-            echo "Personal/local database artifacts must not be committed:"
+            echo "Personal/local database or source-import artifacts must not be committed:"
             echo "$bad"
             exit 1
           fi
 
-      - name: Reject known imported-finance record markers in application source
+      - name: Reject imported-finance record markers in application source
         shell: bash
         run: |
           set -euo pipefail
           if grep -RInE --exclude-dir=.git --exclude-dir=scripts --exclude='*.md' --exclude='*.yml' --exclude='*.yaml' \
-            'legacy_finance_pdf|LEGACY-[0-9]{4}-[0-9]{2}-(INCOME|SAVINGS|DBS-LOAN|OCBC-LOAN|SC-LOAN)|FINANCES-2022\.pdf' .; then
+            'legacy_finance_pdf|LEGACY-[0-9]{4}-[0-9]{2}-[A-Z0-9_-]+' .; then
             echo "Imported finance records or source-specific markers were found in application files. Keep them in the user database only."
             exit 1
           fi
