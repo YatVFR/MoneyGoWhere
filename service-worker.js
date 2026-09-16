@@ -1,6 +1,6 @@
-const APP_VERSION='1.5.5-dev.56';
+const APP_VERSION='1.5.5-dev.57';
 const CACHE_PREFIX='moneygowhere-';
-const CACHE='moneygowhere-v1.5.5-dev-56';
+const CACHE='moneygowhere-v1.5.5-dev-57';
 const versioned=path=>`${path}${path.includes('?')?'&':'?'}v=${encodeURIComponent(APP_VERSION)}`;
 
 // Keep the install cache intentionally small. Feature modules are loaded by the
