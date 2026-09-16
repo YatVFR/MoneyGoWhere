@@ -151,7 +151,13 @@
         setState(`${step}/3 ${label}`, detail, false, true);
         await wait(280);
       };
-      const registerWorker = async () => navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+      const registerWorker = async () => {
+        try{return await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'})}
+        catch(firstError){
+          console.warn('MoneyGoWhere service worker cache option unavailable; using browser default',firstError);
+          return navigator.serviceWorker.register('./service-worker.js');
+        }
+      };
       const detectWaiting = registration => {
         if (registration?.waiting) {
           updateReady = true;
@@ -164,9 +170,18 @@
         if (!worker) return;
         worker.addEventListener('statechange', () => {
           if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            updateReady = true;
             busy = false;
-            if (!worker.state === 'activated') setState('Update available', 'Tap to install', true, false);
+            if (reg?.waiting) {
+              updateReady = true;
+              setState('Update available', 'Tap to install', true, false);
+            } else {
+              setState('Updating', 'Activating latest files', false, true);
+            }
+          }
+          if (worker.state === 'activated') {
+            updateReady = false;
+            busy = false;
+            setState('Latest', `v${BUILD} loaded`);
           }
         });
       };
