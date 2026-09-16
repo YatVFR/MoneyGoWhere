@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.5.5-dev.67" />
-  <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.67" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.68" />
+  <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.68" type="image/svg+xml" />
   <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.5.5-dev.67" />
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.68" />
 </head>
 <body>
   <div class="app-shell">
@@ -120,7 +120,7 @@
 
   <script>
     (() => {
-      const BUILD='1.5.5-dev.67';
+      const BUILD='1.5.5-dev.68';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:13,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
@@ -138,13 +138,13 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="app.js?v=1.5.5-dev.67"></script>
-  <script src="import-normalizer.js?v=1.5.5-dev.67"></script>
-  <script src="interaction-recovery.js?v=1.5.5-dev.67"></script>
-  <script src="version-badge-authority.js?v=1.5.5-dev.67"></script>
-  <script src="finance-fix.js?v=1.5.5-dev.67"></script>
-  <script src="payment-form-core.js?v=1.5.5-dev.67"></script>
-  <script src="historical-data.js?v=1.5.5-dev.67"></script>
-  <script src="cards-wallets.js?v=1.5.5-dev.67"></script>
+  <script src="app.js?v=1.5.5-dev.68"></script>
+  <script src="import-normalizer.js?v=1.5.5-dev.68"></script>
+  <script src="interaction-recovery.js?v=1.5.5-dev.68"></script>
+  <script src="version-badge-authority.js?v=1.5.5-dev.68"></script>
+  <script src="finance-fix.js?v=1.5.5-dev.68"></script>
+  <script src="payment-form-core.js?v=1.5.5-dev.68"></script>
+  <script src="historical-data.js?v=1.5.5-dev.68"></script>
+  <script src="cards-wallets.js?v=1.5.5-dev.68"></script>
 </body>
 </html>
