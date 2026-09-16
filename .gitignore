@@ -1,0 +1,23 @@
+# MoneyGoWhere personal/local databases and backups
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.local.json
+*backup*.json
+*Backup*.json
+MoneyGoWhere_*.json
+MoneyGoWhere-*.json
+
+# Private/imported finance data must never be committed
+private-data/
+local-data/
+user-data/
+data/private/
+data/imports/
+
+# Local development artifacts
+.DS_Store
+Thumbs.db
+*.log
