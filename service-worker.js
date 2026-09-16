@@ -11,6 +11,7 @@ const SHELL=[
   './index.html',
   './style.css',
   './app.js',
+  './interaction-recovery.js',
   './version-badge-authority.js',
   './finance-fix.js',
   './payment-form-core.js',
