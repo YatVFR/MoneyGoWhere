@@ -2,15 +2,27 @@ name: Data Boundary Guard
 
 on:
   push:
-    branches: [dev, uat, main]
+    branches: [dev, "preview/uat", main]
   pull_request:
-    branches: [dev, uat, main]
+    branches: [dev, "preview/uat", main]
 
 jobs:
   prevent-personal-data-in-app:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: JavaScript syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -maxdepth 1 -type f -name '*.js' -print0)
+
+      - name: Code hygiene audit report
+        run: python3 scripts/code-audit.py
+
       - name: Reject tracked personal database/backup files
         shell: bash
         run: |
@@ -21,6 +33,7 @@ jobs:
             echo "$bad"
             exit 1
           fi
+
       - name: Reject known imported-finance record markers in application source
         shell: bash
         run: |
@@ -30,6 +43,7 @@ jobs:
             echo "Imported finance records or source-specific markers were found in application files. Keep them in the user database only."
             exit 1
           fi
+
       - name: Verify base database starts empty
         shell: bash
         run: |
