@@ -1,8 +1,12 @@
 const params=new URL(self.location.href).searchParams;
 const APP_VERSION=params.get('v')||'dev';
-const CACHE_PREFIX='moneygowhere-';
+const SCOPE_URL=new URL(self.registration.scope);
+const SCOPE_PATH=SCOPE_URL.pathname;
+const ENV=SCOPE_PATH.includes('/dev/')?'dev':SCOPE_PATH.includes('/uat/')?'uat':'prod';
+const CACHE_PREFIX=`moneygowhere-${ENV}-`;
 const safeVersion=APP_VERSION.replace(/[^A-Za-z0-9._-]+/g,'-');
 const CACHE=`${CACHE_PREFIX}${safeVersion}`;
+const SHELL_URL=new URL('index.html',self.registration.scope).href;
 
 // Keep the install cache intentionally small. Core files are network-first and
 // feature modules are release-versioned by the runtime coordinator.
@@ -62,11 +66,11 @@ async function navigationNetworkFirst(request){
     const response=await fetch(request,{cache:'no-store'});
     if(response&&response.ok){
       cache.put(request,response.clone()).catch(()=>{});
-      cache.put('./index.html',response.clone()).catch(()=>{});
+      cache.put(SHELL_URL,response.clone()).catch(()=>{});
     }
     return response;
   }catch(err){
-    return (await cache.match(request))||(await cache.match('./index.html'))||new Response('MoneyGoWhere is offline and no cached app shell is available.',{status:503,headers:{'Content-Type':'text/plain'}});
+    return (await cache.match(request))||(await cache.match(SHELL_URL))||new Response('MoneyGoWhere is offline and no cached app shell is available.',{status:503,headers:{'Content-Type':'text/plain'}});
   }
 }
 
@@ -98,6 +102,10 @@ self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin)return;
+
+  // Once this worker reaches PROD, the root scope must never serve nested
+  // DEV/UAT applications. Each nested environment owns its own worker/cache.
+  if(ENV==='prod'&&(url.pathname.startsWith(`${SCOPE_PATH}dev/`)||url.pathname.startsWith(`${SCOPE_PATH}uat/`)))return;
 
   if(event.request.mode==='navigate'){
     event.respondWith(navigationNetworkFirst(event.request));
