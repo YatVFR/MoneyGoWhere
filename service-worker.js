@@ -1,5 +1,5 @@
-const APP_VERSION='1.5.5-dev.53';
-const CACHE='moneygowhere-v1.5.5-dev-53';
+const APP_VERSION='1.5.5-dev.54';
+const CACHE='moneygowhere-v1.5.5-dev-54';
 const CORE=[
   './','./index.html','./style.css','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
@@ -10,7 +10,7 @@ const CORE=[
   './dashboard-core.js','./performance-optimizer.js','./version-badge-authority.js','./manifest.json','./assets/icons/icon.svg'
 ];
 const CORE_URLS=new Set(CORE.map(x=>new URL(x,self.location.href).href));
-const CRITICAL=new Set(['app.js','finance-fix.js','historical-data.js','cards-wallets.js','version-badge-authority.js','recurring-onboarding.js','guided-walkthrough.js','startup-import-assistant.js','icloud-folder-scanner.js']);
+const CRITICAL=new Set(['app.js','finance-fix.js','historical-data.js','credit-manager.js','credit-collapse.js','cards-wallets.js','dashboard-core.js','version-badge-authority.js','recurring-onboarding.js','guided-walkthrough.js','startup-import-assistant.js','icloud-folder-scanner.js']);
 self.addEventListener('install',e=>{
   e.waitUntil((async()=>{
     const cache=await caches.open(CACHE);

@@ -2,7 +2,7 @@
 // Generic app configuration only. No personal card/account data is bundled here.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.16';
+  const RELEASE='1.5.5-dev.54';
   const TYPES={credit:'Credit Card',debit:'Debit Card',wallet:'Multi-Currency / Travel Wallet',prepaid:'Prepaid / Stored Value',other:'Other'};
   const CATALOG={
     credit:{
@@ -50,9 +50,31 @@
   const issuerList=type=>Object.keys(CATALOG[type]||CATALOG.other);
   const products=(type,issuer)=>CATALOG[type]?.[issuer]||['Other / Custom Card'];
   const displayName=a=>a.nickname||a.name||a.cardProduct||'Card / Wallet';
+  let refreshQueued=false;
 
-  function ensure(){db.walletAccounts=Array.isArray(db.walletAccounts)?db.walletAccounts:[]}
+  function ensure(){
+    db.creditAccounts=Array.isArray(db.creditAccounts)?db.creditAccounts:[];
+    db.creditPayments=Array.isArray(db.creditPayments)?db.creditPayments:[];
+    db.walletAccounts=Array.isArray(db.walletAccounts)?db.walletAccounts:[];
+  }
   function showModal(title,html){const m=document.querySelector('#modal'),body=document.querySelector('#modalBody');if(!m||!body)return null;document.querySelector('#modalTitle').textContent=title;body.innerHTML=html;m.showModal();return body}
+  function refreshAccountsUI(){
+    if(refreshQueued)return;
+    refreshQueued=true;
+    const run=()=>{
+      refreshQueued=false;
+      let handled=false;
+      try{
+        if(window.MGWCreditManager?.refresh){window.MGWCreditManager.refresh();handled=true}
+        if(window.MGWDashboardCore?.refresh)window.MGWDashboardCore.refresh();
+        enhance();
+        window.MGWCreditCollapse?.refresh?.();
+        document.dispatchEvent(new CustomEvent('mgw:accounts-changed',{detail:{source:'cards-wallets'}}));
+      }catch(err){console.error('MoneyGoWhere account refresh failed',err)}
+      if(!handled&&typeof renderAll==='function'){try{renderAll()}catch(err){console.error('MoneyGoWhere fallback render failed',err)}}
+    };
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);
+  }
 
   function openAccount(a={},source='credit'){
     ensure();const edit=Boolean(a.id);let type=a.accountType||(source==='wallet'?'wallet':'credit');if(!TYPES[type])type='credit';
@@ -89,17 +111,23 @@
     issuerEl.addEventListener('change',()=>refreshProducts());
     productEl.addEventListener('change',()=>{customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'});
     refreshIssuers(issuer,a.cardProduct||'');
-    f.addEventListener('submit',e=>{e.preventDefault();const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
-      if(accountType==='credit'){
-        const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
-        if(source==='wallet'&&edit)db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);if(!edit||source==='wallet')db.creditAccounts.push(o);else Object.assign(a,o);
-      }else{
-        const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};
-        if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
-      }
-      persist();document.querySelector('#modal').close();renderAll?.();toast?.(edit?'Card / wallet updated':'Card / wallet added')
+    f.addEventListener('submit',e=>{
+      e.preventDefault();if(f.dataset.mgwSaving==='1')return;
+      const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();
+      if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
+      f.dataset.mgwSaving='1';const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
+      try{
+        if(accountType==='credit'){
+          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
+          if(source==='wallet'&&edit)db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);if(!edit||source==='wallet')db.creditAccounts.push(o);else Object.assign(a,o);
+        }else{
+          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};
+          if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
+        }
+        persist();document.querySelector('#modal').close();toast?.(edit?'Card / wallet updated':'Card / wallet added');refreshAccountsUI();
+      }catch(err){console.error('MoneyGoWhere card save failed',err);f.dataset.mgwSaving='0';if(submit)submit.disabled=false;toast?.('Could not save card / wallet')}
     });
-    body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Delete this card / wallet tracker? Existing expense transactions will not be deleted.'))return;if(source==='credit'){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}else db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);persist();document.querySelector('#modal').close();renderAll?.();toast?.('Card / wallet tracker deleted')});
+    body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Delete this card / wallet tracker? Existing expense transactions will not be deleted.'))return;try{if(source==='credit'){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}else db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);persist();document.querySelector('#modal').close();toast?.('Card / wallet tracker deleted');refreshAccountsUI()}catch(err){console.error('MoneyGoWhere card delete failed',err);toast?.('Could not delete card / wallet')}});
   }
 
   function walletCard(a){return `<div class="mgw-account"><div class="mgw-account-head"><div><b>💼 ${esc(displayName(a))}</b><small>${esc(a.issuer||'')} · ${esc(a.cardProduct||'')}</small></div><strong>${a.balance===''||a.balance==null?'—':money(num(a.balance))}</strong></div><div class="mgw-mini"><div><small>Type</small><strong>${esc(TYPES[a.accountType]||'Wallet')}</strong></div><div><small>Base currency</small><strong>${esc(a.baseCurrency||'SGD')}</strong></div></div><div class="mgw-account-actions"><button data-wallet-edit="${a.id}">Edit</button></div></div>`}
@@ -107,7 +135,7 @@
     const settings=document.querySelector('#mgwCreditSettings .mgw-account-grid');if(settings&&!document.querySelector('#mgwWalletAccountsBlock')){const block=document.createElement('div');block.id='mgwWalletAccountsBlock';block.innerHTML=db.walletAccounts.length?`<p class="mgw-muted"><b>Debit Cards & Wallets</b> · excluded from credit debt/utilisation</p>${db.walletAccounts.map(walletCard).join('')}`:'';settings.appendChild(block)}
     const dash=document.querySelector('#mgwAccountsDashboard .mgw-account-grid');if(dash&&!document.querySelector('#mgwWalletDashboardBlock')&&db.walletAccounts.length){const block=document.createElement('div');block.id='mgwWalletDashboardBlock';block.innerHTML=`<p class="mgw-muted"><b>Wallets & Debit</b></p>${db.walletAccounts.map(walletCard).join('')}`;dash.appendChild(block)}
   }
-  document.addEventListener('click',e=>{const add=e.target.closest?.('#mgwAddCard');if(add){e.preventDefault();e.stopImmediatePropagation();openAccount();return}const edit=e.target.closest?.('[data-card-edit]');if(edit){const a=(db.creditAccounts||[]).find(x=>x.id===edit.dataset.cardEdit);if(a){e.preventDefault();e.stopImmediatePropagation();openAccount(a,'credit')}return}const we=e.target.closest?.('[data-wallet-edit]');if(we){const a=(db.walletAccounts||[]).find(x=>x.id===we.dataset.walletEdit);if(a){e.preventDefault();e.stopImmediatePropagation();openAccount(a,'wallet')}}},true);
-  function boot(){ensure();if(typeof renderAll==='function'&&!renderAll.__mgwCardsWallets){const base=renderAll;renderAll=function(){base();queueMicrotask(enhance)};renderAll.__mgwCardsWallets=true}queueMicrotask(enhance);window.MGWCardsWallets={version:RELEASE,types:{...TYPES},catalog:CATALOG,open:openAccount}}
+  document.addEventListener('click',e=>{const we=e.target.closest?.('[data-wallet-edit]');if(we){const a=(db.walletAccounts||[]).find(x=>x.id===we.dataset.walletEdit);if(a){e.preventDefault();e.stopImmediatePropagation();openAccount(a,'wallet')}}},true);
+  function boot(){ensure();if(typeof renderAll==='function'&&!renderAll.__mgwCardsWallets){const base=renderAll;renderAll=function(){base();queueMicrotask(enhance)};renderAll.__mgwCardsWallets=true}queueMicrotask(enhance);window.MGWCardsWallets={version:RELEASE,types:{...TYPES},catalog:CATALOG,open:openAccount,enhance,refresh:refreshAccountsUI}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
