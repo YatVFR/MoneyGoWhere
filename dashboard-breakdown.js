@@ -1,8 +1,8 @@
-// MoneyGoWhere v1.5.5-dev.9 — clean grouped dashboard breakdown
+// MoneyGoWhere feature v1.5.5-dev.9 — clean grouped dashboard breakdown
 (()=>{
 'use strict';
 const RELEASE='1.5.5-dev.9';
-const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const num=v=>Number(v)||0;
 const sum=rows=>rows.reduce((t,x)=>t+num(x.amount),0);
 const key=()=>`${MGW.state.month.getFullYear()}-${String(MGW.state.month.getMonth()+1).padStart(2,'0')}`;
@@ -120,10 +120,8 @@ function enforce(){
   const wrapped=function(el,cats){if(el?.id==='topCategories')return renderTop(el,cats);return current(el,cats)};
   wrapped.__mgwDashboardBreakdown=true;renderCats=wrapped;
   if(typeof renderDashboard==='function')renderDashboard();
-  const badge=document.querySelector('#mgwRuntimeVersionBadge');
-  if(badge){badge.textContent=`v${RELEASE} · DEV`;badge.title=`Development build ${RELEASE}`}
 }
-function boot(){enforce();setTimeout(enforce,0);setTimeout(enforce,250);setTimeout(enforce,1000)}
+function boot(){enforce()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 window.MGWDashboardBreakdown={version:RELEASE,render:()=>renderTop(document.querySelector('#topCategories'),catTotals(expenses()).slice(0,5)),enforce};
 })();
