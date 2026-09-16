@@ -1,13 +1,13 @@
 // MoneyGoWhere DEV — first-launch helping bubbles
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.43';let step=0,root=null,activeTarget=null;
+const RELEASE='1.5.5-dev.51';let step=0,root=null,activeTarget=null;
 const steps=[
  {sel:'#mgwCycleFocus',title:'Your current cycle',text:'MoneyGoWhere now starts with the active pay cycle, so the numbers you see belong to one clear period.'},
  {sel:'.metric-grid',title:'Three numbers first',text:'Income, Spent and Left are the main figures. Extra detail stays out of the way until you need it.'},
- {sel:'[data-nav="add"]',title:'Add transactions',text:'Use Add New for expenses, receipts and income.'},
+ {sel:'[data-nav="add"]',title:'Add transactions and recurring data',text:'Use Add New for expenses, receipts, income, recurring salary and recurring commitments.'},
  {sel:'[data-nav="insights"]',title:'Understand the pattern',text:'Insights shows spending, salary progression and bonus history without changing your data.'},
  {sel:'#refreshBtn',title:'Refresh safely',text:'Use Refresh to check for a newer app build and load it when one is available.'},
- {sel:'[data-nav="settings"]',title:'Backups and settings',text:'Back up your local database regularly. Settings also lets you replay this walkthrough.'}
+ {sel:'[data-nav="settings"]',title:'Backups and settings',text:'Back up your local database regularly. Settings also lets you manage recurring bills and replay this walkthrough.'}
 ];
 function ensure(){db.settings=db.settings||{};db.settings.walkthrough=db.settings.walkthrough||{}}
 function save(){localStorage.setItem(MGW.key,JSON.stringify(db))}
@@ -23,7 +23,7 @@ function maybeStart(){
   ensure();installReplay();if(db.settings.walkthrough.completed)return;
   const wait=()=>{
     const onboarding=document.querySelector('#mgwOnboarding');
-    const startupPending=window.MGWStartupSyncDone!==true||window.MGWStartupImportDone!==true;
+    const startupPending=window.MGWStartupSyncDone!==true||window.MGWStartupImportDone!==true||window.MGWStartupRecurringDone!==true;
     const blocking=[...document.querySelectorAll('dialog[open]')].length>0;
     if(onboarding||startupPending||blocking){setTimeout(wait,250);return}
     if(typeof nav==='function')nav('dashboard');setTimeout(()=>show(0),350);
