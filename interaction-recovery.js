@@ -6,6 +6,45 @@ const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const safeCall=(label,fn)=>{try{return fn()}catch(err){console.error(`MoneyGoWhere ${label} recovery failed`,err)}};
 
+async function isolateServiceWorkerScope(){
+  if(!('serviceWorker' in navigator))return false;
+  const path=location.pathname;
+  const env=path.includes('/dev/')?'dev':path.includes('/uat/')?'uat':'prod';
+  if(env==='prod')return false;
+
+  const expectedPath=new URL('./',location.href).pathname;
+  const projectRoot=expectedPath.replace(/(?:dev|uat)\/$/,'');
+  let removedAncestor=false;
+
+  try{
+    const registrations=await navigator.serviceWorker.getRegistrations();
+    for(const registration of registrations){
+      const scopePath=new URL(registration.scope).pathname;
+      const isProjectScope=scopePath.startsWith(projectRoot);
+      const isAncestor=expectedPath.startsWith(scopePath);
+      if(isProjectScope&&isAncestor&&scopePath!==expectedPath){
+        const removed=await registration.unregister();
+        removedAncestor=removedAncestor||removed;
+        if(removed)console.info('MoneyGoWhere removed conflicting ancestor service worker:',scopePath);
+      }
+    }
+  }catch(err){
+    console.warn('MoneyGoWhere service worker isolation check failed',err);
+  }
+
+  if(removedAncestor){
+    const key=`mgw-sw-scope-isolated:${env}`;
+    if(sessionStorage.getItem(key)!=='1'){
+      sessionStorage.setItem(key,'1');
+      const url=new URL(location.href);
+      url.searchParams.set('mgw-sw-reset',Date.now().toString());
+      location.replace(url.href);
+      return true;
+    }
+  }
+  return false;
+}
+
 function removeBlockingResidue(){
   // Startup/onboarding helpers must never be able to trap the whole app.
   ['#mgwOnboarding','.mgw-ob','.mgw-walk-mask','.mgw-walk-bubble'].forEach(sel=>{
@@ -138,7 +177,8 @@ function observeDomRecovery(){
   }).observe(document.body,{childList:true,subtree:true});
 }
 
-function boot(){
+async function boot(){
+  if(await isolateServiceWorkerScope())return;
   removeBlockingResidue();
   installDelegatedRecovery();
   markIntentionalModal();
@@ -147,5 +187,5 @@ function boot(){
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)removeBlockingResidue()});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.MGWInteractionRecovery={version:RELEASE,reset:removeBlockingResidue};
+window.MGWInteractionRecovery={version:RELEASE,reset:removeBlockingResidue,isolateServiceWorkerScope};
 })();
