@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.59 runtime coordinator.
-// Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.59',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-59'});
+// MoneyGoWhere runtime coordinator. Global build identity comes from index.html.
+// Keeps pay-cycle behaviour and loads feature modules once, in deterministic order.
+const MGW_RUNTIME_RELEASE=Object.freeze(window.MGW_RELEASE||{appVersion:'dev',schemaVersion:1,dataVersion:13,cacheVersion:'dev'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -91,6 +91,7 @@ if(typeof renderAll==='function'){
 }
 const MGW_FEATURE_MODULES=[
   './ocr-enhance.js',
+  './ocr-runtime.js',
   './credit-manager.js',
   './credit-collapse.js',
   './ui-navigation-history.js',
@@ -109,13 +110,11 @@ const MGW_FEATURE_MODULES=[
   './salary-collapse.js',
   './transaction-editor.js',
   './currency-ui.js',
-  './startup-sync-controls.js',
   './icloud-folder-scanner.js',
   './startup-import-assistant.js',
   './guided-walkthrough.js',
   './receipt-match-hint.js',
   './payment-source-linker.js',
-  './ui-db-scan-button.js',
   './dashboard-core.js',
   './performance-optimizer.js'
 ];
@@ -146,8 +145,6 @@ function mgwLoadModule(src){
   });
 }
 async function mgwLoadFeatureModules(){
-  // One managed path owns feature loading. Release-versioned URLs prevent legacy
-  // cached scripts from being mixed into the active runtime.
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
   MGW_RUNTIME_HEALTH.ready=true;
   if(typeof renderAll==='function')renderAll();
@@ -166,7 +163,6 @@ function mgwBootRuntime(){
   db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];
   db.recurringBills=Array.isArray(db.recurringBills)?db.recurringBills:[];
   db.bankAccounts=Array.isArray(db.bankAccounts)?db.bankAccounts:[];
-  // Compatibility bridge for optional startup modules. The app must never depend on this alias to render.
   window.db=db;
   MGW.state.month=mgwActiveCycleAnchor(new Date());
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();

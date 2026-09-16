@@ -1,21 +1,22 @@
-const APP_VERSION='1.5.5-dev.59';
+const params=new URL(self.location.href).searchParams;
+const APP_VERSION=params.get('v')||'dev';
 const CACHE_PREFIX='moneygowhere-';
-const CACHE='moneygowhere-v1.5.5-dev-59';
-const versioned=path=>`${path}${path.includes('?')?'&':'?'}v=${encodeURIComponent(APP_VERSION)}`;
+const safeVersion=APP_VERSION.replace(/[^A-Za-z0-9._-]+/g,'-');
+const CACHE=`${CACHE_PREFIX}${safeVersion}`;
 
-// Keep the install cache intentionally small. Feature modules are loaded by the
-// runtime coordinator with release-versioned URLs and cached on first use.
+// Keep the install cache intentionally small. Core files are network-first and
+// feature modules are release-versioned by the runtime coordinator.
 const SHELL=[
   './',
   './index.html',
-  versioned('./style.css'),
-  versioned('./app.js'),
-  versioned('./version-badge-authority.js'),
-  versioned('./finance-fix.js'),
-  versioned('./payment-form-core.js'),
-  versioned('./historical-data.js'),
-  versioned('./cards-wallets.js'),
-  versioned('./manifest.json'),
+  './style.css',
+  './app.js',
+  './version-badge-authority.js',
+  './finance-fix.js',
+  './payment-form-core.js',
+  './historical-data.js',
+  './cards-wallets.js',
+  './manifest.json',
   './assets/icons/icon.svg'
 ];
 
@@ -30,16 +31,13 @@ self.addEventListener('install',event=>{
         console.warn('MoneyGoWhere shell cache skipped:',url,err);
       }
     }
-    // Do not call skipWaiting here. Updates must not replace the active worker
-    // while the app is booting. The refresh UI sends SKIP_WAITING explicitly.
+    // Updates activate only after the user accepts them from the refresh UI.
   })());
 });
 
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
     const keys=await caches.keys();
-    // CacheStorage is origin-wide on GitHub Pages. Only remove MoneyGoWhere
-    // caches; never delete caches that may belong to another app on the origin.
     await Promise.all(keys
       .filter(key=>key.startsWith(CACHE_PREFIX)&&key!==CACHE)
       .map(key=>caches.delete(key)));
@@ -98,9 +96,6 @@ async function assetNetworkFirst(request){
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;
   const url=new URL(event.request.url);
-
-  // Do not intercept third-party libraries/CDNs. Their cache lifecycle is not
-  // owned by MoneyGoWhere and should not affect app stability.
   if(url.origin!==self.location.origin)return;
 
   if(event.request.mode==='navigate'){
@@ -108,8 +103,6 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  // Release-versioned assets are immutable for that release, so cache-first is
-  // safe. Unversioned assets remain network-first to avoid mixed-build code.
   if(url.searchParams.get('v')===APP_VERSION){
     event.respondWith(versionedCacheFirst(event.request));
     return;

@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.5.5-dev.59" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.5.5-dev.59" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
@@ -124,10 +124,10 @@
   </dialog>
 
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     (() => {
-      const BUILD='1.5.5-dev.59';
+      const BUILD='1.5.5-dev.60';
+      window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:13,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn = document.getElementById('refreshBtn');
       const status = document.getElementById('updateStatus');
       const sub = document.getElementById('updateSub');
@@ -152,10 +152,11 @@
         await wait(280);
       };
       const registerWorker = async () => {
-        try{return await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'})}
+        const workerUrl=`./service-worker.js?v=${encodeURIComponent(BUILD)}`;
+        try{return await navigator.serviceWorker.register(workerUrl,{updateViaCache:'none'})}
         catch(firstError){
           console.warn('MoneyGoWhere service worker cache option unavailable; using browser default',firstError);
-          return navigator.serviceWorker.register('./service-worker.js');
+          return navigator.serviceWorker.register(workerUrl);
         }
       };
       const detectWaiting = registration => {
@@ -193,20 +194,16 @@
         try {
           if (manual) await progress(1, 'Checking', 'Contacting app service');
           reg = await registerWorker();
-
           if (detectWaiting(reg)) { busy = false; return; }
           if (manual) await progress(2, 'Comparing', 'Checking latest files');
-
           await reg.update();
           if (detectWaiting(reg)) { busy = false; return; }
-
           if (reg.installing) {
             watchInstalling(reg.installing);
             if (manual) await progress(3, 'Preparing', 'Downloading update');
             busy = false;
             return;
           }
-
           if (manual) {
             await progress(3, 'Complete', 'No new update found');
             setState('Latest', `v${BUILD} loaded`);
@@ -263,12 +260,11 @@
       });
     })();
   </script>
-  <script data-mgw-module="./startup-sync-controls.js" data-mgw-ready="1" src="startup-sync-controls.js?fix=nonblocking-startup-1"></script>
-  <script src="app.js?v=1.5.5-dev.59"></script>
-  <script src="version-badge-authority.js?v=1.5.5-dev.59"></script>
-  <script src="finance-fix.js?v=1.5.5-dev.59"></script>
-  <script src="payment-form-core.js?v=1.5.5-dev.59"></script>
-  <script src="historical-data.js?v=1.5.5-dev.59"></script>
-  <script src="cards-wallets.js?v=1.5.5-dev.59"></script>
+  <script src="app.js"></script>
+  <script src="version-badge-authority.js"></script>
+  <script src="finance-fix.js"></script>
+  <script src="payment-form-core.js"></script>
+  <script src="historical-data.js"></script>
+  <script src="cards-wallets.js"></script>
 </body>
 </html>
