@@ -93,7 +93,12 @@ function normalizedImport(file){
   const reader=new FileReader();reader.onload=()=>{try{const parsed=JSON.parse(reader.result);const result=normalizeBackup(parsed);db=result.db;window.db=db;localStorage.setItem(MGW.key,JSON.stringify(db));if(typeof renderAll==='function')renderAll();if(typeof toast==='function')toast(reportText(result.report));document.dispatchEvent(new CustomEvent('mgw:db-imported',{detail:result.report}))}catch(err){console.error('MoneyGoWhere backup import failed',err);if(typeof toast==='function')toast('Invalid or incompatible MoneyGoWhere backup')}};reader.readAsText(file);
 }
 function normalizeCurrent(){
-  try{if(typeof db==='undefined'||!db||!Array.isArray(db.expenses)||!Array.isArray(db.income))return;const result=normalizeBackup(db);const before=JSON.stringify(db),after=JSON.stringify(result.db);if(before!==after){db=result.db;window.db=db;localStorage.setItem(MGW.key,after);if(typeof renderAll==='function')renderAll();console.info('MoneyGoWhere existing DB normalized',result.report)}}catch(err){console.warn('MoneyGoWhere existing DB normalization skipped',err)}
+  try{
+    if(typeof db==='undefined'||!db||!Array.isArray(db.expenses)||!Array.isArray(db.income))return;
+    const marker=db.importMeta?.lastNormalization;
+    if(marker?.appVersion===RELEASE.appVersion&&Number(marker?.dataVersion)===Number(RELEASE.dataVersion)&&Number(marker?.schemaVersion)===Number(RELEASE.schemaVersion))return;
+    const result=normalizeBackup(db);db=result.db;window.db=db;localStorage.setItem(MGW.key,JSON.stringify(db));if(typeof renderAll==='function')renderAll();console.info('MoneyGoWhere existing DB normalized',result.report);
+  }catch(err){console.warn('MoneyGoWhere existing DB normalization skipped',err)}
 }
 window.MGWImportNormalizer={normalizeBackup,importFile:normalizedImport,normalizeCurrent};
 window.importData=normalizedImport;
