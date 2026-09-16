@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.51 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.52 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.51',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-51'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.52',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-52'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -157,6 +157,8 @@ function mgwBootRuntime(){
   db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];
   db.recurringBills=Array.isArray(db.recurringBills)?db.recurringBills:[];
   db.bankAccounts=Array.isArray(db.bankAccounts)?db.bankAccounts:[];
+  // Compatibility bridge for optional startup modules. The app must never depend on this alias to render.
+  window.db=db;
   MGW.state.month=mgwActiveCycleAnchor(new Date());
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   const exportBtn=document.querySelector('#exportBtn');
