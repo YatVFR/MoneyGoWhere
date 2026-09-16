@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.54 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.55 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.54',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-54'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.55',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-55'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -118,32 +118,41 @@ const MGW_FEATURE_MODULES=[
   './performance-optimizer.js',
   './version-badge-authority.js'
 ];
-function mgwPreloadFeatureModules(){
-  const frag=document.createDocumentFragment();let added=false;
-  for(const src of MGW_FEATURE_MODULES){
-    if(document.querySelector(`link[data-mgw-preload="${src}"]`))continue;
-    const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;link.dataset.mgwPreload=src;frag.appendChild(link);added=true;
-  }
-  if(added)document.head.appendChild(frag);
-}
+const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],ready:false};
+window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
+function mgwModuleUrl(src){return `${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(MGW_RUNTIME_RELEASE.appVersion)}`}
 function mgwLoadModule(src){
   return new Promise(resolve=>{
     const existing=document.querySelector(`script[data-mgw-module="${src}"]`);
     if(existing){
       if(existing.dataset.mgwReady==='1')return resolve();
-      let done=false;const finish=()=>{if(done)return;done=true;existing.dataset.mgwReady='1';resolve()};
-      existing.addEventListener('load',finish,{once:true});existing.addEventListener('error',finish,{once:true});setTimeout(finish,700);return;
+      const finish=ok=>{
+        existing.dataset.mgwReady='1';
+        (ok?MGW_RUNTIME_HEALTH.loaded:MGW_RUNTIME_HEALTH.failed).push(src);
+        resolve();
+      };
+      existing.addEventListener('load',()=>finish(true),{once:true});
+      existing.addEventListener('error',()=>finish(false),{once:true});
+      return;
     }
-    const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.async=false;
-    s.onload=()=>{s.dataset.mgwReady='1';resolve()};s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);resolve()};
+    const s=document.createElement('script');
+    s.src=mgwModuleUrl(src);
+    s.dataset.mgwModule=src;
+    s.async=false;
+    s.onload=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.loaded.push(src);resolve()};
+    s.onerror=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.failed.push(src);console.error('MoneyGoWhere module failed to load:',src);resolve()};
     document.head.appendChild(s);
   });
 }
 async function mgwLoadFeatureModules(){
-  mgwPreloadFeatureModules();
+  // Deliberately avoid preloading every feature in parallel. Sequential release-
+  // versioned loading prevents older cached modules from executing out of order
+  // on resource-constrained mobile browsers.
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
+  MGW_RUNTIME_HEALTH.ready=true;
   if(typeof renderAll==='function')renderAll();
   mgwInstallRuntimeBadge();
+  if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
 }
 function mgwExportCurrent(){
   const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
@@ -163,6 +172,6 @@ function mgwBootRuntime(){
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   const exportBtn=document.querySelector('#exportBtn');
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
-  mgwLoadFeatureModules();
+  mgwLoadFeatureModules().catch(err=>console.error('MoneyGoWhere runtime feature loading failed',err));
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
