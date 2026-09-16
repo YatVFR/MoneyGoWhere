@@ -1,6 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.55 runtime coordinator.
+// MoneyGoWhere v1.5.5-dev.56 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.55',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-55'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.56',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-56'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -93,6 +93,7 @@ const MGW_FEATURE_MODULES=[
   './ocr-enhance.js',
   './credit-manager.js',
   './credit-collapse.js',
+  './ui-navigation-history.js',
   './recurring-schedules.js',
   './recurring-bills.js',
   './paylater-recurrence.js',
@@ -115,8 +116,7 @@ const MGW_FEATURE_MODULES=[
   './payment-source-linker.js',
   './ui-db-scan-button.js',
   './dashboard-core.js',
-  './performance-optimizer.js',
-  './version-badge-authority.js'
+  './performance-optimizer.js'
 ];
 const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],ready:false};
 window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
@@ -145,9 +145,8 @@ function mgwLoadModule(src){
   });
 }
 async function mgwLoadFeatureModules(){
-  // Deliberately avoid preloading every feature in parallel. Sequential release-
-  // versioned loading prevents older cached modules from executing out of order
-  // on resource-constrained mobile browsers.
+  // One managed path owns feature loading. Release-versioned URLs prevent legacy
+  // cached scripts from being mixed into the active runtime.
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
   MGW_RUNTIME_HEALTH.ready=true;
   if(typeof renderAll==='function')renderAll();
