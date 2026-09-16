@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.55" />
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.55" />
 </head>
 <body>
   <div class="app-shell">
@@ -127,15 +127,16 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     (() => {
+      const BUILD='1.5.5-dev.55';
       const btn = document.getElementById('refreshBtn');
       const status = document.getElementById('updateStatus');
       const sub = document.getElementById('updateSub');
       const dot = document.getElementById('updateDot');
-      const icon = btn.querySelector('.refresh-icon');
       let reg = null;
       let updateReady = false;
       let busy = false;
       let reloading = false;
+      window.MGWPageBuild=BUILD;
 
       const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
       const setState = (label, detail, available=false, spinning=false) => {
@@ -150,6 +151,7 @@
         setState(`${step}/3 ${label}`, detail, false, true);
         await wait(280);
       };
+      const registerWorker = async () => navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
       const detectWaiting = registration => {
         if (registration?.waiting) {
           updateReady = true;
@@ -164,7 +166,7 @@
           if (worker.state === 'installed' && navigator.serviceWorker.controller) {
             updateReady = true;
             busy = false;
-            setState('Update available', 'Tap to install', true, false);
+            if (!worker.state === 'activated') setState('Update available', 'Tap to install', true, false);
           }
         });
       };
@@ -178,8 +180,7 @@
         busy = true;
         try {
           if (manual) await progress(1, 'Checking', 'Contacting app service');
-          reg = reg || await navigator.serviceWorker.getRegistration();
-          if (!reg) reg = await navigator.serviceWorker.register('./service-worker.js');
+          reg = await registerWorker();
 
           if (detectWaiting(reg)) { busy = false; return; }
           if (manual) await progress(2, 'Comparing', 'Checking latest files');
@@ -196,9 +197,10 @@
 
           if (manual) {
             await progress(3, 'Complete', 'No new update found');
-            setState('Latest', 'App is up to date');
+            setState('Latest', `v${BUILD} loaded`);
           }
         } catch (e) {
+          console.error('MoneyGoWhere update check failed',e);
           setState('Refresh', 'Update check failed');
         } finally {
           busy = false;
@@ -236,21 +238,23 @@
 
       window.addEventListener('load', async () => {
         try {
-          reg = await navigator.serviceWorker.getRegistration();
+          reg = await registerWorker();
           if (reg?.waiting) detectWaiting(reg);
           else {
-            await reg?.update();
+            await reg.update();
             if (reg?.waiting) detectWaiting(reg);
             else if (reg?.installing) watchInstalling(reg.installing);
           }
-        } catch (_) {}
+        } catch (e) {
+          console.warn('MoneyGoWhere service worker unavailable',e);
+        }
       });
     })();
   </script>
-  <script src="app.js"></script>
-  <script src="finance-fix.js"></script>
-  <script src="payment-form-core.js?v=1.5.5-dev.49"></script>
-  <script src="historical-data.js"></script>
-  <script src="cards-wallets.js"></script>
+  <script src="app.js?v=1.5.5-dev.55"></script>
+  <script src="finance-fix.js?v=1.5.5-dev.55"></script>
+  <script src="payment-form-core.js?v=1.5.5-dev.55"></script>
+  <script src="historical-data.js?v=1.5.5-dev.55"></script>
+  <script src="cards-wallets.js?v=1.5.5-dev.55"></script>
 </body>
 </html>
