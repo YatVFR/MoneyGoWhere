@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.5.5-dev.55" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.56" />
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.5.5-dev.55" />
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.56" />
 </head>
 <body>
   <div class="app-shell">
@@ -127,7 +127,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     (() => {
-      const BUILD='1.5.5-dev.55';
+      const BUILD='1.5.5-dev.56';
       const btn = document.getElementById('refreshBtn');
       const status = document.getElementById('updateStatus');
       const sub = document.getElementById('updateSub');
@@ -171,12 +171,9 @@
         worker.addEventListener('statechange', () => {
           if (worker.state === 'installed' && navigator.serviceWorker.controller) {
             busy = false;
-            if (reg?.waiting) {
-              updateReady = true;
-              setState('Update available', 'Tap to install', true, false);
-            } else {
-              setState('Updating', 'Activating latest files', false, true);
-            }
+            setTimeout(() => {
+              if (!detectWaiting(reg)) setState('Update ready', 'Waiting for activation', true, false);
+            }, 0);
           }
           if (worker.state === 'activated') {
             updateReady = false;
@@ -266,10 +263,11 @@
       });
     })();
   </script>
-  <script src="app.js?v=1.5.5-dev.55"></script>
-  <script src="finance-fix.js?v=1.5.5-dev.55"></script>
-  <script src="payment-form-core.js?v=1.5.5-dev.55"></script>
-  <script src="historical-data.js?v=1.5.5-dev.55"></script>
-  <script src="cards-wallets.js?v=1.5.5-dev.55"></script>
+  <script src="app.js?v=1.5.5-dev.56"></script>
+  <script src="version-badge-authority.js?v=1.5.5-dev.56"></script>
+  <script src="finance-fix.js?v=1.5.5-dev.56"></script>
+  <script src="payment-form-core.js?v=1.5.5-dev.56"></script>
+  <script src="historical-data.js?v=1.5.5-dev.56"></script>
+  <script src="cards-wallets.js?v=1.5.5-dev.56"></script>
 </body>
 </html>
