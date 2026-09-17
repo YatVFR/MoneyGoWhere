@@ -58,7 +58,8 @@ async function loadFeatures(){
     './version-badge-authority.js',
     './finance-fix.js',
     './payment-form-core.js',
-    './cards-wallets.js'
+    './cards-wallets.js',
+    './wallet-visibility-fix.js'
   ];
   for(const src of core)await loadScript(src);
   if(typeof renderAll==='function')renderAll();
