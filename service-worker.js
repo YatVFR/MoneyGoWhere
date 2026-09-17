@@ -14,6 +14,7 @@ const SHELL=[
   './',
   './index.html',
   './style.css',
+  './boot-phases.js',
   './app.js',
   './import-normalizer.js',
   './interaction-recovery.js',
@@ -22,6 +23,7 @@ const SHELL=[
   './payment-form-core.js',
   './historical-data.js',
   './cards-wallets.js',
+  './apple-pay-queue-bridge.js',
   './manifest.json',
   './assets/icons/icon.svg'
 ];
