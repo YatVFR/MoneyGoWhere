@@ -44,6 +44,16 @@ jobs:
             exit 1
           fi
 
+      - name: Reject seeded finance records in JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --include='*.js' --exclude-dir=.git \
+            '(expenses|income|creditAccounts|creditPayments|walletAccounts|payLaterAccounts|payLaterPayments|recurringBills|recurringIncome|recurringCommitments|importQueue|importHistory|receiptImportQueue|receiptImportHistory)[[:space:]]*:[[:space:]]*\[[[:space:]]*\{' .; then
+            echo "Finance records must never be embedded in application JavaScript. Keep code and user data separate."
+            exit 1
+          fi
+
       - name: Verify base database starts empty
         shell: bash
         run: |
