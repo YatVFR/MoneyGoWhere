@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — phased startup coordinator.
 // Phase 1: render the base UI with an empty DB. Phase 2: hydrate local data after first paint.
-// Phase 3: load feature modules progressively.
+// Phase 3: load feature modules progressively without monopolising Safari's main thread.
 (()=>{'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const DB_KEY='moneygowhere-db-v1';
@@ -21,6 +21,8 @@ function setPhase(phase,detail=''){
 }
 function restoreStorage(){if(!gated)return;gated=false;Storage.prototype.getItem=originalGet}
 function nextPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
+function yieldBrowser(ms=0){return new Promise(resolve=>setTimeout(resolve,ms))}
+function idle(timeout=700){return new Promise(resolve=>('requestIdleCallback'in window?requestIdleCallback(()=>resolve(),{timeout}):setTimeout(resolve,60)))}
 function loadScript(src){return new Promise(resolve=>{
   const existing=document.querySelector(`script[data-mgw-boot-src="${src}"]`);
   if(existing)return resolve(true);
@@ -38,14 +40,15 @@ async function hydrate(){
   restoreStorage();
   try{
     const raw=originalGet.call(localStorage,DB_KEY),parsed=raw?JSON.parse(raw):{};
-    if(typeof emptyDB==='function')db=Object.assign(emptyDB(),parsed||{});else db=parsed||{};
+    const stable=window.MGWStability?.sanitize?window.MGWStability.sanitize(parsed):parsed;
+    if(typeof emptyDB==='function')db=Object.assign(emptyDB(),stable||{});else db=stable||{};
     db.expenses=Array.isArray(db.expenses)?db.expenses:[];
     db.income=Array.isArray(db.income)?db.income:[];
     db.budgets=db.budgets&&typeof db.budgets==='object'?db.budgets:{monthly:0,categories:{}};
     db.budgets.categories=db.budgets.categories&&typeof db.budgets.categories==='object'?db.budgets.categories:{};
     db.settings=db.settings&&typeof db.settings==='object'?db.settings:{currency:'SGD'};
     window.db=db;state.dataReady=true;
-    if(typeof renderAll==='function')renderAll();
+    if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
     document.dispatchEvent(new CustomEvent('mgw:data-ready'));
   }catch(err){console.error('MoneyGoWhere data hydration failed',err);state.dataReady=true;document.dispatchEvent(new CustomEvent('mgw:data-ready',{detail:{error:String(err)}}))}
   await loadFeatures();
@@ -61,10 +64,11 @@ async function loadFeatures(){
     './cards-wallets.js',
     './wallet-visibility-fix.js'
   ];
-  for(const src of core)await loadScript(src);
-  if(typeof renderAll==='function')renderAll();
-  await new Promise(resolve=>('requestIdleCallback'in window?requestIdleCallback(()=>resolve(),{timeout:600}):setTimeout(resolve,80)));
+  for(const src of core){await loadScript(src);await yieldBrowser(0)}
+  if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
+  await idle(900);
   await loadScript('./historical-data.js');
+  await yieldBrowser(0);
   await loadScript('./apple-pay-queue-bridge.js');
   state.featuresReady=true;setPhase('ready','Ready');
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
