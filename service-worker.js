@@ -23,6 +23,7 @@ const SHELL=[
   './payment-form-core.js',
   './historical-data.js',
   './cards-wallets.js',
+  './wallet-visibility-fix.js',
   './apple-pay-queue-bridge.js',
   './manifest.json',
   './assets/icons/icon.svg'
