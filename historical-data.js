@@ -147,9 +147,12 @@ function mgwLoadModule(src){
 async function mgwLoadFeatureModules(){
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
   MGW_RUNTIME_HEALTH.ready=true;
-  if(typeof renderAll==='function')renderAll();
+  // During feature-first boot the real DB is intentionally still gated.
+  // Avoid a heavy empty-data redraw; boot-phases performs the final render after hydration.
+  if(window.MGWBootState?.dataReady&&typeof renderAll==='function')renderAll();
   mgwInstallRuntimeBadge();
   if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
+  return MGW_RUNTIME_HEALTH;
 }
 function mgwExportCurrent(){
   const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
@@ -168,6 +171,6 @@ function mgwBootRuntime(){
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   const exportBtn=document.querySelector('#exportBtn');
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
-  mgwLoadFeatureModules().catch(err=>console.error('MoneyGoWhere runtime feature loading failed',err));
+  window.MGWRuntimeFeaturesReady=mgwLoadFeatureModules().catch(err=>{console.error('MoneyGoWhere runtime feature loading failed',err);return MGW_RUNTIME_HEALTH});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
