@@ -14,6 +14,7 @@ const SHELL=[
   './',
   './index.html',
   './style.css',
+  './data-stability.js',
   './boot-phases.js',
   './app.js',
   './import-normalizer.js',
