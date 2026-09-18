@@ -43,6 +43,7 @@ function restoreStorage(){if(!gated)return;gated=false;Storage.prototype.getItem
 function nextPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
 function yieldBrowser(ms=0){return new Promise(resolve=>setTimeout(resolve,ms))}
 function idle(timeout=500){return new Promise(resolve=>('requestIdleCallback'in window?requestIdleCallback(()=>resolve(),{timeout}):setTimeout(resolve,40)))}
+function preloadScripts(list){for(const src of list){const href=`${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(RELEASE)}`;if(document.querySelector(`link[data-mgw-boot-preload="${href}"]`))continue;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=href;link.dataset.mgwBootPreload=href;document.head.appendChild(link)}}
 function loadScript(src){return new Promise(resolve=>{
   const existing=document.querySelector(`script[data-mgw-boot-src="${src}"]`);
   if(existing)return resolve(true);
@@ -87,6 +88,7 @@ async function loadFeaturesFirst(){
     './cards-wallets.js',
     './wallet-visibility-fix.js'
   ];
+  preloadScripts(core);
   for(const src of core){await loadScript(src);await yieldBrowser(0)}
   await idle(500);
   await loadScript('./historical-data.js');
