@@ -12,7 +12,7 @@ const SHELL=[
   './','./index.html','./style.css','./data-stability.js','./boot-phases.js','./app.js',
   './import-normalizer.js','./interaction-recovery.js','./version-badge-authority.js','./finance-fix.js',
   './payment-form-core.js','./historical-data.js','./cards-wallets.js','./wallet-visibility-fix.js',
-  './apple-pay-queue-bridge.js','./manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/apple-touch-icon.png','./assets/branding/loading-logo.svg'
+  './apple-pay-queue-bridge.js','./manifest.json','./assets/icons/icon.svg','./assets/branding/loading-logo.svg'
 ];
 
 self.addEventListener('install',event=>{
