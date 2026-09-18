@@ -97,11 +97,12 @@ function normalizeCurrent(){
     if(typeof db==='undefined'||!db||!Array.isArray(db.expenses)||!Array.isArray(db.income))return;
     const marker=db.importMeta?.lastNormalization;
     if(marker?.appVersion===RELEASE.appVersion&&Number(marker?.dataVersion)===Number(RELEASE.dataVersion)&&Number(marker?.schemaVersion)===Number(RELEASE.schemaVersion))return;
-    const result=normalizeBackup(db);db=result.db;window.db=db;localStorage.setItem(MGW.key,JSON.stringify(db));if(typeof renderAll==='function')renderAll();console.info('MoneyGoWhere existing DB normalized',result.report);
+    const result=normalizeBackup(db);db=result.db;window.db=db;localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:db-normalized',{detail:result.report}));console.info('MoneyGoWhere existing DB normalized',result.report);
   }catch(err){console.warn('MoneyGoWhere existing DB normalization skipped',err)}
 }
 window.MGWImportNormalizer={normalizeBackup,importFile:normalizedImport,normalizeCurrent};
 window.importData=normalizedImport;
 const input=document.querySelector('#importInput');if(input)input.onchange=e=>e.target.files?.[0]&&normalizedImport(e.target.files[0]);
-normalizeCurrent();
+if(window.MGWBootState?.dataReady)normalizeCurrent();
+else document.addEventListener('mgw:data-ready',normalizeCurrent,{once:true});
 })();
