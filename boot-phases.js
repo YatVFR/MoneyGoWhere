@@ -8,7 +8,7 @@ const DB_KEY='moneygowhere-db-v1';
 const originalGet=Storage.prototype.getItem;
 const originalSet=Storage.prototype.setItem;
 let gated=true,hydrated=false,loadingFeatures=false;
-const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,loaded:[],failed:[]};
+const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,deferredReady:false,loaded:[],failed:[],timings:{started:performance.now()}};
 window.MGWBootState=state;
 
 Storage.prototype.getItem=function(key){
@@ -35,6 +35,7 @@ function updateLoadingScreen(phase,detail=''){
 }
 function setPhase(phase,detail=''){
   state.phase=phase;state.detail=detail;
+  state.timings[phase]=performance.now()-state.timings.started;
   document.documentElement.dataset.mgwBootPhase=phase;
   updateLoadingScreen(phase,detail);
   document.dispatchEvent(new CustomEvent('mgw:boot-phase',{detail:{phase,detail}}));
@@ -111,9 +112,21 @@ async function boot(){
   await loadFeaturesFirst();
   if(sub)sub.textContent='Loading data…';
   await hydrateData();
+  await nextPaint();
   setPhase('ready','Ready');
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
   if(sub)sub.textContent=`v${RELEASE} loaded`;
+  console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
+  const runDeferred=async()=>{
+    try{
+      await window.MGWLoadDeferredFeatures?.();
+      state.deferredReady=true;
+      state.timings.deferred=performance.now()-state.timings.started;
+      console.info('MoneyGoWhere deferred features ready',JSON.parse(JSON.stringify(state.timings)));
+    }catch(err){console.error('MoneyGoWhere deferred feature phase failed',err)}
+  };
+  if('requestIdleCallback'in window)requestIdleCallback(()=>runDeferred(),{timeout:1500});
+  else setTimeout(runDeferred,180);
 }
 const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
