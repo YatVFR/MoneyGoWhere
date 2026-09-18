@@ -3,7 +3,8 @@
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev',num=v=>Number(v)||0,norm=v=>String(v||'').trim().replace(/\s+/g,' ').toUpperCase(),uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const persist=()=>localStorage.setItem(MGW.key,JSON.stringify(db));
-function ensure(){db.importQueue=Array.isArray(db.importQueue)?db.importQueue:[];db.importHistory=Array.isArray(db.importHistory)?db.importHistory:[];db.merchantRules=db.merchantRules&&typeof db.merchantRules==='object'?db.merchantRules:{}}
+function ensure(){db.importQueue=Array.isArray(db.importQueue)?db.importQueue:[];db.importHistory=Array.isArray(db.importHistory)?db.importHistory:[];db.merchantRules=db.merchantRules&&typeof db.merchantRules==='object'?db.merchantRules:{};db.importQueue.forEach(x=>{if(x&&(!x.status||x.status==='queued'))x.status='pending'})}
+function pendingRows(){ensure();return db.importQueue.filter(x=>x&&x.status==='pending')}
 function css(){if(document.querySelector('#mgwWalletQueueCss'))return;const s=document.createElement('style');s.id='mgwWalletQueueCss';s.textContent='.mgw-import-row{border:1px solid var(--line,#e4e9e7);border-radius:14px;padding:12px;margin-top:8px;display:grid;grid-template-columns:1fr auto;gap:10px}.mgw-import-row small{display:block;color:var(--muted,#6b7774)}.mgw-import-actions{display:flex;gap:6px;margin-top:8px}.mgw-import-actions button{border:0;border-radius:9px;padding:7px 9px}.mgw-import-pill{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#e8f5f2;color:#0f766e;font-size:.72rem;font-weight:800}.mgw-import-warn{background:#fff7ed;color:#c2410c}@media(max-width:520px){.mgw-import-row{grid-template-columns:1fr}}';document.head.appendChild(s)}
 function suggest(merchant,hint=''){const learned=db.merchantRules[norm(merchant)];if(learned)return learned;if(typeof mgwSuggestCategory==='function'){const x=mgwSuggestCategory(merchant,hint);return {category:x.category||'',confidence:x.confidence||0}}return {category:'',confidence:0}}
 function duplicate(x){return db.expenses.some(e=>Math.abs(num(e.amount)-num(x.amount))<.005&&String(e.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&norm(e.vendor||e.merchant)===norm(x.merchant))}
@@ -28,9 +29,10 @@ function ingest(){
   const d=new Date(),date=firstParam(p,['date','Date'])||d.toISOString().slice(0,10),time=firstParam(p,['time','Time'])||`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   const card=firstParam(p,['card','paymentSource','pass','Card']);
   const sourceId=firstParam(p,['sourceId','transactionId','id'])||`${date.slice(0,10)}-${time.slice(0,5)}-${amount}-${norm(merchant)}-${norm(card)}`;
-  const queued=db.importQueue.find(x=>x.sourceId===sourceId);
+  const queued=pendingRows().find(x=>x.sourceId===sourceId);
   if(queued){window.MGWLaunchCapture?.clear?.();showPending();toast?.('Apple Pay transaction is already pending review');return true}
   if(db.importHistory.some(x=>x.sourceId===sourceId)){window.MGWLaunchCapture?.clear?.();toast?.('Apple Pay transaction was already reviewed');return true}
+  db.importQueue=db.importQueue.filter(x=>x.sourceId!==sourceId||x.status==='pending');
   const s=suggest(merchant,firstParam(p,['hint','Hint']));
   const item={id:uid('IMP'),source:'apple_wallet',sourceId,merchant,amount,date:date.slice(0,10),time:time.slice(0,5),currency:firstParam(p,['currency','Currency'])||'SGD',card,paymentMethod:'Apple Pay',category:s.category||'',confidence:s.confidence||0,status:'pending'};
   item.possibleDuplicate=duplicate(item);db.importQueue.push(item);persist();window.MGWLaunchCapture?.clear?.();
@@ -43,7 +45,7 @@ function rowSignature(rows){return JSON.stringify(rows.map(x=>[x.id,x.merchant,n
 function render(){
   ensure();const view=document.querySelector('#view-add');if(!view)return;
   let card=document.querySelector('#mgwWalletImportQueue');if(!card){card=document.createElement('article');card.className='card';card.id='mgwWalletImportQueue';view.prepend(card)}
-  const rows=db.importQueue.filter(x=>x.status==='pending'),signature=rowSignature(rows);
+  const rows=pendingRows(),signature=rowSignature(rows);
   if(card.dataset.mgwSignature===signature)return;
   card.dataset.mgwSignature=signature;
   card.innerHTML=`<div class="card-head"><div><span class="section-icon">⚡</span><b>Pending Imports</b></div><strong>${rows.length}</strong></div><p class="mgw-muted">Review Wallet transactions before saving them.</p>${rows.map(x=>`<div class="mgw-import-row" data-id="${esc(x.id)}"><div><b>${esc(x.merchant)}</b><small>${esc([x.date,x.time].filter(Boolean).join(' · '))}</small><span class="mgw-import-pill">Wallet</span>${x.possibleDuplicate?'<span class="mgw-import-pill mgw-import-warn">Possible duplicate</span>':''}<div class="field" style="margin-top:8px"><select>${options(x.category)}</select></div></div><div><strong>${money(x.amount)}</strong><div class="mgw-import-actions"><button data-accept>Accept</button><button data-dismiss>Dismiss</button></div></div></div>`).join('')||'<p class="empty-state">No pending imports.</p>'}`;
@@ -53,4 +55,4 @@ function settings(){const view=document.querySelector('#view-settings');if(!view
 function refresh(){ensure();render();settings()}
 function showPending(){refresh();if(typeof nav==='function')nav('add');requestAnimationFrame(()=>requestAnimationFrame(()=>document.querySelector('#mgwWalletImportQueue')?.scrollIntoView({behavior:'smooth',block:'start'})))}
 function boot(){ensure();css();refresh();document.addEventListener('mgw:import-queue-changed',refresh);const afterData=()=>{ingest();refresh()};if(window.MGWBootState?.dataReady)afterData();else document.addEventListener('mgw:data-ready',afterData,{once:true});if(typeof renderAll==='function'&&!renderAll.__mgwWalletQueue){const base=renderAll;renderAll=function(){base();queueMicrotask(refresh)};renderAll.__mgwWalletQueue=true}}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.MGWWalletQueue={version:RELEASE,items:()=>db.importQueue,refresh,render,showPending};})();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.MGWWalletQueue={version:RELEASE,items:()=>pendingRows(),refresh,render,showPending};})();
