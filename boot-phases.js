@@ -35,6 +35,7 @@ Storage.prototype.setItem=function(key,value){
 function updateLoadingScreen(phase,detail=''){
   const screen=document.querySelector('#mgwLoadingScreen'),message=document.querySelector('#mgwLoadingMessage'),stage=document.querySelector('#mgwLoadingStage');
   if(!screen)return;
+  if(phase!=='ready'){screen.hidden=false;screen.classList.remove('is-ready')}
   const copy={ui:['Preparing interface…','Starting'],features:['Loading app features…','Features'],data:['Loading your finance data…','Data'],ready:['Ready','Complete'],error:['Could not finish loading','Startup issue']};
   const text=copy[phase]||[detail||'Loading…','Working'];
   if(message)message.textContent=detail||text[0];
@@ -121,6 +122,8 @@ async function boot(){
   await loadFeaturesFirst();
   if(sub)sub.textContent='Loading data…';
   await hydrateData();
+  setPhase('data','Rendering your dashboard…');
+  await nextPaint();
   await nextPaint();
   perfMark('firstStableRender');
   setPhase('ready','Ready');perfMark('appReady');
