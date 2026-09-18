@@ -58,14 +58,16 @@ async function navigationNetworkFirst(request){
   }
 }
 
-async function versionedNetworkFirst(request){
+async function versionedCacheFirst(request){
   const cache=await caches.open(CACHE);
+  const cached=await cache.match(request);
+  if(cached)return cached;
   try{
     const response=await fetch(request,{cache:'no-store'});
     if(response&&response.ok)cache.put(request,response.clone()).catch(()=>{});
     return response;
   }catch(err){
-    return (await cache.match(request))||new Response('',{status:504,statusText:'MoneyGoWhere asset unavailable'});
+    return new Response('',{status:504,statusText:'MoneyGoWhere asset unavailable'});
   }
 }
 
@@ -86,6 +88,6 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
   if(ENV==='prod'&&(url.pathname.startsWith(`${SCOPE_PATH}dev/`)||url.pathname.startsWith(`${SCOPE_PATH}uat/`)))return;
   if(event.request.mode==='navigate'){event.respondWith(navigationNetworkFirst(event.request));return}
-  if(url.searchParams.get('v')===APP_VERSION){event.respondWith(versionedNetworkFirst(event.request));return}
+  if(url.searchParams.get('v')===APP_VERSION){event.respondWith(versionedCacheFirst(event.request));return}
   event.respondWith(assetNetworkFirst(event.request));
 });
