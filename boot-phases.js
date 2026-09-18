@@ -10,6 +10,11 @@ const originalSet=Storage.prototype.setItem;
 let gated=true,hydrated=false,loadingFeatures=false;
 const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,deferredReady:false,loaded:[],failed:[],timings:{started:performance.now()}};
 window.MGWBootState=state;
+// DEV-only, data-free startup diagnostics. No finance values are captured.
+const perf=window.MGWPerf=window.MGWPerf||{release:RELEASE,marks:{},longTasks:[],modules:[]};
+const perfMark=name=>{perf.marks[name]=Math.round(performance.now()-state.timings.started)};
+try{if('PerformanceObserver'in window){const o=new PerformanceObserver(list=>{for(const e of list.getEntries())perf.longTasks.push({start:Math.round(e.startTime),duration:Math.round(e.duration)});if(perf.longTasks.length>40)perf.longTasks.splice(0,perf.longTasks.length-40)});o.observe({type:'longtask',buffered:true})}}catch{}
+window.MGWPerformanceReport=()=>({release:RELEASE,phase:state.phase,marks:{...perf.marks},bootTimings:{...state.timings},modules:perf.modules.slice(),longTasks:perf.longTasks.slice(),longTaskCount:perf.longTasks.length,maxLongTaskMs:perf.longTasks.reduce((m,x)=>Math.max(m,x.duration||0),0)});
 
 const markUserBusy=()=>{state.userBusyUntil=performance.now()+1800};
 ['pointerdown','keydown','input','change'].forEach(type=>document.addEventListener(type,markUserBusy,{capture:true,passive:type==='pointerdown'}));
@@ -52,15 +57,15 @@ function preloadScripts(list){for(const src of list){const href=`${src}${src.inc
 function loadScript(src){return new Promise(resolve=>{
   const existing=document.querySelector(`script[data-mgw-boot-src="${src}"]`);
   if(existing)return resolve(true);
-  const s=document.createElement('script');
+  const started=performance.now(),s=document.createElement('script');
   s.src=`${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(RELEASE)}`;
   s.async=false;s.dataset.mgwBootSrc=src;
-  s.onload=()=>{state.loaded.push(src);resolve(true)};
-  s.onerror=()=>{state.failed.push(src);console.error('MoneyGoWhere phased module failed:',src);resolve(false)};
+  s.onload=()=>{state.loaded.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:true});resolve(true)};
+  s.onerror=()=>{state.failed.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:false});console.error('MoneyGoWhere phased module failed:',src);resolve(false)};
   document.head.appendChild(s);
 })}
 async function hydrateData(){
-  if(hydrated)return;hydrated=true;
+  if(hydrated)return;hydrated=true;perfMark('dataStart');
   setPhase('data','Loading your finance data…');
   restoreStorage();
   try{
@@ -72,7 +77,7 @@ async function hydrateData(){
     db.budgets=db.budgets&&typeof db.budgets==='object'?db.budgets:{monthly:0,categories:{}};
     db.budgets.categories=db.budgets.categories&&typeof db.budgets.categories==='object'?db.budgets.categories:{};
     db.settings=db.settings&&typeof db.settings==='object'?db.settings:{currency:'SGD'};
-    window.db=db;state.dataReady=true;
+    window.db=db;state.dataReady=true;perfMark('dataReady');
     document.dispatchEvent(new CustomEvent('mgw:data-ready'));
     if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
   }catch(err){
@@ -117,7 +122,8 @@ async function boot(){
   if(sub)sub.textContent='Loading data…';
   await hydrateData();
   await nextPaint();
-  setPhase('ready','Ready');
+  perfMark('firstStableRender');
+  setPhase('ready','Ready');perfMark('appReady');
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
   if(sub)sub.textContent=`v${RELEASE} loaded`;
   console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
