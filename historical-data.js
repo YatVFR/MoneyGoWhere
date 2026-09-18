@@ -121,6 +121,7 @@ const MGW_FEATURE_MODULES=[
 const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],ready:false};
 window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
 function mgwModuleUrl(src){return `${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(MGW_RUNTIME_RELEASE.appVersion)}`}
+function mgwPreloadModules(list){for(const src of list){const href=mgwModuleUrl(src);if(document.querySelector(`link[data-mgw-preload="${href}"]`))continue;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=href;link.dataset.mgwPreload=href;document.head.appendChild(link)}}
 function mgwLoadModule(src){
   return new Promise(resolve=>{
     const existing=document.querySelector(`script[data-mgw-module="${src}"]`);
@@ -145,6 +146,7 @@ function mgwLoadModule(src){
   });
 }
 async function mgwLoadFeatureModules(){
+  mgwPreloadModules(MGW_FEATURE_MODULES);
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
   MGW_RUNTIME_HEALTH.ready=true;
   // During feature-first boot the real DB is intentionally still gated.
