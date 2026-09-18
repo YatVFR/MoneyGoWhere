@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.5.5-dev.82" />
-  <link rel="icon" href="assets/icons/icon-192.png?v=1.5.5-dev.82" type="image/png" sizes="192x192" />
-  <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.82" type="image/svg+xml" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=1.5.5-dev.82" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.83" />
+    <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.83" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg?v=1.5.5-dev.83" />
+  <link rel="apple-touch-icon-precomposed" href="assets/icons/icon.svg?v=1.5.5-dev.83" />
   <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.5.5-dev.82" />
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.83" />
 </head>
 <body>
   <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
     <div class="mgw-loading-card">
-      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/loading-logo.svg?v=1.5.5-dev.82" alt="" /></div>
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/loading-logo.svg?v=1.5.5-dev.83" alt="" /></div>
       <h2>MoneyGoWhere</h2>
       <p id="mgwLoadingMessage">Preparing interface…</p>
       <div class="mgw-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -162,7 +162,7 @@
         };
       };
       captureLaunch();
-      const BUILD='1.5.5-dev.82';
+      const BUILD='1.5.5-dev.83';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:14,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
@@ -180,8 +180,8 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="data-stability.js?v=1.5.5-dev.82"></script>
-  <script src="boot-phases.js?v=1.5.5-dev.82"></script>
-  <script src="app.js?v=1.5.5-dev.82"></script>
+  <script src="data-stability.js?v=1.5.5-dev.83"></script>
+  <script src="boot-phases.js?v=1.5.5-dev.83"></script>
+  <script src="app.js?v=1.5.5-dev.83"></script>
 </body>
 </html>
