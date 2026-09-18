@@ -164,7 +164,7 @@ async function mgwLoadDeferredModules(){
   }
   MGW_RUNTIME_HEALTH.deferredReady=true;
   MGW_RUNTIME_HEALTH.ready=true;
-  if(window.MGWBootState?.dataReady&&typeof renderAll==='function')window.MGWStability?.requestRender?.()||renderAll();
+  if(window.MGWBootState?.dataReady){if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll()}
   if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
   document.dispatchEvent(new CustomEvent('mgw:deferred-features-ready'));
   return MGW_RUNTIME_HEALTH;
