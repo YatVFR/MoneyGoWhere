@@ -23,9 +23,20 @@ Storage.prototype.setItem=function(key,value){
   return originalSet.call(this,key,value);
 };
 
+function updateLoadingScreen(phase,detail=''){
+  const screen=document.querySelector('#mgwLoadingScreen'),message=document.querySelector('#mgwLoadingMessage'),stage=document.querySelector('#mgwLoadingStage');
+  if(!screen)return;
+  const copy={ui:['Preparing interface…','Starting'],features:['Loading app features…','Features'],data:['Loading your finance data…','Data'],ready:['Ready','Complete'],error:['Could not finish loading','Startup issue']};
+  const text=copy[phase]||[detail||'Loading…','Working'];
+  if(message)message.textContent=detail||text[0];
+  if(stage)stage.textContent=text[1];
+  if(phase==='ready'){screen.classList.add('is-ready');setTimeout(()=>screen.hidden=true,260)}
+  if(phase==='error')screen.classList.remove('is-ready');
+}
 function setPhase(phase,detail=''){
   state.phase=phase;state.detail=detail;
   document.documentElement.dataset.mgwBootPhase=phase;
+  updateLoadingScreen(phase,detail);
   document.dispatchEvent(new CustomEvent('mgw:boot-phase',{detail:{phase,detail}}));
 }
 function restoreStorage(){if(!gated)return;gated=false;Storage.prototype.getItem=originalGet;Storage.prototype.setItem=originalSet}
@@ -44,7 +55,7 @@ function loadScript(src){return new Promise(resolve=>{
 })}
 async function hydrateData(){
   if(hydrated)return;hydrated=true;
-  setPhase('data','Loading finance data');
+  setPhase('data','Loading your finance data…');
   restoreStorage();
   try{
     const raw=originalGet.call(localStorage,DB_KEY),parsed=raw?JSON.parse(raw):{};
@@ -66,7 +77,7 @@ async function hydrateData(){
 }
 async function loadFeaturesFirst(){
   if(loadingFeatures)return;loadingFeatures=true;
-  setPhase('features','Loading app features');
+  setPhase('features','Loading app features…');
   const core=[
     './import-normalizer.js',
     './interaction-recovery.js',
@@ -91,7 +102,7 @@ async function loadFeaturesFirst(){
   document.dispatchEvent(new CustomEvent('mgw:features-ready'));
 }
 async function boot(){
-  setPhase('ui','Interface ready');
+  setPhase('ui','Preparing interface…');
   const status=document.querySelector('#updateStatus'),sub=document.querySelector('#updateSub');
   if(status)status.textContent='Ready';if(sub)sub.textContent='Loading features…';
   await nextPaint();
@@ -102,6 +113,7 @@ async function boot(){
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
   if(sub)sub.textContent=`v${RELEASE} loaded`;
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage()}),{once:true});else boot().catch(err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage()});
+const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
 window.addEventListener('pagehide',restoreStorage,{once:true});
 })();
