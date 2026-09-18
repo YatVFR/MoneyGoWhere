@@ -155,12 +155,19 @@ async function mgwLoadCoreModules(){
   if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere core module failures:',MGW_RUNTIME_HEALTH.failed);
   return MGW_RUNTIME_HEALTH;
 }
+async function mgwWaitForInteractionIdle(){
+  let checks=0;
+  while((window.MGWIsInteractionBusy?.()||document.querySelector('dialog[open]'))&&checks++<240){
+    await new Promise(resolve=>setTimeout(resolve,250));
+  }
+}
 async function mgwLoadDeferredModules(){
   if(MGW_RUNTIME_HEALTH.deferredReady)return MGW_RUNTIME_HEALTH;
   mgwPreloadModules(MGW_DEFERRED_MODULES);
   for(const src of MGW_DEFERRED_MODULES){
+    await mgwWaitForInteractionIdle();
     await mgwLoadModule(src);
-    await new Promise(resolve=>setTimeout(resolve,0));
+    await new Promise(resolve=>setTimeout(resolve,120));
   }
   MGW_RUNTIME_HEALTH.deferredReady=true;
   MGW_RUNTIME_HEALTH.ready=true;
