@@ -113,7 +113,7 @@
     productEl.addEventListener('change',()=>{customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'});
     refreshIssuers(issuer,a.cardProduct||'');
     f.addEventListener('submit',e=>{
-      e.preventDefault();if(f.dataset.mgwSaving==='1')return;
+      e.preventDefault();if(window.MGWBootState&&!window.MGWBootState.dataReady){toast?.('Finance data is still loading. Try again in a moment.');return}if(f.dataset.mgwSaving==='1')return;
       const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();
       if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
       f.dataset.mgwSaving='1';const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
