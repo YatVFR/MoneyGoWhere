@@ -11,6 +11,10 @@ let gated=true,hydrated=false,loadingFeatures=false;
 const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,deferredReady:false,loaded:[],failed:[],timings:{started:performance.now()}};
 window.MGWBootState=state;
 
+const markUserBusy=()=>{state.userBusyUntil=performance.now()+1800};
+['pointerdown','keydown','input','change'].forEach(type=>document.addEventListener(type,markUserBusy,{capture:true,passive:type==='pointerdown'}));
+window.MGWIsInteractionBusy=()=>Boolean(document.querySelector('dialog[open]'))||performance.now()<(state.userBusyUntil||0);
+
 Storage.prototype.getItem=function(key){
   if(gated&&this===localStorage&&key===DB_KEY)return null;
   return originalGet.call(this,key);
@@ -119,14 +123,17 @@ async function boot(){
   console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
   const runDeferred=async()=>{
     try{
+      let guard=0;
+      while(window.MGWIsInteractionBusy?.()&&guard++<120)await yieldBrowser(250);
       await window.MGWLoadDeferredFeatures?.();
       state.deferredReady=true;
       state.timings.deferred=performance.now()-state.timings.started;
       console.info('MoneyGoWhere deferred features ready',JSON.parse(JSON.stringify(state.timings)));
     }catch(err){console.error('MoneyGoWhere deferred feature phase failed',err)}
   };
-  if('requestIdleCallback'in window)requestIdleCallback(()=>runDeferred(),{timeout:1500});
-  else setTimeout(runDeferred,180);
+  const scheduleDeferred=()=>setTimeout(runDeferred,2200);
+  if('requestIdleCallback'in window)requestIdleCallback(scheduleDeferred,{timeout:3000});
+  else scheduleDeferred();
 }
 const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
