@@ -90,25 +90,27 @@ if(typeof renderAll==='function'){
   renderAll=function(){baseRender();mgwUpdateCycleUI()};
 }
 const MGW_CORE_MODULES=[
+  // Only modules required to interpret/render persisted finance data belong
+  // on the blocking startup path. Everything else is staged after app-ready.
+  './currency-normalization.js',
+  './dashboard-core.js',
   './credit-manager.js',
+  './wallet-import-queue.js',
+  './apple-pay-inbox.js'
+];
+const MGW_DEFERRED_MODULES=[
   './credit-collapse.js',
   './ui-navigation-history.js',
   './recurring-schedules.js',
   './recurring-bills.js',
   './paylater-recurrence.js',
   './paylater-rule-hotfix.js',
-  './currency-normalization.js',
   './dashboard-breakdown.js',
   './salary-trends.js',
-  './wallet-import-queue.js',
-  './apple-pay-inbox.js',
   './transaction-editor.js',
   './currency-ui.js',
   './payment-source-linker.js',
-  './dashboard-core.js',
-  './performance-optimizer.js'
-];
-const MGW_DEFERRED_MODULES=[
+  './performance-optimizer.js',
   './ocr-enhance.js',
   './ocr-runtime.js',
   './onboarding-dev.js',
