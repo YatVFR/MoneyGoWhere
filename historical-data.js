@@ -89,9 +89,7 @@ if(typeof renderAll==='function'){
   const baseRender=renderAll;
   renderAll=function(){baseRender();mgwUpdateCycleUI()};
 }
-const MGW_FEATURE_MODULES=[
-  './ocr-enhance.js',
-  './ocr-runtime.js',
+const MGW_CORE_MODULES=[
   './credit-manager.js',
   './credit-collapse.js',
   './ui-navigation-history.js',
@@ -102,23 +100,27 @@ const MGW_FEATURE_MODULES=[
   './currency-normalization.js',
   './dashboard-breakdown.js',
   './salary-trends.js',
-  './onboarding-dev.js',
-  './recurring-onboarding.js',
   './wallet-import-queue.js',
   './apple-pay-inbox.js',
-  './history-collapse.js',
-  './salary-collapse.js',
   './transaction-editor.js',
   './currency-ui.js',
-  './icloud-folder-scanner.js',
-  './startup-import-assistant.js',
-  './guided-walkthrough.js',
-  './receipt-match-hint.js',
   './payment-source-linker.js',
   './dashboard-core.js',
   './performance-optimizer.js'
 ];
-const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],ready:false};
+const MGW_DEFERRED_MODULES=[
+  './ocr-enhance.js',
+  './ocr-runtime.js',
+  './onboarding-dev.js',
+  './recurring-onboarding.js',
+  './history-collapse.js',
+  './salary-collapse.js',
+  './icloud-folder-scanner.js',
+  './startup-import-assistant.js',
+  './guided-walkthrough.js',
+  './receipt-match-hint.js'
+];
+const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],coreReady:false,deferredReady:false,ready:false};
 window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
 function mgwModuleUrl(src){return `${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(MGW_RUNTIME_RELEASE.appVersion)}`}
 function mgwPreloadModules(list){for(const src of list){const href=mgwModuleUrl(src);if(document.querySelector(`link[data-mgw-preload="${href}"]`))continue;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=href;link.dataset.mgwPreload=href;document.head.appendChild(link)}}
@@ -145,15 +147,26 @@ function mgwLoadModule(src){
     document.head.appendChild(s);
   });
 }
-async function mgwLoadFeatureModules(){
-  mgwPreloadModules(MGW_FEATURE_MODULES);
-  for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
-  MGW_RUNTIME_HEALTH.ready=true;
-  // During feature-first boot the real DB is intentionally still gated.
-  // Avoid a heavy empty-data redraw; boot-phases performs the final render after hydration.
-  if(window.MGWBootState?.dataReady&&typeof renderAll==='function')renderAll();
+async function mgwLoadCoreModules(){
+  mgwPreloadModules(MGW_CORE_MODULES);
+  for(const src of MGW_CORE_MODULES)await mgwLoadModule(src);
+  MGW_RUNTIME_HEALTH.coreReady=true;
   mgwInstallRuntimeBadge();
+  if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere core module failures:',MGW_RUNTIME_HEALTH.failed);
+  return MGW_RUNTIME_HEALTH;
+}
+async function mgwLoadDeferredModules(){
+  if(MGW_RUNTIME_HEALTH.deferredReady)return MGW_RUNTIME_HEALTH;
+  mgwPreloadModules(MGW_DEFERRED_MODULES);
+  for(const src of MGW_DEFERRED_MODULES){
+    await mgwLoadModule(src);
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  MGW_RUNTIME_HEALTH.deferredReady=true;
+  MGW_RUNTIME_HEALTH.ready=true;
+  if(window.MGWBootState?.dataReady&&typeof renderAll==='function')window.MGWStability?.requestRender?.()||renderAll();
   if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
+  document.dispatchEvent(new CustomEvent('mgw:deferred-features-ready'));
   return MGW_RUNTIME_HEALTH;
 }
 function mgwExportCurrent(){
@@ -173,6 +186,7 @@ function mgwBootRuntime(){
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   const exportBtn=document.querySelector('#exportBtn');
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
-  window.MGWRuntimeFeaturesReady=mgwLoadFeatureModules().catch(err=>{console.error('MoneyGoWhere runtime feature loading failed',err);return MGW_RUNTIME_HEALTH});
+  window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
+  window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
