@@ -83,7 +83,7 @@ async function hydrateData(){
 }
 async function loadFeaturesFirst(){
   if(loadingFeatures)return;loadingFeatures=true;
-  setPhase('features','Loading app features…');
+  setPhase('features','Loading essential app features…');
   const core=[
     './import-normalizer.js',
     './interaction-recovery.js',
@@ -95,16 +95,9 @@ async function loadFeaturesFirst(){
   ];
   preloadScripts(core);
   for(const src of core){await loadScript(src);await yieldBrowser(0)}
-  await idle(500);
+  // Load the runtime coordinator so pay-cycle/date behaviour is installed,
+  // but do not block first paint on every optional runtime module.
   await loadScript('./historical-data.js');
-  if(window.MGWRuntimeFeaturesReady&&typeof window.MGWRuntimeFeaturesReady.then==='function'){
-    try{await window.MGWRuntimeFeaturesReady}catch(err){console.error('MoneyGoWhere runtime feature loading failed',err)}
-  }else{
-    // Older runtime compatibility: give asynchronously loaded feature modules a short chance to settle.
-    let tries=0;
-    while(window.MGWRuntimeHealth&&!window.MGWRuntimeHealth.ready&&tries++<120)await yieldBrowser(25);
-  }
-  await loadScript('./apple-pay-queue-bridge.js');
   state.featuresReady=true;
   document.dispatchEvent(new CustomEvent('mgw:features-ready'));
 }
@@ -125,6 +118,10 @@ async function boot(){
     try{
       let guard=0;
       while(window.MGWIsInteractionBusy?.()&&guard++<120)await yieldBrowser(250);
+      if(window.MGWRuntimeFeaturesReady&&typeof window.MGWRuntimeFeaturesReady.then==='function'){
+        await window.MGWRuntimeFeaturesReady;
+      }
+      await loadScript('./apple-pay-queue-bridge.js');
       await window.MGWLoadDeferredFeatures?.();
       state.deferredReady=true;
       state.timings.deferred=performance.now()-state.timings.started;
