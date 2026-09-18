@@ -100,10 +100,11 @@
         <div class="field"><label>Payment due day</label><input name="dueDay" type="number" min="1" max="31" value="${a.dueDay??''}"></div>
       </div></div>
       <div id="mgwWalletOnly" class="field full"><div class="form-grid"><div class="field"><label>Current balance (optional)</label><input name="walletBalance" type="number" min="0" step="0.01" value="${a.balance??''}"></div><div class="field"><label>Base currency</label><input name="baseCurrency" maxlength="3" value="${esc(a.baseCurrency||'SGD')}"></div></div><div class="mgw-form-note">Wallet/debit balances are not treated as available credit or debt. Top-ups should be recorded as transfers to avoid double-counting spending.</div></div>
-      <div class="field full"><button class="primary-btn">${edit?'Save Changes':'Add Card / Wallet'}</button></div>
+      <div class="field full"><button type="submit" class="primary-btn">${edit?'Save Changes':'Add Card / Wallet'}</button></div>
       ${edit?'<div class="field full"><button type="button" class="danger" id="mgwDeleteCardWallet">Delete Card / Wallet</button></div>':''}
     </form>`);if(!body)return;
     const f=body.querySelector('form'),typeEl=f.elements.accountType,issuerEl=f.elements.issuer,productEl=f.elements.cardProduct,creditOnly=body.querySelector('#mgwCreditOnly'),walletOnly=body.querySelector('#mgwWalletOnly'),customWrap=body.querySelector('#mgwCustomProductWrap');
+    const closeBtn=document.querySelector('#closeModal');if(closeBtn){closeBtn.disabled=false;closeBtn.style.pointerEvents='auto'}
     f.elements.role.value=a.role||'spending';
     const setCreditVisibility=()=>{const isCredit=typeEl.value==='credit';creditOnly.style.display=isCredit?'':'none';walletOnly.style.display=isCredit?'none':''};
     const refreshProducts=(preferredProduct='')=>{const ps=products(typeEl.value,issuerEl.value),selected=ps.includes(preferredProduct)?preferredProduct:ps[0];productEl.innerHTML=opts(ps,selected);customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none';setCreditVisibility()};
