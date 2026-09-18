@@ -20,7 +20,7 @@
 .mgw-loading-screen{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:24px;background:var(--bg,#f6f8f7);transition:opacity .22s ease,visibility .22s ease}
 .mgw-loading-screen.is-ready{opacity:0;visibility:hidden;pointer-events:none}
 .mgw-loading-card{width:min(360px,100%);text-align:center;padding:28px 24px;border:1px solid var(--line,#e4e9e7);border-radius:26px;background:var(--card,#fff);box-shadow:var(--shadow,0 10px 30px rgba(21,45,41,.08))}
-.mgw-loading-mark{width:58px;height:58px;margin:0 auto 16px;border-radius:18px;display:grid;place-items:center;background:var(--brand-soft,#e8f5f2);color:var(--brand,#0f766e);font-size:1.55rem;font-weight:900;animation:mgw-load-float 1.25s ease-in-out infinite}
+.mgw-loading-mark{width:132px;height:132px;margin:0 auto 18px;border-radius:28px;display:grid;place-items:center;background:transparent;box-shadow:0 14px 34px rgba(15,118,110,.13);overflow:hidden;animation:mgw-load-float 1.25s ease-in-out infinite}.mgw-loading-mark img{display:block;width:100%;height:100%;object-fit:cover}
 .mgw-loading-card h2{font-size:1.15rem;margin:0 0 6px}.mgw-loading-card p{margin:0;color:var(--muted,#6b7774)}
 .mgw-loading-dots{display:flex;justify-content:center;gap:7px;margin:18px 0 12px}
 .mgw-loading-dots i{width:8px;height:8px;border-radius:99px;background:var(--brand,#0f766e);opacity:.28;animation:mgw-load-dot 1s ease-in-out infinite}
