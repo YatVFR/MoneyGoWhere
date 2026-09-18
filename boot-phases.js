@@ -6,6 +6,7 @@
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const DB_KEY='moneygowhere-db-v1';
 const originalGet=Storage.prototype.getItem;
+const originalSet=Storage.prototype.setItem;
 let gated=true,hydrated=false,loadingFeatures=false;
 const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,loaded:[],failed:[]};
 window.MGWBootState=state;
@@ -14,13 +15,20 @@ Storage.prototype.getItem=function(key){
   if(gated&&this===localStorage&&key===DB_KEY)return null;
   return originalGet.call(this,key);
 };
+Storage.prototype.setItem=function(key,value){
+  if(gated&&this===localStorage&&key===DB_KEY){
+    console.warn('MoneyGoWhere blocked a database write before data hydration');
+    return;
+  }
+  return originalSet.call(this,key,value);
+};
 
 function setPhase(phase,detail=''){
   state.phase=phase;state.detail=detail;
   document.documentElement.dataset.mgwBootPhase=phase;
   document.dispatchEvent(new CustomEvent('mgw:boot-phase',{detail:{phase,detail}}));
 }
-function restoreStorage(){if(!gated)return;gated=false;Storage.prototype.getItem=originalGet}
+function restoreStorage(){if(!gated)return;gated=false;Storage.prototype.getItem=originalGet;Storage.prototype.setItem=originalSet}
 function nextPaint(){return new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
 function yieldBrowser(ms=0){return new Promise(resolve=>setTimeout(resolve,ms))}
 function idle(timeout=500){return new Promise(resolve=>('requestIdleCallback'in window?requestIdleCallback(()=>resolve(),{timeout}):setTimeout(resolve,40)))}
