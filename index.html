@@ -130,6 +130,36 @@
 
   <script>
     (() => {
+      const LAUNCH_KEY='mgw-applepay-launch-v1';
+      const parseLaunch=url=>{
+        try{
+          const u=new URL(url,location.href),p=new URLSearchParams(u.search);
+          if(u.hash&&u.hash.includes('?')){
+            const hp=new URLSearchParams(u.hash.slice(u.hash.indexOf('?')+1));
+            hp.forEach((v,k)=>{if(!p.has(k))p.set(k,v)});
+          }
+          return p;
+        }catch{return new URLSearchParams()}
+      };
+      const captureLaunch=()=>{
+        let saved='';
+        try{saved=sessionStorage.getItem(LAUNCH_KEY)||''}catch{}
+        const urls=[location.href,performance.getEntriesByType('navigation')[0]?.name].filter(Boolean);
+        for(const url of urls){
+          const p=parseLaunch(url),mode=String(p.get('mgw')||p.get('mode')||'').toLowerCase();
+          const hasTxn=Boolean(p.get('merchant')||p.get('vendor')||p.get('amount')||p.get('total'));
+          if(['applepay','applewallet','walletqueue'].includes(mode)||hasTxn){
+            saved=p.toString();
+            try{sessionStorage.setItem(LAUNCH_KEY,saved)}catch{}
+            break;
+          }
+        }
+        window.MGWLaunchCapture={
+          params:()=>new URLSearchParams(saved||''),
+          clear:()=>{saved='';try{sessionStorage.removeItem(LAUNCH_KEY)}catch{}}
+        };
+      };
+      captureLaunch();
       const BUILD='1.5.5-dev.76';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:14,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
