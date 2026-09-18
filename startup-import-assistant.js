@@ -1,7 +1,7 @@
 // MoneyGoWhere DEV — optional startup import assistant + calibrated local batch receipt OCR.
 // Receipt images are processed locally and are never persisted or uploaded by this module.
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.43';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const num=v=>{const n=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0};
 const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toUpperCase();
@@ -28,11 +28,19 @@ function duplicate(x){
   const rows=[...(db.expenses||[]),...db.receiptImportQueue,...db.receiptImportHistory];
   return rows.some(y=>y.sourceId===x.sourceId||(x.amount>0&&String(y.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&Math.abs(num(y.amount)-num(x.amount))<.005&&norm(y.vendor||y.merchant)===norm(x.merchant)));
 }
+function closePrompt(){
+  const d=document.querySelector('#mgwStartupImportDialog');
+  if(d?.open)try{d.close()}catch{}
+}
+function closeOnCommittedSelection(input){
+  if(!input)return;
+  input.addEventListener('change',()=>{if(input.files?.length)closePrompt()},{once:true});
+}
 function makeReceiptInput(){
   let input=document.querySelector('#mgwBatchReceiptInput');
   if(input)return input;
   input=document.createElement('input');input.id='mgwBatchReceiptInput';input.type='file';input.accept='image/*';input.multiple=true;input.hidden=true;
-  input.addEventListener('change',async()=>{if(input.files?.length)await processReceipts(input.files);input.value=''});
+  input.addEventListener('change',async()=>{if(input.files?.length){closePrompt();await processReceipts(input.files)}input.value=''});
   document.body.appendChild(input);return input;
 }
 function style(){
@@ -107,8 +115,8 @@ async function processReceipts(files){
   }finally{processing=false}
 }
 function openApplePay(){
-  const dir=document.querySelector('#mgwApplePayFolderInput');if(dir){dir.click();return}
-  const files=document.querySelector('#mgwApplePayInboxInput');if(files){files.click();return}
+  const dir=document.querySelector('#mgwApplePayFolderInput');if(dir){closeOnCommittedSelection(dir);dir.click();return}
+  const files=document.querySelector('#mgwApplePayInboxInput');if(files){closeOnCommittedSelection(files);files.click();return}
   if(typeof toast==='function')toast('Apple Pay importer is still loading');
 }
 function showPrompt({manual=false}={}){
