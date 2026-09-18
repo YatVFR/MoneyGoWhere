@@ -95,7 +95,7 @@ async function loadFeaturesFirst(){
   ];
   preloadScripts(core);
   for(const src of core){await loadScript(src);await yieldBrowser(0)}
-  await idle(500);
+  await idle(120);
   await loadScript('./historical-data.js');
   if(window.MGWRuntimeFeaturesReady&&typeof window.MGWRuntimeFeaturesReady.then==='function'){
     try{await window.MGWRuntimeFeaturesReady}catch(err){console.error('MoneyGoWhere runtime feature loading failed',err)}
