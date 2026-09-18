@@ -7,8 +7,37 @@ function ensure(){db.importQueue=Array.isArray(db.importQueue)?db.importQueue:[]
 function css(){if(document.querySelector('#mgwWalletQueueCss'))return;const s=document.createElement('style');s.id='mgwWalletQueueCss';s.textContent='.mgw-import-row{border:1px solid var(--line,#e4e9e7);border-radius:14px;padding:12px;margin-top:8px;display:grid;grid-template-columns:1fr auto;gap:10px}.mgw-import-row small{display:block;color:var(--muted,#6b7774)}.mgw-import-actions{display:flex;gap:6px;margin-top:8px}.mgw-import-actions button{border:0;border-radius:9px;padding:7px 9px}.mgw-import-pill{display:inline-block;margin-top:5px;padding:3px 7px;border-radius:999px;background:#e8f5f2;color:#0f766e;font-size:.72rem;font-weight:800}.mgw-import-warn{background:#fff7ed;color:#c2410c}@media(max-width:520px){.mgw-import-row{grid-template-columns:1fr}}';document.head.appendChild(s)}
 function suggest(merchant,hint=''){const learned=db.merchantRules[norm(merchant)];if(learned)return learned;if(typeof mgwSuggestCategory==='function'){const x=mgwSuggestCategory(merchant,hint);return {category:x.category||'',confidence:x.confidence||0}}return {category:'',confidence:0}}
 function duplicate(x){return db.expenses.some(e=>Math.abs(num(e.amount)-num(x.amount))<.005&&String(e.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&norm(e.vendor||e.merchant)===norm(x.merchant))}
-function launchParams(){try{const n=performance.getEntriesByType('navigation')[0]?.name;if(n)return new URL(n).searchParams}catch{}return new URLSearchParams(location.search)}
-function ingest(){const p=launchParams(),mode=p.get('mgw');if(!['applepay','applewallet','walletqueue'].includes(mode))return;const merchant=String(p.get('merchant')||'').trim(),amount=Number(String(p.get('amount')||'').replace(/[^0-9.-]/g,''));if(!merchant||!Number.isFinite(amount)||amount<=0)return;const d=new Date(),date=String(p.get('date')||d.toISOString().slice(0,10)).slice(0,10),time=String(p.get('time')||`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`).slice(0,5),sourceId=String(p.get('sourceId')||`${date}-${time}-${amount}-${norm(merchant)}`),s=suggest(merchant,String(p.get('hint')||''));if(db.importQueue.some(x=>x.sourceId===sourceId)||db.importHistory.some(x=>x.sourceId===sourceId))return;const item={id:uid('IMP'),source:'apple_wallet',sourceId,merchant,amount,date,time,currency:'SGD',category:s.category||'',confidence:s.confidence||0,status:'pending'};item.possibleDuplicate=duplicate(item);db.importQueue.push(item);persist();document.dispatchEvent(new CustomEvent('mgw:import-queue-changed',{detail:{added:1,source:'apple_wallet'}}));try{const m=document.querySelector('#modal');if(mode==='applepay'&&m?.open)m.close()}catch{}if(typeof toast==='function')toast('Wallet transaction queued for review')}
+function launchParams(){
+  try{
+    const captured=window.MGWLaunchCapture?.params?.();
+    if(captured&&[...captured.keys()].length)return captured;
+  }catch{}
+  try{
+    const n=performance.getEntriesByType('navigation')[0]?.name;
+    if(n)return new URL(n).searchParams;
+  }catch{}
+  return new URLSearchParams(location.search);
+}
+function firstParam(p,names){for(const name of names){const v=p.get(name);if(v!=null&&String(v).trim()!=='')return String(v).trim()}return''}
+function ingest(){
+  const p=launchParams(),mode=firstParam(p,['mgw','mode']).toLowerCase();
+  if(!['applepay','applewallet','walletqueue'].includes(mode))return false;
+  const merchant=firstParam(p,['merchant','vendor','name','Merchant','Vendor']);
+  const amount=Number(firstParam(p,['amount','total','Amount','Total']).replace(/[^0-9.-]/g,''));
+  if(!merchant||!Number.isFinite(amount)||amount<=0){toast?.('Apple Pay transaction could not be read');return false}
+  const d=new Date(),date=firstParam(p,['date','Date'])||d.toISOString().slice(0,10),time=firstParam(p,['time','Time'])||`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const card=firstParam(p,['card','paymentSource','pass','Card']);
+  const sourceId=firstParam(p,['sourceId','transactionId','id'])||`${date.slice(0,10)}-${time.slice(0,5)}-${amount}-${norm(merchant)}-${norm(card)}`;
+  const queued=db.importQueue.find(x=>x.sourceId===sourceId);
+  if(queued){window.MGWLaunchCapture?.clear?.();showPending();toast?.('Apple Pay transaction is already pending review');return true}
+  if(db.importHistory.some(x=>x.sourceId===sourceId)){window.MGWLaunchCapture?.clear?.();toast?.('Apple Pay transaction was already reviewed');return true}
+  const s=suggest(merchant,firstParam(p,['hint','Hint']));
+  const item={id:uid('IMP'),source:'apple_wallet',sourceId,merchant,amount,date:date.slice(0,10),time:time.slice(0,5),currency:firstParam(p,['currency','Currency'])||'SGD',card,paymentMethod:'Apple Pay',category:s.category||'',confidence:s.confidence||0,status:'pending'};
+  item.possibleDuplicate=duplicate(item);db.importQueue.push(item);persist();window.MGWLaunchCapture?.clear?.();
+  document.dispatchEvent(new CustomEvent('mgw:import-queue-changed',{detail:{added:1,source:'apple_wallet'}}));
+  try{const m=document.querySelector('#modal');if(mode==='applepay'&&m?.open)m.close()}catch{}
+  showPending();toast?.('Apple Pay transaction queued for review');return true
+}
 function options(selected=''){return '<option value="">Choose category</option>'+Object.keys(MGW.cats).map(c=>`<option ${c===selected?'selected':''}>${esc(c)}</option>`).join('')}
 function rowSignature(rows){return JSON.stringify(rows.map(x=>[x.id,x.merchant,num(x.amount),x.date,x.time,x.category,Boolean(x.possibleDuplicate)]))}
 function render(){
