@@ -115,17 +115,18 @@
     f.addEventListener('submit',e=>{
       e.preventDefault();if(window.MGWBootState&&!window.MGWBootState.dataReady){toast?.('Finance data is still loading. Try again in a moment.');return}if(f.dataset.mgwSaving==='1')return;
       const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();
+      let savedAccount=null;
       if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
       f.dataset.mgwSaving='1';const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
       try{
         if(accountType==='credit'){
-          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
+          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};savedAccount=o;['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
           if(source==='wallet'&&edit)db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);if(!edit||source==='wallet')db.creditAccounts.push(o);else Object.assign(a,o);
         }else{
-          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};
+          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};savedAccount=o;
           if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
         }
-        persist();if(!persistedAccount(o.id))throw new Error('Saved account was not found in local database');document.querySelector('#modal').close();toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');refreshAccountsUI();setTimeout(()=>{enhance();window.MGWWalletVisibility?.refresh?.()},80);
+        persist();if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');document.querySelector('#modal').close();toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');refreshAccountsUI();setTimeout(()=>{enhance();window.MGWWalletVisibility?.refresh?.()},80);
       }catch(err){console.error('MoneyGoWhere card save failed',err);f.dataset.mgwSaving='0';if(submit)submit.disabled=false;toast?.('Could not save card / wallet')}
     });
     body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Delete this card / wallet tracker? Existing expense transactions will not be deleted.'))return;try{if(source==='credit'){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}else db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);persist();document.querySelector('#modal').close();toast?.('Card / wallet tracker deleted');refreshAccountsUI()}catch(err){console.error('MoneyGoWhere card delete failed',err);toast?.('Could not delete card / wallet')}});
