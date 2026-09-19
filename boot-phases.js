@@ -33,13 +33,19 @@ Storage.prototype.setItem=function(key,value){
 };
 
 function updateLoadingScreen(phase,detail=''){
-  const screen=document.querySelector('#mgwLoadingScreen'),message=document.querySelector('#mgwLoadingMessage'),stage=document.querySelector('#mgwLoadingStage');
+  const screen=document.querySelector('#mgwLoadingScreen'),message=document.querySelector('#mgwLoadingMessage'),stage=document.querySelector('#mgwLoadingStage'),percent=document.querySelector('#mgwLoadingPercent'),bar=document.querySelector('#mgwLoadingProgress');
   if(!screen)return;
   if(phase!=='ready'){screen.hidden=false;screen.classList.remove('is-ready')}
-  const copy={ui:['Preparing interface…','Starting'],features:['Loading app features…','Features'],data:['Loading your finance data…','Data'],ready:['Ready','Complete'],error:['Could not finish loading','Startup issue']};
-  const text=copy[phase]||[detail||'Loading…','Working'];
-  if(message)message.textContent=detail||text[0];
-  if(stage)stage.textContent=text[1];
+  const d=String(detail||'').toLowerCase();
+  let step='ui',pct=8,label='Starting';
+  if(phase==='features'){step=d.includes('finishing')?'features':'accounts';pct=d.includes('finishing')?82:34;label=d.includes('finishing')?'Finalizing':'Accounts'}
+  if(phase==='data'){step=d.includes('render')||d.includes('final')?'dashboard':'data';pct=d.includes('final')?94:(d.includes('render')?68:48);label=d.includes('final')?'Finalizing':(d.includes('render')?'Dashboard':'Finance data')}
+  if(phase==='ready'){step='features';pct=100;label='Ready'}
+  const order=['ui','data','accounts','dashboard','features'],active=order.indexOf(step);
+  document.querySelectorAll('.mgw-loader-step').forEach((el,n)=>{el.classList.toggle('is-done',n<active||phase==='ready');el.classList.toggle('is-active',n===active&&phase!=='ready')});
+  const copy={ui:'Initializing MoneyGoWhere…',features:'Setting up app features…',data:'Loading your finance data…',ready:'Ready',error:'Could not finish loading'};
+  if(message)message.textContent=detail||copy[phase]||'Working…';
+  if(stage)stage.textContent=label;if(percent)percent.textContent=pct+'%';if(bar)bar.style.width=pct+'%';
   if(phase==='ready'){screen.classList.add('is-ready');setTimeout(()=>screen.hidden=true,260)}
   if(phase==='error')screen.classList.remove('is-ready');
 }
