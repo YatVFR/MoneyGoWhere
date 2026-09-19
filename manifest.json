@@ -9,7 +9,7 @@
   "theme_color": "#0f766e",
   "icons": [
     {
-      "src": "assets/icons/icon-192.jpg?v=stable51-emblem",
+      "src": "assets/icons/icon-192.jpg?v=1.5.5-dev.96",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any maskable"

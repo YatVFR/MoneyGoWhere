@@ -1,8 +1,8 @@
-// MoneyGoWhere DEV — consolidated dashboard accounting and mobile layout.
+// MoneyGoWhere v1.5.5-dev.57 — consolidated dashboard accounting and mobile layout.
 // One source of truth for commitments, planned balance, safe-to-spend and cycle budget.
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.39';
+const RELEASE='1.5.5-dev.57';
 const STEPS={monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12};
 const num=v=>Math.max(0,Number(v)||0);
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -112,12 +112,11 @@ function installStyles(){
 .mgw-budget-reserve-breakdown{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--muted,#6b7774)}.mgw-budget-reserve-breakdown b{color:var(--text,#18221f)}
 .mgw-advice{display:grid;gap:9px}.mgw-advice-item{padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.07)}.mgw-advice-item b{display:block;margin-bottom:3px}
 .mgw-commit-list{display:grid;gap:10px;margin-top:12px}.mgw-commit{border:1px solid var(--line,#dbe4e4);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}.mgw-commit small{display:block;opacity:.7}.mgw-commit-actions{display:flex;gap:6px;flex-wrap:wrap}.mgw-commit-actions button{border:0;border-radius:9px;padding:7px 9px}
+.mgw-advisor-priority{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent,#0f9d8a) 34%,var(--line,#dbe4e4));background:linear-gradient(145deg,color-mix(in srgb,var(--accent,#0f9d8a) 10%,white),var(--card,#fff) 55%);box-shadow:0 8px 24px rgba(20,70,65,.08)}
+.mgw-advisor-priority .card-head{margin-bottom:10px}.mgw-advisor-priority .card-head b{font-size:1.02rem}.mgw-advisor-priority .section-icon{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:10px;background:color-mix(in srgb,var(--accent,#0f9d8a) 14%,transparent)}
+.mgw-advisor-priority .mgw-advice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mgw-advisor-priority .mgw-advice-item{padding:11px;border-radius:12px;background:color-mix(in srgb,var(--card,#fff) 84%,var(--accent,#0f9d8a) 6%);border:1px solid var(--line,#dbe4e4)}.mgw-advisor-priority .mgw-advice-item b,.mgw-advisor-priority .mgw-advice-item span{display:block}.mgw-advisor-priority .mgw-advice-item span{margin-top:4px;font-size:.82rem;line-height:1.35;opacity:.78}.mgw-advisor-priority .mgw-muted{margin:9px 2px 0;font-size:.74rem;opacity:.62}
 @media(max-width:759px){
-  html,body{height:100%;overflow:hidden}
-  .app-shell{height:100dvh;min-height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;padding-bottom:0!important}
-  .topbar{position:relative;top:auto}
-  .app-shell>main{min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:18px;overscroll-behavior-y:contain}
-  .bottom-nav{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:100%!important;margin:0!important;border-radius:22px 22px 0 0!important;padding:8px 12px calc(8px + env(safe-area-inset-bottom))!important}
+  .mgw-advisor-priority .mgw-advice{grid-template-columns:1fr}
   .metric-grid.mgw-core-metrics{gap:8px}.metric-grid.mgw-core-metrics .metric{padding:12px 9px}.metric-grid.mgw-core-metrics .metric span{font-size:.72rem}.metric-grid.mgw-core-metrics .metric strong{font-size:1.06rem}
 }
 `;
@@ -126,6 +125,7 @@ function installStyles(){
 function ensureUi(){
   const dashboard=document.querySelector('#view-dashboard'),advisor=document.querySelector('#budgetAlertCard'),month=document.querySelector('.month-row');
   if(month&&!document.querySelector('#mgwCycleFocus')){const el=document.createElement('div');el.id='mgwCycleFocus';el.className='mgw-cycle-focus';month.insertAdjacentElement('afterend',el)}
+  if(dashboard&&advisor&&month){const anchor=document.querySelector('#mgwCycleFocus')||month;anchor.insertAdjacentElement('afterend',advisor);advisor.classList.add('mgw-advisor-priority')}
   if(dashboard&&advisor&&!document.querySelector('#mgwBudgetAfterCommitments')){const card=document.createElement('article');card.className='card mgw-budget-after';card.id='mgwBudgetAfterCommitments';advisor.insertAdjacentElement('afterend',card)}
   const settings=document.querySelector('#view-settings');
   if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}

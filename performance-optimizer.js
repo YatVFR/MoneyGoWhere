@@ -1,8 +1,8 @@
-// MoneyGoWhere v1.5.5-dev.51 — lightweight formatter and render optimization.
-// Module loading and render scheduling are owned by historical-data.js to avoid duplicate loaders and render races.
+// MoneyGoWhere — lightweight formatter and render optimization.
+// Module loading and render scheduling are owned by historical-data.js.
 (()=>{
   'use strict';
-  const DEV_RELEASE='1.5.5-dev.51';
+  const release=window.MGW_RELEASE?.appVersion||'dev';
   if(typeof money==='function'&&!money.__mgwOptimized){
     const formatters=new Map();
     const optimized=function(v){
@@ -29,5 +29,5 @@
     optimized.__mgwDashboardBreakdown=Boolean(prior.__mgwDashboardBreakdown);
     renderCats=optimized;
   }
-  window.MGWPerformance={version:DEV_RELEASE};
+  window.MGWPerformance={version:release};
 })();

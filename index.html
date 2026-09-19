@@ -5,13 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="assets/icons/icon-192.jpg?v=stable51-emblem" type="image/jpeg" />
-  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.jpg?v=stable51-emblem" />
-  <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.98" />
+    <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.98" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.98" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.98" />
+      <title>MoneyGoWhere</title>
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.98" />
 </head>
 <body>
+  <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
+    <div class="mgw-loading-card mgw-loader-a">
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/emblem.jpg?v=1.5.5-dev.98" alt="" /></div>
+      <h2>Money<span>Go</span>Where</h2>
+      <p class="mgw-loader-tagline">SPEND SMARTER · LIVE BETTER</p>
+      <p class="mgw-loader-journey">Preparing your financial journey…</p>
+      <div class="mgw-loader-steps" id="mgwLoaderSteps">
+        <div class="mgw-loader-step" data-step="ui"><i>⚙️</i><div><b>Initializing app</b><small>Preparing the interface</small></div></div>
+        <div class="mgw-loader-step" data-step="data"><i>🗄️</i><div><b>Loading finance data</b><small>Reading your local database</small></div></div>
+        <div class="mgw-loader-step" data-step="accounts"><i>👛</i><div><b>Setting up accounts</b><small>Cards, wallets & PayLater</small></div></div>
+        <div class="mgw-loader-step" data-step="dashboard"><i>📊</i><div><b>Preparing dashboard</b><small>Summarizing your finances</small></div></div>
+        <div class="mgw-loader-step" data-step="features"><i>✨</i><div><b>Finalizing features</b><small>Almost there…</small></div></div>
+      </div>
+      <p id="mgwLoadingMessage" class="mgw-loader-live">Preparing interface…</p>
+      <div class="mgw-loading-track" aria-hidden="true"><i id="mgwLoadingProgress"></i></div>
+      <div class="mgw-loader-progress-row"><span id="mgwLoadingStage">Starting</span><b id="mgwLoadingPercent">8%</b></div>
+      <div class="mgw-loader-tip" id="mgwLoadingTip">💡 <span>Quick tip: Review small daily expenses—they add up quickly.</span></div>
+      <div class="mgw-loader-trust"><span>🛡️ PRIVATE</span><span>⚡ FAST</span><span>🔒 SECURE</span></div>
+    </div>
+  </div>
   <div class="app-shell">
     <header class="topbar">
       <div>
@@ -21,7 +42,7 @@
       <div class="top-actions">
         <button class="refresh-btn" id="refreshBtn" aria-label="Check for app updates" title="Check for updates">
           <span class="refresh-icon">↻</span>
-          <span class="refresh-copy"><b id="updateStatus">Latest</b><small id="updateSub">Tap to check</small></span>
+          <span class="refresh-copy"><b id="updateStatus">Ready</b><small id="updateSub">Loading data…</small></span>
           <span id="updateDot" class="update-dot hidden"></span>
         </button>
         <button class="icon-btn" id="alertBtn" aria-label="Budget alerts">🔔<span id="alertDot" class="alert-dot hidden"></span></button>
@@ -35,30 +56,25 @@
           <button class="month-chip" id="monthLabel"></button>
           <button class="ghost-btn" id="nextMonth">›</button>
         </div>
-
         <div class="metric-grid">
-          <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">No comparison yet</small></article>
-          <article class="card metric"><span>Spent</span><strong id="spentTotal">$0.00</strong><small id="spentDelta">No comparison yet</small></article>
+          <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">Loading…</small></article>
+          <article class="card metric"><span>Spent</span><strong id="spentTotal">$0.00</strong><small id="spentDelta">Loading…</small></article>
           <article class="card metric"><span>Remaining</span><strong id="remainingTotal">$0.00</strong><small>Income minus tracked spending</small></article>
-          <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">No budget set</small></article>
+          <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">Loading…</small></article>
         </div>
-
         <article class="card budget-card">
           <div class="card-head"><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><button class="text-btn" data-open="budget">Edit</button></div>
           <div class="progress"><div id="budgetBar"></div></div>
-          <div class="budget-copy"><span id="budgetCopy">Set a monthly budget to start monitoring.</span><strong id="budgetRemaining"></strong></div>
+          <div class="budget-copy"><span id="budgetCopy">Loading budget data…</span><strong id="budgetRemaining"></strong></div>
         </article>
-
         <article class="card" id="budgetAlertCard">
           <div class="card-head"><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div></div>
-          <p id="budgetAlertText">Add a few expenses and MoneyGoWhere will start surfacing useful insights here.</p>
+          <p id="budgetAlertText">Loading your finance data…</p>
         </article>
-
         <article class="card">
           <div class="card-head"><div><span class="section-icon">🏆</span><b>Top Spending</b></div><button class="text-btn" data-nav="insights">View details</button></div>
-          <div id="topCategories" class="category-list empty-state">No expenses for this month yet.</div>
+          <div id="topCategories" class="category-list empty-state">Loading…</div>
         </article>
-
         <article class="card">
           <div class="card-head"><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div></div>
           <div id="trendBars" class="trend-bars"></div>
@@ -72,10 +88,9 @@
           <button class="action-card" data-open="income"><span>💰</span><b>Add Income</b><small>Salary, bonus, one-off</small></button>
           <button class="action-card" data-open="budget"><span>🎯</span><b>Set Budget</b><small>Monthly & category limits</small></button>
         </div>
-
         <article class="card">
           <div class="card-head"><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div></div>
-          <div id="recentTransactions" class="transaction-list empty-state">Nothing recorded yet.</div>
+          <div id="recentTransactions" class="transaction-list empty-state">Loading…</div>
         </article>
       </section>
 
@@ -119,139 +134,64 @@
 
   <dialog id="modal">
     <div class="modal-shell">
-      <div class="modal-head"><div><p class="eyebrow">MoneyGoWhere</p><h2 id="modalTitle"></h2></div><button class="icon-btn" id="closeModal">✕</button></div>
+      <div class="modal-head"><div><p class="eyebrow">MoneyGoWhere</p><h2 id="modalTitle"></h2></div><button type="button" class="icon-btn" id="closeModal">✕</button></div>
       <div id="modalBody"></div>
     </div>
   </dialog>
-
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
   <script>
     (() => {
-      const btn = document.getElementById('refreshBtn');
-      const status = document.getElementById('updateStatus');
-      const sub = document.getElementById('updateSub');
-      const dot = document.getElementById('updateDot');
-      const icon = btn.querySelector('.refresh-icon');
-      let reg = null;
-      let updateReady = false;
-      let busy = false;
-      let reloading = false;
-
-      const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-      const setState = (label, detail, available=false, spinning=false) => {
-        status.textContent = label;
-        sub.textContent = detail;
-        dot.classList.toggle('hidden', !available);
-        btn.classList.toggle('update-available', available);
-        btn.classList.toggle('is-checking', spinning);
-        btn.setAttribute('aria-busy', spinning ? 'true' : 'false');
-      };
-      const progress = async (step, label, detail) => {
-        setState(`${step}/3 ${label}`, detail, false, true);
-        await wait(280);
-      };
-      const detectWaiting = registration => {
-        if (registration?.waiting) {
-          updateReady = true;
-          setState('Update available', 'Tap to install', true, false);
-          return true;
-        }
-        return false;
-      };
-      const watchInstalling = worker => {
-        if (!worker) return;
-        worker.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-            updateReady = true;
-            busy = false;
-            setState('Update available', 'Tap to install', true, false);
+      const LAUNCH_KEY='mgw-applepay-launch-v1';
+      const parseLaunch=url=>{
+        try{
+          const u=new URL(url,location.href),p=new URLSearchParams(u.search);
+          if(u.hash&&u.hash.includes('?')){
+            const hp=new URLSearchParams(u.hash.slice(u.hash.indexOf('?')+1));
+            hp.forEach((v,k)=>{if(!p.has(k))p.set(k,v)});
           }
-        });
+          return p;
+        }catch{return new URLSearchParams()}
       };
-
-      async function checkForUpdates(manual=false) {
-        if (busy) return;
-        if (!('serviceWorker' in navigator)) {
-          setState('Refresh', 'Service worker unavailable');
-          return;
-        }
-        busy = true;
-        try {
-          if (manual) await progress(1, 'Checking', 'Contacting app service');
-          reg = reg || await navigator.serviceWorker.getRegistration();
-          if (!reg) reg = await navigator.serviceWorker.register('./service-worker.js');
-
-          if (detectWaiting(reg)) { busy = false; return; }
-          if (manual) await progress(2, 'Comparing', 'Checking latest files');
-
-          await reg.update();
-          if (detectWaiting(reg)) { busy = false; return; }
-
-          if (reg.installing) {
-            watchInstalling(reg.installing);
-            if (manual) await progress(3, 'Preparing', 'Downloading update');
-            busy = false;
-            return;
+      const captureLaunch=()=>{
+        let saved='';
+        try{saved=sessionStorage.getItem(LAUNCH_KEY)||''}catch{}
+        const urls=[location.href,performance.getEntriesByType('navigation')[0]?.name].filter(Boolean);
+        for(const url of urls){
+          const p=parseLaunch(url),mode=String(p.get('mgw')||p.get('mode')||'').toLowerCase();
+          const hasTxn=Boolean(p.get('merchant')||p.get('vendor')||p.get('amount')||p.get('total'));
+          if(['applepay','applewallet','walletqueue'].includes(mode)||hasTxn){
+            saved=p.toString();
+            try{sessionStorage.setItem(LAUNCH_KEY,saved)}catch{}
+            break;
           }
-
-          if (manual) {
-            await progress(3, 'Complete', 'No new update found');
-            setState('Latest', 'App is up to date');
-          }
-        } catch (e) {
-          setState('Refresh', 'Update check failed');
-        } finally {
-          busy = false;
         }
-      }
-
-      async function applyUpdate() {
-        if (!reg?.waiting || busy) return;
-        busy = true;
-        try {
-          await progress(1, 'Installing', 'Applying new version');
-          reg.waiting.postMessage({type:'SKIP_WAITING'});
-          await progress(2, 'Activating', 'Switching to latest files');
-          setState('3/3 Reloading', 'Opening latest version', false, true);
-          reloading = true;
-          setTimeout(() => location.reload(), 700);
-        } catch (e) {
-          busy = false;
-          setState('Refresh', 'Update install failed');
-        }
-      }
-
-      btn.addEventListener('click', async () => {
-        if (updateReady && reg?.waiting) return applyUpdate();
-        return checkForUpdates(true);
-      });
-
-      navigator.serviceWorker?.addEventListener('controllerchange', () => {
-        if (!reloading) {
-          reloading = true;
-          setState('3/3 Reloading', 'Opening latest version', false, true);
-          setTimeout(() => location.reload(), 450);
-        }
-      });
-
-      window.addEventListener('load', async () => {
-        try {
-          reg = await navigator.serviceWorker.getRegistration();
-          if (reg?.waiting) detectWaiting(reg);
-          else {
-            await reg?.update();
-            if (reg?.waiting) detectWaiting(reg);
-            else if (reg?.installing) watchInstalling(reg.installing);
-          }
-        } catch (_) {}
-      });
+        window.MGWLaunchCapture={
+          params:()=>new URLSearchParams(saved||''),
+          clear:()=>{saved='';try{sessionStorage.removeItem(LAUNCH_KEY)}catch{}}
+        };
+      };
+      captureLaunch();
+      const BUILD='1.5.5-dev.98';
+      window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:14,cacheVersion:BUILD.replace(/\./g,'-')});
+      const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
+      let reg=null,updateReady=false,busy=false,reloading=false;
+      window.MGWPageBuild=BUILD;
+      const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+      const setState=(label,detail,available=false,spinning=false)=>{status.textContent=label;sub.textContent=detail;dot.classList.toggle('hidden',!available);btn.classList.toggle('update-available',available);btn.classList.toggle('is-checking',spinning);btn.setAttribute('aria-busy',spinning?'true':'false')};
+      const progress=async(step,label,detail)=>{setState(`${step}/3 ${label}`,detail,false,true);await wait(280)};
+      const registerWorker=async()=>{const workerUrl=`./service-worker.js?v=${encodeURIComponent(BUILD)}`,scope=new URL('./',location.href).pathname;try{return await navigator.serviceWorker.register(workerUrl,{scope,updateViaCache:'none'})}catch(firstError){console.warn('MoneyGoWhere service worker cache option unavailable; using browser default',firstError);return navigator.serviceWorker.register(workerUrl,{scope})}};
+      const detectWaiting=registration=>{if(registration?.waiting){updateReady=true;setState('Update available','Tap to install',true,false);return true}return false};
+      const watchInstalling=worker=>{if(!worker)return;worker.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller){busy=false;setTimeout(()=>{if(!detectWaiting(reg))setState('Update ready','Waiting for activation',true,false)},0)}if(worker.state==='activated'){updateReady=false;busy=false;setState('Latest',`v${BUILD} loaded`)}})};
+      async function checkForUpdates(manual=false){if(busy)return;if(!('serviceWorker'in navigator)){setState('Refresh','Service worker unavailable');return}busy=true;try{if(manual)await progress(1,'Checking','Contacting app service');reg=await registerWorker();if(detectWaiting(reg)){busy=false;return}if(manual)await progress(2,'Comparing','Checking latest files');await reg.update();if(detectWaiting(reg)){busy=false;return}if(reg.installing){watchInstalling(reg.installing);if(manual)await progress(3,'Preparing','Downloading update');busy=false;return}if(manual){await progress(3,'Complete','No new update found');setState('Latest',`v${BUILD} loaded`)}}catch(e){console.error('MoneyGoWhere update check failed',e);setState('Refresh','Update check failed')}finally{busy=false}}
+      async function applyUpdate(){if(!reg?.waiting||busy)return;busy=true;try{await progress(1,'Installing','Applying new version');reg.waiting.postMessage({type:'SKIP_WAITING'});await progress(2,'Activating','Switching to latest files');setState('3/3 Reloading','Opening latest version',false,true);reloading=true;setTimeout(()=>location.reload(),700)}catch(e){busy=false;setState('Refresh','Update install failed')}}
+      btn.addEventListener('click',async()=>updateReady&&reg?.waiting?applyUpdate():checkForUpdates(true));
+      navigator.serviceWorker?.addEventListener('controllerchange',()=>{if(!reloading){reloading=true;setState('3/3 Reloading','Opening latest version',false,true);setTimeout(()=>location.reload(),450)}});
+      window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="app.js"></script>
-  <script src="finance-fix.js"></script>
-  <script src="payment-form-core.js?v=1.5.5-dev.49"></script>
-  <script src="historical-data.js"></script>
-  <script src="cards-wallets.js"></script>
+  <script src="data-stability.js?v=1.5.5-dev.98"></script>
+  <script src="boot-phases.js?v=1.5.5-dev.98"></script>
+  <script src="app.js?v=1.5.5-dev.98"></script>
 </body>
 </html>

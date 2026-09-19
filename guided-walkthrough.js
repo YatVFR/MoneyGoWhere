@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — first-launch helping bubbles
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.51';let step=0,root=null,activeTarget=null;
+const RELEASE='1.5.5-dev.52';let step=0,root=null,activeTarget=null;
 const steps=[
  {sel:'#mgwCycleFocus',title:'Your current cycle',text:'MoneyGoWhere now starts with the active pay cycle, so the numbers you see belong to one clear period.'},
  {sel:'.metric-grid',title:'Three numbers first',text:'Income, Spent and Left are the main figures. Extra detail stays out of the way until you need it.'},
@@ -23,7 +23,8 @@ function maybeStart(){
   ensure();installReplay();if(db.settings.walkthrough.completed)return;
   const wait=()=>{
     const onboarding=document.querySelector('#mgwOnboarding');
-    const startupPending=window.MGWStartupSyncDone!==true||window.MGWStartupImportDone!==true||window.MGWStartupRecurringDone!==true;
+    // Optional feature prompts must never block the application from launching.
+    const startupPending=window.MGWStartupSyncDone!==true||window.MGWStartupImportDone!==true;
     const blocking=[...document.querySelectorAll('dialog[open]')].length>0;
     if(onboarding||startupPending||blocking){setTimeout(wait,250);return}
     if(typeof nav==='function')nav('dashboard');setTimeout(()=>show(0),350);
