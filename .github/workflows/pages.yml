@@ -43,24 +43,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if command -v magick >/dev/null 2>&1; then
-            IM=magick
-          elif command -v convert >/dev/null 2>&1; then
-            IM=convert
-          else
-            sudo apt-get update -y
-            sudo apt-get install -y imagemagick
-            IM=convert
-          fi
+          sudo apt-get update -y
+          sudo apt-get install -y librsvg2-bin imagemagick
           SRC="uat-src/assets/icons/icon.svg"
           test -s "$SRC"
           mkdir -p uat-src/assets/icons
-          "$IM" "$SRC" -resize 180x180! -strip uat-src/assets/icons/apple-touch-icon.png
-          "$IM" "$SRC" -resize 192x192! -strip uat-src/assets/icons/icon-192.png
-          "$IM" "$SRC" -resize 256x256! -strip uat-src/assets/icons/icon-256.png
-          "$IM" "$SRC" -resize 384x384! -strip uat-src/assets/icons/icon-384.png
-          "$IM" "$SRC" -resize 512x512! -strip uat-src/assets/icons/icon-512.png
-          "$IM" -size 512x512 xc:'#011a22' \( "$SRC" -resize 380x380! \) -gravity center -composite -strip uat-src/assets/icons/icon-512-maskable.png
+          rsvg-convert -w 180 -h 180 "$SRC" -o uat-src/assets/icons/apple-touch-icon.png
+          rsvg-convert -w 192 -h 192 "$SRC" -o uat-src/assets/icons/icon-192.png
+          rsvg-convert -w 256 -h 256 "$SRC" -o uat-src/assets/icons/icon-256.png
+          rsvg-convert -w 384 -h 384 "$SRC" -o uat-src/assets/icons/icon-384.png
+          rsvg-convert -w 512 -h 512 "$SRC" -o uat-src/assets/icons/icon-512.png
+          convert -size 512x512 xc:'#011a22' \
+            \( uat-src/assets/icons/icon-512.png -resize 380x380! \) \
+            -gravity center -composite -strip uat-src/assets/icons/icon-512-maskable.png
           identify uat-src/assets/icons/apple-touch-icon.png \
                    uat-src/assets/icons/icon-192.png \
                    uat-src/assets/icons/icon-256.png \
