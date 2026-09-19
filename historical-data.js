@@ -163,6 +163,27 @@ async function mgwWaitForInteractionIdle(){
     await new Promise(resolve=>setTimeout(resolve,250));
   }
 }
+const MGW_IMPORT_MODULES=[
+  './ocr-enhance.js',
+  './ocr-runtime.js',
+  './icloud-folder-scanner.js',
+  './startup-import-assistant.js',
+  './receipt-match-hint.js'
+];
+let mgwImportPromise=null;
+async function mgwLoadImportModules(){
+  if(mgwImportPromise)return mgwImportPromise;
+  mgwImportPromise=(async()=>{
+    mgwPreloadModules(MGW_IMPORT_MODULES);
+    for(const src of MGW_IMPORT_MODULES){
+      await mgwLoadModule(src);
+      await new Promise(resolve=>setTimeout(resolve,16));
+    }
+    document.dispatchEvent(new CustomEvent('mgw:import-features-ready'));
+    return MGW_RUNTIME_HEALTH;
+  })();
+  return mgwImportPromise;
+}
 const MGW_SETTINGS_MODULES=[
   './recurring-schedules.js',
   './recurring-bills.js',
@@ -221,6 +242,7 @@ function mgwBootRuntime(){
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
   window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadSettingsFeatures=()=>mgwLoadSettingsModules().catch(err=>{console.error('MoneyGoWhere settings feature loading failed',err);return MGW_RUNTIME_HEALTH});
+  window.MGWLoadImportFeatures=()=>mgwLoadImportModules().catch(err=>{console.error('MoneyGoWhere import feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
