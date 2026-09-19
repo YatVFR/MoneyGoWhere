@@ -184,6 +184,15 @@ async function mgwLoadImportModules(){
   })();
   return mgwImportPromise;
 }
+const MGW_DASHBOARD_MODULES=[
+  './dashboard-breakdown.js'
+];
+let mgwDashboardPromise=null;
+async function mgwLoadDashboardModules(){
+  if(mgwDashboardPromise)return mgwDashboardPromise;
+  mgwDashboardPromise=(async()=>{for(const src of MGW_DASHBOARD_MODULES)await mgwLoadModule(src);return MGW_RUNTIME_HEALTH})();
+  return mgwDashboardPromise;
+}
 const MGW_SETTINGS_MODULES=[
   './recurring-schedules.js',
   './recurring-bills.js',
@@ -241,6 +250,7 @@ function mgwBootRuntime(){
   const exportBtn=document.querySelector('#exportBtn');
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
   window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
+  window.MGWLoadDashboardFeatures=()=>mgwLoadDashboardModules().catch(err=>{console.error('MoneyGoWhere dashboard feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadSettingsFeatures=()=>mgwLoadSettingsModules().catch(err=>{console.error('MoneyGoWhere settings feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadImportFeatures=()=>mgwLoadImportModules().catch(err=>{console.error('MoneyGoWhere import feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
