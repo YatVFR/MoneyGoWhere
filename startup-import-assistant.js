@@ -115,8 +115,8 @@ async function processReceipts(files){
   }finally{processing=false}
 }
 function openApplePay(){
-  const dir=document.querySelector('#mgwApplePayFolderInput');if(dir){closeOnCommittedSelection(dir);dir.click();return}
-  const files=document.querySelector('#mgwApplePayInboxInput');if(files){closeOnCommittedSelection(files);files.click();return}
+  const dir=document.querySelector('#mgwApplePayFolderInput');if(dir){closePrompt();dir.click();return}
+  const files=document.querySelector('#mgwApplePayInboxInput');if(files){closePrompt();files.click();return}
   if(typeof toast==='function')toast('Apple Pay importer is still loading');
 }
 function showPrompt({manual=false}={}){
@@ -124,7 +124,7 @@ function showPrompt({manual=false}={}){
   if(!manual&&(!db.settings.startupImport.enabled||shownThisLoad)){markStartupImportDone();return}
   let d=document.querySelector('#mgwStartupImportDialog');if(!d){d=document.createElement('dialog');d.id='mgwStartupImportDialog';d.className='mgw-startup-import';document.body.appendChild(d)}
   d.innerHTML=`<div class="mgw-startup-import-shell"><div class="eyebrow">Quick Import</div><h2>Anything to add?</h2><p>Add several receipt images for calibrated local OCR, scan your MGW Apple Pay folder, or continue without importing.</p><div class="mgw-startup-import-actions"><button class="secondary-btn" data-receipts><b>🧾 Add Receipt Images</b><small>Select multiple receipt photos. MGW checks orientation, totals, dates, merchant and currency before review.</small></button><button class="secondary-btn" data-apple><b>🍎 Scan Apple Pay Folder</b><small>Check MGW JSON/TXT transaction files and queue new transactions.</small></button><button class="primary-btn" data-done><b>Continue to MoneyGoWhere</b></button></div><div class="mgw-startup-import-status" id="mgwStartupImportStatus"></div></div>`;
-  d.querySelector('[data-receipts]').addEventListener('click',()=>makeReceiptInput().click());d.querySelector('[data-apple]').addEventListener('click',openApplePay);d.querySelector('[data-done]').addEventListener('click',()=>d.close());
+  d.querySelector('[data-receipts]').addEventListener('click',()=>{closePrompt();makeReceiptInput().click()});d.querySelector('[data-apple]').addEventListener('click',openApplePay);d.querySelector('[data-done]').addEventListener('click',()=>d.close());
   if(!manual&&!d.dataset.mgwStartupSequenceBound){d.dataset.mgwStartupSequenceBound='1';d.addEventListener('close',markStartupImportDone,{once:true})}
   shownThisLoad=true;
   try{d.showModal()}catch{if(!manual)markStartupImportDone()}
