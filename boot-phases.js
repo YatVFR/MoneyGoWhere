@@ -145,30 +145,32 @@ async function boot(){
   await nextPaint();
   await nextPaint();
   perfMark('firstStableRender');
-  // Keep the launch gate up while deferred modules attach their render hooks.
-  // This prevents users seeing cards/values mutate after the loading screen disappears.
-  setPhase('features','Finishing dashboard…');
+  // The launch gate covers only the essential, user-visible dashboard.
+  // Optional modules must never block first use of the app.
+  setPhase('features','Finalizing essential features…');
+  setPhase('data','Finalizing dashboard…');
+  if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
+  await nextPaint();
+  await nextPaint();
+  perfMark('finalStableRender');
+  setPhase('ready','Ready');perfMark('appReady');
+  document.dispatchEvent(new CustomEvent('mgw:app-ready'));
+  if(sub)sub.textContent=`v${RELEASE} loaded`;
+  console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
+  // Start optional capabilities only after the loading gate has closed.
   const runDeferred=async()=>{
     try{
+      await yieldBrowser(350);
       let guard=0;
-      while(window.MGWIsInteractionBusy?.()&&guard++<120)await yieldBrowser(250);
+      while(window.MGWIsInteractionBusy?.()&&guard++<24)await yieldBrowser(250);
       await window.MGWLoadDeferredFeatures?.();
       state.deferredReady=true;
       state.timings.deferred=performance.now()-state.timings.started;
       console.info('MoneyGoWhere deferred features ready',JSON.parse(JSON.stringify(state.timings)));
     }catch(err){console.error('MoneyGoWhere deferred feature phase failed',err)}
   };
-  await runDeferred();
-  setPhase('data','Finalizing dashboard…');
-  if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
-  await nextPaint();
-  await nextPaint();
-  state.deferredReady=true;
-  perfMark('finalStableRender');
-  setPhase('ready','Ready');perfMark('appReady');
-  document.dispatchEvent(new CustomEvent('mgw:app-ready'));
-  if(sub)sub.textContent=`v${RELEASE} loaded`;
-  console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
+  if('requestIdleCallback'in window)requestIdleCallback(()=>runDeferred(),{timeout:1800});
+  else setTimeout(runDeferred,500);
 }
 const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
