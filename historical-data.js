@@ -169,11 +169,13 @@ async function mgwLoadDeferredModules(){
   for(const src of MGW_DEFERRED_MODULES){
     await mgwWaitForInteractionIdle();
     await mgwLoadModule(src);
-    await new Promise(resolve=>setTimeout(resolve,120));
+    // Yield briefly so Safari can paint/respond between optional modules.
+    await new Promise(resolve=>setTimeout(resolve,24));
   }
   MGW_RUNTIME_HEALTH.deferredReady=true;
   MGW_RUNTIME_HEALTH.ready=true;
-  if(window.MGWBootState?.dataReady){if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll()}
+  // Do not force a global dashboard render here. Each optional module owns its
+  // feature UI; a late renderAll caused visible post-launch dashboard churn.
   if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
   document.dispatchEvent(new CustomEvent('mgw:deferred-features-ready'));
   return MGW_RUNTIME_HEALTH;
