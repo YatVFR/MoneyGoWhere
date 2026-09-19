@@ -26,7 +26,10 @@
       #mgwAccountsDashboard .mgw-account-summary .mgw-chevron{display:inline-block;transition:transform .18s ease}
       #mgwAccountsDashboard .mgw-account-summary[aria-expanded="true"] .mgw-chevron{transform:rotate(90deg)}
       #mgwAccountsDashboard .mgw-account-body{padding:0 14px 14px}
-      #mgwAccountsDashboard .mgw-collapse-body{padding-top:12px}
+      #mgwAccountsDashboard .mgw-collapse-body{padding-top:12px;overflow:visible}
+      #mgwAccountsDashboard .mgw-account-grid{max-height:min(62dvh,620px);overflow-y:auto;overflow-x:hidden;padding:2px 2px 24px;scroll-padding-bottom:24px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+      #mgwAccountsDashboard .mgw-account-grid>.mgw-account:last-child{margin-bottom:4px}
+      @media(max-width:759px){#mgwAccountsDashboard .mgw-account-grid{max-height:min(56dvh,520px)}}
     `;
     document.head.appendChild(style);
   }

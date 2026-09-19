@@ -41,8 +41,8 @@ function mgwInstallRuntimeBadge(){
   const header=document.querySelector('.topbar > div:first-child');if(!header)return;
   let badge=document.querySelector('#mgwRuntimeVersionBadge');
   if(!badge){badge=document.createElement('span');badge.id='mgwRuntimeVersionBadge';badge.className='app-version-badge';header.appendChild(badge)}
-  badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · DEV`;
-  badge.title=`Development · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion} · Cache ${MGW_RUNTIME_RELEASE.cacheVersion}`;
+  badge.textContent=`v${MGW_RUNTIME_RELEASE.appVersion} · UAT`;
+  badge.title=`UAT · App ${MGW_RUNTIME_RELEASE.appVersion} · Schema ${MGW_RUNTIME_RELEASE.schemaVersion} · Data ${MGW_RUNTIME_RELEASE.dataVersion} · Cache ${MGW_RUNTIME_RELEASE.cacheVersion}`;
 }
 if(typeof monthExpenses==='function')monthExpenses=d=>db.expenses.filter(x=>mgwInCycle(x,d));
 if(typeof monthIncome==='function')monthIncome=d=>db.income.filter(x=>mgwInCycle(x,d));

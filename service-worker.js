@@ -1,5 +1,5 @@
 const APP_VERSION='1.5.5-dev.51';
-const CACHE='moneygowhere-uat-dev51-pwa-icon-v4';
+const CACHE='moneygowhere-uat-dev51-pwa-layout-v8';
 const CORE=[
   './','./index.html','./style.css','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
@@ -7,7 +7,7 @@ const CORE=[
   './dashboard-breakdown.js','./salary-trends.js','./onboarding-dev.js','./recurring-onboarding.js','./wallet-import-queue.js','./apple-pay-inbox.js',
   './history-collapse.js','./salary-collapse.js','./guided-walkthrough.js','./transaction-editor.js','./currency-ui.js',
   './icloud-folder-scanner.js','./startup-import-assistant.js','./receipt-match-hint.js','./payment-source-linker.js','./ui-db-scan-button.js',
-  './dashboard-core.js','./performance-optimizer.js','./version-badge-authority.js','./manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192-v4.jpg','./assets/icons/apple-touch-icon-v4.jpg'
+  './dashboard-core.js','./performance-optimizer.js','./version-badge-authority.js','./manifest.json','./assets/icons/icon.svg','./assets/icons/apple-touch-icon.png','./assets/icons/icon-192.png','./assets/icons/icon-256.png','./assets/icons/icon-384.png','./assets/icons/icon-512.png','./assets/icons/icon-512-maskable.png'
 ];
 const CORE_URLS=new Set(CORE.map(x=>new URL(x,self.location.href).href));
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)))});
