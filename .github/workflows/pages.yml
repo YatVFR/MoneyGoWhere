@@ -43,18 +43,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y librsvg2-bin imagemagick
-          SRC="uat-src/assets/icons/icon.svg"
+          if ! command -v convert >/dev/null 2>&1; then
+            sudo apt-get update -y
+            sudo apt-get install -y imagemagick
+          fi
+          SRC="uat-src/assets/icons/icon-192.png"
           test -s "$SRC"
+          cp "$SRC" /tmp/mgw-uat-icon-source.png
           mkdir -p uat-src/assets/icons
-          rsvg-convert -w 180 -h 180 "$SRC" -o uat-src/assets/icons/apple-touch-icon.png
-          rsvg-convert -w 192 -h 192 "$SRC" -o uat-src/assets/icons/icon-192.png
-          rsvg-convert -w 256 -h 256 "$SRC" -o uat-src/assets/icons/icon-256.png
-          rsvg-convert -w 384 -h 384 "$SRC" -o uat-src/assets/icons/icon-384.png
-          rsvg-convert -w 512 -h 512 "$SRC" -o uat-src/assets/icons/icon-512.png
+          convert /tmp/mgw-uat-icon-source.png -resize 180x180! -strip uat-src/assets/icons/apple-touch-icon.png
+          convert /tmp/mgw-uat-icon-source.png -resize 192x192! -strip uat-src/assets/icons/icon-192.png
+          convert /tmp/mgw-uat-icon-source.png -resize 256x256! -strip uat-src/assets/icons/icon-256.png
+          convert /tmp/mgw-uat-icon-source.png -resize 384x384! -strip uat-src/assets/icons/icon-384.png
+          convert /tmp/mgw-uat-icon-source.png -resize 512x512! -strip uat-src/assets/icons/icon-512.png
           convert -size 512x512 xc:'#011a22' \
-            \( uat-src/assets/icons/icon-512.png -resize 380x380! \) \
+            \( /tmp/mgw-uat-icon-source.png -resize 380x380! \) \
             -gravity center -composite -strip uat-src/assets/icons/icon-512-maskable.png
           identify uat-src/assets/icons/apple-touch-icon.png \
                    uat-src/assets/icons/icon-192.png \
@@ -62,6 +65,15 @@ jobs:
                    uat-src/assets/icons/icon-384.png \
                    uat-src/assets/icons/icon-512.png \
                    uat-src/assets/icons/icon-512-maskable.png
+          for icon in \
+            uat-src/assets/icons/apple-touch-icon.png \
+            uat-src/assets/icons/icon-192.png \
+            uat-src/assets/icons/icon-256.png \
+            uat-src/assets/icons/icon-384.png \
+            uat-src/assets/icons/icon-512.png \
+            uat-src/assets/icons/icon-512-maskable.png; do
+            test "$(stat -c%s "$icon")" -gt 4000 || { echo "Generated icon is unexpectedly small/corrupt: $icon"; exit 1; }
+          done
 
       - name: Assemble shared Pages site
         run: |
