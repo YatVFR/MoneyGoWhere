@@ -4,9 +4,7 @@
 
 MoneyGoWhere (MGW) is a clean, mobile-first, local-first personal finance PWA for tracking spending, income, budgets, commitments, debt and recurring financial obligations.
 
-## Release Status
-
-The active build is shown in the MoneyGoWhere app header and is derived from the branch build identifier at runtime. Production, UAT and DEV promotion history remains visible in GitHub rather than being duplicated as a manually maintained "current version" in this document.
+## Current Release — v1.5.3
 
 MoneyGoWhere is designed around one goal:
 
@@ -128,9 +126,9 @@ Track:
 - One-off payments
 - Salary trends and bonus history
 
-### Recurring Schedules
+### Recurring Schedules — v1.5.3
 
-MoneyGoWhere has a local recurring-schedule engine for income and commitments.
+MoneyGoWhere now has a local recurring-schedule engine for income and commitments.
 
 Supported frequencies:
 
@@ -145,6 +143,8 @@ A schedule can have a start month, optional end month, or continue without an en
 The engine stores **one recurrence rule** rather than creating duplicate records for every future month. Only the selected period is evaluated, reducing database growth and unnecessary processing.
 
 Recurring net income and recurring commitments are included in Budget After Commitments calculations when their schedule applies to the selected period.
+
+> v1.5.3 currently provides the recurrence engine and schedule summary. Full Add/Edit recurring-schedule forms are planned as a follow-up UI enhancement.
 
 ### Monthly Commitments
 
@@ -244,11 +244,11 @@ Personal finance records are not committed to this public repository. Receipt OC
 
 MoneyGoWhere can be installed as a Progressive Web App. The service worker caches core application assets for resilience and uses a controlled update process rather than automatically replacing the active version while it is running.
 
-The application and cache identity are derived from the active build at runtime rather than duplicated as a second hard-coded version in this document.
+Current application/cache version: **1.5.3**
 
 ## Performance
 
-The current v1.5.x line includes several lightweight optimizations:
+v1.5.x includes several lightweight optimizations:
 
 - Cached currency formatters
 - Coalesced dashboard rendering
@@ -257,7 +257,6 @@ The current v1.5.x line includes several lightweight optimizations:
 - Cycle-specific recurrence evaluation
 - Recurring rules stored once rather than materialized into many monthly records
 - Narrowly scoped DOM observation for collapsible dashboard sections
-- Lazy loading for optional OCR runtime dependencies
 - No heavy frontend framework required
 
 ## UX / Theme

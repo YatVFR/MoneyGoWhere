@@ -1,7 +1,6 @@
-// MoneyGoWhere v1.5.5-dev.54 — collapsible Cards & Pay-Later UI
+// MoneyGoWhere v1.5.4 — collapsible Cards & Pay-Later UI
 // Visual-only enhancement. No finance records or schema changes.
 (() => {
-  const RELEASE='1.5.5-dev.54';
   const SECTION_KEY='mgw-ui-cards-paylater-open';
   const ACCOUNT_KEY='mgw-ui-credit-account-open:';
   const getBool=(key,fallback=false)=>{try{const v=localStorage.getItem(key);return v===null?fallback:v==='1'}catch{return fallback}};
@@ -112,7 +111,5 @@
   };
 
   function boot(){wrapRender();enhance();}
-  document.addEventListener('mgw:accounts-changed',()=>queueMicrotask(enhance));
-  window.MGWCreditCollapse={version:RELEASE,refresh:enhance};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

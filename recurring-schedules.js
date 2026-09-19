@@ -1,14 +1,14 @@
-// MoneyGoWhere recurring salary + commitment schedules.
+// MoneyGoWhere v1.5.5-dev.50 — recurring salary + commitment schedules
 // Local-first: schedules are stored only in the user's MoneyGoWhere browser database.
 (()=>{
 'use strict';
-const RELEASE='feature-recurring-schedules';
+const RELEASE='1.5.5-dev.50';
 const STEPS=Object.freeze({monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12});
 const num=v=>Math.max(0,Number(v)||0);
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const raf=window.requestAnimationFrame?fn=>requestAnimationFrame(fn):fn=>setTimeout(fn,0);
-let summarySignature='',collapseQueued=false,observer;
+let summarySignature='',collapseQueued=false,observer,badgeObserver;
 
 function ensure(){
   if(!window.db)return false;
@@ -52,6 +52,20 @@ function installStyles(){
 .mgw-recurring-badge{display:inline-block;padding:2px 7px;border-radius:999px;background:rgba(19,122,111,.1);color:#137a6f;font-size:.72rem;font-weight:700}.mgw-rec-grid{display:grid;gap:8px;margin-top:10px}.mgw-rec-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;padding:10px 0;border-bottom:1px solid var(--border,#e4e9ea)}.mgw-rec-row small{display:block;opacity:.7;margin-top:2px}.mgw-rec-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:5px}.mgw-rec-actions button{border:0;border-radius:9px;padding:6px 8px}.mgw-rec-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.mgw-rec-toolbar button{flex:1;min-width:135px}.mgw-rec-hint{font-size:.78rem;opacity:.7;margin-top:4px}
 `;
   document.head.appendChild(s);
+}
+function appVersion(){return typeof MGW_RUNTIME_RELEASE!=='undefined'&&MGW_RUNTIME_RELEASE?.appVersion?MGW_RUNTIME_RELEASE.appVersion:RELEASE}
+function syncAppVersionBadge(){
+  const badge=document.querySelector('#appVersionBadge');if(!badge)return;
+  const version=appVersion();
+  const preview=/preview\s*\/\s*uat/i.test(badge.title||'')||/preview\s*\/\s*uat/i.test(badge.textContent||'');
+  const text=preview?`v${version} · PREVIEW/UAT`:`v${version}`;
+  if(badge.textContent!==text)badge.textContent=text;
+}
+function installBadgeGuard(){
+  const badge=document.querySelector('#appVersionBadge');if(!badge)return;
+  syncAppVersionBadge();
+  if(badgeObserver)badgeObserver.disconnect();
+  if(window.MutationObserver){badgeObserver=new MutationObserver(()=>syncAppVersionBadge());badgeObserver.observe(badge,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['title']})}
 }
 function slug(v){return String(v||'section').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,64)||'section'}
 function directHeader(el){return Array.from(el.children).find(x=>x.matches?.('.card-head,h1,h2,h3,h4'))||el.querySelector('.card-head,h1,h2,h3,h4')}
@@ -184,11 +198,14 @@ function renderSummary(){
   const content=rows.length?rows.map(r=>`<div class="mgw-rec-row"><div><b>${esc(r.name)}</b><small>${r.label} · ${esc(frequencyLabel(r.x.frequency))}${r.x.payDay?` · pay day ${r.x.payDay}`:r.x.dueDay?` · around day ${r.x.dueDay}`:''}</small><small>${esc(r.x.startMonth||'now')} → ${esc(r.x.endMonth||'ongoing')}${r.x.active===false?' · Paused':''}</small></div><div><strong>${money(r.amount)}</strong><span class="mgw-recurring-badge">🔁 Recurring</span><div class="mgw-rec-actions"><button data-rec-edit="${r.x.id}" data-rec-kind="${r.kind}">Edit</button><button data-rec-toggle="${r.x.id}" data-rec-kind="${r.kind}">${r.x.active===false?'Resume':'Pause'}</button></div></div></div>`).join(''):'<p class="mgw-muted">No recurring salary or general commitment schedules configured yet.</p>';
   card.innerHTML=`<div class="card-head"><div><span class="section-icon">🔁</span><b>Recurring Schedules</b></div></div><p class="mgw-muted">Set salary and commitments once instead of re-entering them every month. Every schedule can have an optional end month.</p><div class="mgw-rec-toolbar"><button class="primary-btn" data-rec-add="income">＋ Recurring Salary</button><button data-rec-add="commitment">＋ Commitment</button><button data-rec-add="bill">＋ Bill / Subscription</button></div><div class="mgw-rec-grid" id="mgwRecurringSummary">${content}</div>`;
 }
-function render(){if(!ensure())return;installRecurringSettings();renderSummary();installAddActions();installCollapse()}
+function render(){if(!ensure())return;installRecurringSettings();renderSummary();installAddActions();installCollapse();syncAppVersionBadge()}
 function boot(){
-  if(!ensure())return;installStyles();render();
+  if(!ensure())return;installStyles();render();installBadgeGuard();
   const root=document.querySelector('#view-dashboard');if(root&&window.MutationObserver){observer=new MutationObserver(installCollapse);observer.observe(root,{childList:true,subtree:true})}
-  if(typeof renderAll==='function'&&!renderAll.__mgwRecurringSchedules){const base=renderAll;const wrapped=function(){base();render()};wrapped.__mgwRecurringSchedules=true;renderAll=wrapped}
+  if(typeof renderAll==='function'&&!renderAll.__mgwRecurringSchedules){const base=renderAll;const wrapped=function(){base();render();syncAppVersionBadge()};wrapped.__mgwRecurringSchedules=true;renderAll=wrapped}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
+// Dev-only UI extension loader. Keeps personal finance data local and outside the repository.
+(()=>{const src='./ui-navigation-history.js';if(document.querySelector(`script[data-mgw-module="${src}"]`))return;const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;document.head.appendChild(s)})();

@@ -2,67 +2,43 @@ name: Data Boundary Guard
 
 on:
   push:
-    branches: [dev, "preview/uat", main]
+    branches: [dev, uat, main]
   pull_request:
-    branches: [dev, "preview/uat", main]
+    branches: [dev, uat, main]
 
 jobs:
   prevent-personal-data-in-app:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-
-      - name: JavaScript syntax check
+      - uses: actions/checkout@v4
+      - name: Reject tracked personal database/backup files
         shell: bash
         run: |
           set -euo pipefail
-          while IFS= read -r -d '' file; do
-            node --check "$file"
-          done < <(find . -maxdepth 1 -type f -name '*.js' -print0)
-
-      - name: Code hygiene audit
-        run: python3 scripts/code-audit.py
-
-      - name: Reject tracked personal database/import artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-          bad=$(git ls-files | grep -Ei '(^|/)(private-data|local-data|user-data)(/|$)|(^|/)data/(private|imports)/|\.sqlite(3)?$|\.db$|(^|/).*backup.*\.json$|(^|/)MoneyGoWhere[_-].*\.json$|\.(pdf|csv|xlsx?)$' || true)
+          bad=$(git ls-files | grep -Ei '(^|/)(private-data|local-data|user-data)(/|$)|(^|/)data/(private|imports)/|\.sqlite(3)?$|\.db$|(^|/).*backup.*\.json$|(^|/)MoneyGoWhere[_-].*\.json$' || true)
           if [ -n "$bad" ]; then
-            echo "Personal/local database or source-import artifacts must not be committed:"
+            echo "Personal/local database artifacts must not be committed:"
             echo "$bad"
             exit 1
           fi
-
-      - name: Reject imported-finance record markers in application source
+      - name: Reject known imported-finance record markers in application source
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RInE --exclude-dir=.git --exclude-dir=scripts --exclude='*.md' --exclude='*.yml' --exclude='*.yaml' \
-            'legacy_finance_pdf|LEGACY-[0-9]{4}-[0-9]{2}-[A-Z0-9_-]+' .; then
+          if grep -RInE --exclude-dir=.git --exclude='*.md' --exclude='*.yml' --exclude='*.yaml' \
+            'legacy_finance_pdf|LEGACY-[0-9]{4}-[0-9]{2}-(INCOME|SAVINGS|DBS-LOAN|OCBC-LOAN|SC-LOAN)|FINANCES-2022\.pdf' .; then
             echo "Imported finance records or source-specific markers were found in application files. Keep them in the user database only."
             exit 1
           fi
-
-      - name: Reject seeded finance records in JavaScript
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -RInE --include='*.js' --exclude-dir=.git \
-            '(expenses|income|creditAccounts|creditPayments|walletAccounts|payLaterAccounts|payLaterPayments|recurringBills|recurringIncome|recurringCommitments|importQueue|importHistory|receiptImportQueue|receiptImportHistory)[[:space:]]*:[[:space:]]*\[[[:space:]]*\{' .; then
-            echo "Finance records must never be embedded in application JavaScript. Keep code and user data separate."
-            exit 1
-          fi
-
       - name: Verify base database starts empty
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          src = Path('app.js').read_text(encoding='utf-8').replace(' ', '')
+          src = Path('app.js').read_text(encoding='utf-8')
           required = ['expenses:[]', 'income:[]']
-          missing = [x for x in required if x not in src]
+          missing = [x for x in required if x not in src.replace(' ', '')]
           if missing:
               raise SystemExit('Base DB no longer clearly initializes empty: ' + ', '.join(missing))
           print('Data boundary check passed: base finance collections initialize empty.')

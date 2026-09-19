@@ -1,4 +1,4 @@
-// MoneyGoWhere feature v1.5.5-dev.9 — clean grouped dashboard breakdown
+// MoneyGoWhere v1.5.5-dev.9 — clean grouped dashboard breakdown
 (()=>{
 'use strict';
 const RELEASE='1.5.5-dev.9';
@@ -120,8 +120,10 @@ function enforce(){
   const wrapped=function(el,cats){if(el?.id==='topCategories')return renderTop(el,cats);return current(el,cats)};
   wrapped.__mgwDashboardBreakdown=true;renderCats=wrapped;
   if(typeof renderDashboard==='function')renderDashboard();
+  const badge=document.querySelector('#mgwRuntimeVersionBadge');
+  if(badge){badge.textContent=`v${RELEASE} · DEV`;badge.title=`Development build ${RELEASE}`}
 }
-function boot(){enforce()}
+function boot(){enforce();setTimeout(enforce,0);setTimeout(enforce,250);setTimeout(enforce,1000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 window.MGWDashboardBreakdown={version:RELEASE,render:()=>renderTop(document.querySelector('#topCategories'),catTotals(expenses()).slice(0,5)),enforce};
 })();

@@ -1,6 +1,6 @@
-// MoneyGoWhere runtime coordinator. Global build identity comes from index.html.
-// Keeps pay-cycle behaviour and loads feature modules once, in deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze(window.MGW_RELEASE||{appVersion:'dev',schemaVersion:1,dataVersion:13,cacheVersion:'dev'});
+// MoneyGoWhere v1.5.5-dev.51 runtime coordinator.
+// Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.51',schemaVersion:1,dataVersion:13,cacheVersion:'1.5.5-dev-51'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -89,96 +89,61 @@ if(typeof renderAll==='function'){
   const baseRender=renderAll;
   renderAll=function(){baseRender();mgwUpdateCycleUI()};
 }
-const MGW_CORE_MODULES=[
-  // Only modules required to interpret/render persisted finance data belong
-  // on the blocking startup path. Everything else is staged after app-ready.
-  './currency-normalization.js',
-  './dashboard-core.js',
+const MGW_FEATURE_MODULES=[
+  './ocr-enhance.js',
   './credit-manager.js',
-  './wallet-import-queue.js',
-  './apple-pay-inbox.js'
-];
-const MGW_DEFERRED_MODULES=[
   './credit-collapse.js',
-  './ui-navigation-history.js',
   './recurring-schedules.js',
   './recurring-bills.js',
   './paylater-recurrence.js',
   './paylater-rule-hotfix.js',
+  './currency-normalization.js',
   './dashboard-breakdown.js',
   './salary-trends.js',
-  './transaction-editor.js',
-  './currency-ui.js',
-  './payment-source-linker.js',
-  './performance-optimizer.js',
-  './ocr-enhance.js',
-  './ocr-runtime.js',
   './onboarding-dev.js',
   './recurring-onboarding.js',
+  './wallet-import-queue.js',
+  './apple-pay-inbox.js',
   './history-collapse.js',
   './salary-collapse.js',
+  './transaction-editor.js',
+  './currency-ui.js',
   './icloud-folder-scanner.js',
   './startup-import-assistant.js',
   './guided-walkthrough.js',
-  './receipt-match-hint.js'
+  './receipt-match-hint.js',
+  './payment-source-linker.js',
+  './ui-db-scan-button.js',
+  './dashboard-core.js',
+  './performance-optimizer.js',
+  './version-badge-authority.js'
 ];
-const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],coreReady:false,deferredReady:false,ready:false};
-window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
-function mgwModuleUrl(src){return `${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(MGW_RUNTIME_RELEASE.appVersion)}`}
-function mgwPreloadModules(list){for(const src of list){const href=mgwModuleUrl(src);if(document.querySelector(`link[data-mgw-preload="${href}"]`))continue;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=href;link.dataset.mgwPreload=href;document.head.appendChild(link)}}
+function mgwPreloadFeatureModules(){
+  const frag=document.createDocumentFragment();let added=false;
+  for(const src of MGW_FEATURE_MODULES){
+    if(document.querySelector(`link[data-mgw-preload="${src}"]`))continue;
+    const link=document.createElement('link');link.rel='preload';link.as='script';link.href=src;link.dataset.mgwPreload=src;frag.appendChild(link);added=true;
+  }
+  if(added)document.head.appendChild(frag);
+}
 function mgwLoadModule(src){
   return new Promise(resolve=>{
     const existing=document.querySelector(`script[data-mgw-module="${src}"]`);
     if(existing){
       if(existing.dataset.mgwReady==='1')return resolve();
-      const finish=ok=>{
-        existing.dataset.mgwReady='1';
-        (ok?MGW_RUNTIME_HEALTH.loaded:MGW_RUNTIME_HEALTH.failed).push(src);
-        resolve();
-      };
-      existing.addEventListener('load',()=>finish(true),{once:true});
-      existing.addEventListener('error',()=>finish(false),{once:true});
-      return;
+      let done=false;const finish=()=>{if(done)return;done=true;existing.dataset.mgwReady='1';resolve()};
+      existing.addEventListener('load',finish,{once:true});existing.addEventListener('error',finish,{once:true});setTimeout(finish,700);return;
     }
-    const s=document.createElement('script');
-    s.src=mgwModuleUrl(src);
-    s.dataset.mgwModule=src;
-    s.async=false;
-    s.onload=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.loaded.push(src);resolve()};
-    s.onerror=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.failed.push(src);console.error('MoneyGoWhere module failed to load:',src);resolve()};
+    const s=document.createElement('script');s.src=src;s.dataset.mgwModule=src;s.async=false;
+    s.onload=()=>{s.dataset.mgwReady='1';resolve()};s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);resolve()};
     document.head.appendChild(s);
   });
 }
-async function mgwLoadCoreModules(){
-  mgwPreloadModules(MGW_CORE_MODULES);
-  for(const src of MGW_CORE_MODULES)await mgwLoadModule(src);
-  MGW_RUNTIME_HEALTH.coreReady=true;
+async function mgwLoadFeatureModules(){
+  mgwPreloadFeatureModules();
+  for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
+  if(typeof renderAll==='function')renderAll();
   mgwInstallRuntimeBadge();
-  if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere core module failures:',MGW_RUNTIME_HEALTH.failed);
-  return MGW_RUNTIME_HEALTH;
-}
-async function mgwWaitForInteractionIdle(){
-  let checks=0;
-  while((window.MGWIsInteractionBusy?.()||document.querySelector('dialog[open]'))&&checks++<240){
-    await new Promise(resolve=>setTimeout(resolve,250));
-  }
-}
-async function mgwLoadDeferredModules(){
-  if(MGW_RUNTIME_HEALTH.deferredReady)return MGW_RUNTIME_HEALTH;
-  mgwPreloadModules(MGW_DEFERRED_MODULES);
-  for(const src of MGW_DEFERRED_MODULES){
-    await mgwWaitForInteractionIdle();
-    await mgwLoadModule(src);
-    // Yield briefly so Safari can paint/respond between optional modules.
-    await new Promise(resolve=>setTimeout(resolve,24));
-  }
-  MGW_RUNTIME_HEALTH.deferredReady=true;
-  MGW_RUNTIME_HEALTH.ready=true;
-  // Do not force a global dashboard render here. Each optional module owns its
-  // feature UI; a late renderAll caused visible post-launch dashboard churn.
-  if(MGW_RUNTIME_HEALTH.failed.length)console.warn('MoneyGoWhere optional modules unavailable:',MGW_RUNTIME_HEALTH.failed);
-  document.dispatchEvent(new CustomEvent('mgw:deferred-features-ready'));
-  return MGW_RUNTIME_HEALTH;
 }
 function mgwExportCurrent(){
   const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
@@ -192,12 +157,10 @@ function mgwBootRuntime(){
   db.recurringCommitments=Array.isArray(db.recurringCommitments)?db.recurringCommitments:[];
   db.recurringBills=Array.isArray(db.recurringBills)?db.recurringBills:[];
   db.bankAccounts=Array.isArray(db.bankAccounts)?db.bankAccounts:[];
-  window.db=db;
   MGW.state.month=mgwActiveCycleAnchor(new Date());
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   const exportBtn=document.querySelector('#exportBtn');
   if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
-  window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
-  window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
+  mgwLoadFeatureModules();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();

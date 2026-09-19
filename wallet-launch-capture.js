@@ -1,0 +1,2 @@
+// MoneyGoWhere dev.12 — preserve Apple Wallet Shortcut launch parameters before legacy handlers clear the URL.
+(()=>{'use strict';try{const p=new URLSearchParams(location.search),mode=p.get('mgw');if(['applepay','applewallet','walletqueue'].includes(mode)){sessionStorage.setItem('mgw-wallet-launch',location.search);sessionStorage.setItem('mgw-wallet-launch-at',String(Date.now()))}}catch(_){}})();
