@@ -47,17 +47,17 @@ jobs:
             sudo apt-get update -y
             sudo apt-get install -y imagemagick
           fi
-          SRC="uat-src/assets/icons/icon-192.png"
+          SRC="uat-src/assets/icons/icon-source-uat.jpg"
           test -s "$SRC"
-          cp "$SRC" /tmp/mgw-uat-icon-source.png
+          cp "$SRC" /tmp/mgw-uat-icon-source.jpg
           mkdir -p uat-src/assets/icons
-          convert /tmp/mgw-uat-icon-source.png -resize 180x180! -strip uat-src/assets/icons/apple-touch-icon.png
-          convert /tmp/mgw-uat-icon-source.png -resize 192x192! -strip uat-src/assets/icons/icon-192.png
-          convert /tmp/mgw-uat-icon-source.png -resize 256x256! -strip uat-src/assets/icons/icon-256.png
-          convert /tmp/mgw-uat-icon-source.png -resize 384x384! -strip uat-src/assets/icons/icon-384.png
-          convert /tmp/mgw-uat-icon-source.png -resize 512x512! -strip uat-src/assets/icons/icon-512.png
+          convert /tmp/mgw-uat-icon-source.jpg -resize 180x180! -strip uat-src/assets/icons/apple-touch-icon.png
+          convert /tmp/mgw-uat-icon-source.jpg -resize 192x192! -strip uat-src/assets/icons/icon-192.png
+          convert /tmp/mgw-uat-icon-source.jpg -resize 256x256! -strip uat-src/assets/icons/icon-256.png
+          convert /tmp/mgw-uat-icon-source.jpg -resize 384x384! -strip uat-src/assets/icons/icon-384.png
+          convert /tmp/mgw-uat-icon-source.jpg -resize 512x512! -strip uat-src/assets/icons/icon-512.png
           convert -size 512x512 xc:'#011a22' \
-            \( /tmp/mgw-uat-icon-source.png -resize 380x380! \) \
+            \( /tmp/mgw-uat-icon-source.jpg -resize 380x380! \) \
             -gravity center -composite -strip uat-src/assets/icons/icon-512-maskable.png
           identify uat-src/assets/icons/apple-touch-icon.png \
                    uat-src/assets/icons/icon-192.png \
