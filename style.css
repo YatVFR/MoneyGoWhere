@@ -43,3 +43,7 @@ html[data-mgw-boot-phase="ready"] .mgw-loading-track i{width:100%}
 .mgw-loader-live{text-align:center;font-size:.76rem;color:#a8cccc;margin:12px 0 7px}.mgw-loader-a .mgw-loading-track{height:7px;border-radius:99px;background:rgba(105,196,190,.16);overflow:hidden}.mgw-loader-a .mgw-loading-track i{display:block;height:100%;width:8%;border-radius:inherit;background:linear-gradient(90deg,#18bdb2,#36f0dd);box-shadow:0 0 12px rgba(42,238,220,.55);transition:width .28s ease}
 .mgw-loader-progress-row{display:flex;justify-content:space-between;align-items:center;margin-top:6px;color:#a8cccc;font-size:.7rem}.mgw-loader-progress-row b{color:#f5ffff;font-size:.78rem}.mgw-loader-tip{margin-top:12px;padding:9px 11px;border:1px solid rgba(239,196,93,.32);border-radius:12px;background:rgba(226,177,62,.06);color:#e6d7a9;font-size:.7rem;line-height:1.35}.mgw-loader-trust{display:flex;justify-content:space-around;gap:8px;margin-top:11px;color:#87b8b8;font-size:.58rem;letter-spacing:.06em}
 @media(max-height:720px){.mgw-loader-a{padding-top:15px}.mgw-loader-a .mgw-loading-mark{width:72px;height:72px}.mgw-loader-journey{margin-bottom:8px}.mgw-loader-step{padding:5px 8px}.mgw-loader-tip{display:none}}
+
+/* v1.5.5-dev.96 emblem presentation */
+.mgw-loader-a .mgw-loading-mark{overflow:visible;background:transparent;border:0;box-shadow:none}
+.mgw-loader-a .mgw-loading-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:24%;filter:drop-shadow(0 0 8px rgba(36,238,218,.72)) drop-shadow(0 0 18px rgba(22,190,177,.38))}
