@@ -9,7 +9,7 @@
   "theme_color": "#0f766e",
   "icons": [
     {
-      "src": "assets/icons/icon-192.jpg?v=uat-pwa-v3",
+      "src": "assets/icons/icon-192-v4.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
