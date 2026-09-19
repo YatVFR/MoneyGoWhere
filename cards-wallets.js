@@ -58,7 +58,14 @@
     db.creditPayments=Array.isArray(db.creditPayments)?db.creditPayments:[];
     db.walletAccounts=Array.isArray(db.walletAccounts)?db.walletAccounts:[];
   }
-  function showModal(title,html){const m=document.querySelector('#modal'),body=document.querySelector('#modalBody');if(!m||!body)return null;document.querySelector('#modalTitle').textContent=title;body.innerHTML=html;m.showModal();return body}
+  function showModal(title,html){
+    const m=document.querySelector('#modal'),body=document.querySelector('#modalBody');if(!m||!body)return null;
+    document.querySelector('#modalTitle').textContent=title;body.innerHTML=html;
+    try{if(!m.open)m.showModal()}catch(err){console.warn('MoneyGoWhere modal open recovery',err);m.setAttribute('open','')}
+    const close=document.querySelector('#closeModal');
+    if(close&&!close.dataset.mgwCardClose){close.dataset.mgwCardClose='1';close.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();try{m.close()}catch{m.removeAttribute('open')}},{capture:true})}
+    return body
+  }
   function refreshAccountsUI(){
     if(refreshQueued)return;
     refreshQueued=true;
@@ -127,7 +134,7 @@
           const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};savedAccount=o;
           if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
         }
-        persist();if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');document.querySelector('#modal').close();toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');refreshAccountsUI();setTimeout(()=>{enhance();window.MGWWalletVisibility?.refresh?.()},80);
+        persist();if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');try{document.querySelector('#modal')?.close()}catch{document.querySelector('#modal')?.removeAttribute('open')}toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');setTimeout(()=>{refreshAccountsUI();enhance();window.MGWWalletVisibility?.refresh?.()},0);
       }catch(err){console.error('MoneyGoWhere card save failed',err);f.dataset.mgwSaving='0';if(submit)submit.disabled=false;toast?.('Could not save card / wallet')}
     });
     body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Delete this card / wallet tracker? Existing expense transactions will not be deleted.'))return;try{if(source==='credit'){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}else db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);persist();document.querySelector('#modal').close();toast?.('Card / wallet tracker deleted');refreshAccountsUI()}catch(err){console.error('MoneyGoWhere card delete failed',err);toast?.('Could not delete card / wallet')}});
