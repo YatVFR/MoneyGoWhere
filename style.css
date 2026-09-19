@@ -47,3 +47,9 @@ html[data-mgw-boot-phase="ready"] .mgw-loading-track i{width:100%}
 /* v1.5.5-dev.96 emblem presentation */
 .mgw-loader-a .mgw-loading-mark{overflow:visible;background:transparent;border:0;box-shadow:none}
 .mgw-loader-a .mgw-loading-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:24%;filter:drop-shadow(0 0 8px rgba(36,238,218,.72)) drop-shadow(0 0 18px rgba(22,190,177,.38))}
+
+/* v1.5.5-dev.98 interaction safety: hidden launch gate must never intercept taps */
+#mgwLoadingScreen[hidden]{display:none!important;pointer-events:none!important}
+#mgwLoadingScreen.is-ready{pointer-events:none!important}
+.bottom-nav{touch-action:manipulation}
+.bottom-nav button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
