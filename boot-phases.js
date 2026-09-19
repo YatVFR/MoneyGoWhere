@@ -157,20 +157,12 @@ async function boot(){
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
   if(sub)sub.textContent=`v${RELEASE} loaded`;
   console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
-  // Start optional capabilities only after the loading gate has closed.
-  const runDeferred=async()=>{
-    try{
-      await yieldBrowser(350);
-      let guard=0;
-      while(window.MGWIsInteractionBusy?.()&&guard++<24)await yieldBrowser(250);
-      await window.MGWLoadDeferredFeatures?.();
-      state.deferredReady=true;
-      state.timings.deferred=performance.now()-state.timings.started;
-      console.info('MoneyGoWhere deferred features ready',JSON.parse(JSON.stringify(state.timings)));
-    }catch(err){console.error('MoneyGoWhere deferred feature phase failed',err)}
-  };
-  if('requestIdleCallback'in window)requestIdleCallback(()=>runDeferred(),{timeout:1800});
-  else setTimeout(runDeferred,500);
+  // Stability mode: do not auto-load optional feature modules after launch.
+  // They previously rewired render/navigation handlers while the user was
+  // interacting, which caused Safari stalls and unresponsive menus.
+  state.deferredReady=false;
+  state.timings.deferred='on-demand';
+
 }
 const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
