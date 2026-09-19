@@ -77,7 +77,8 @@ function installDelegatedRecovery(){
       $$('[data-nav]').forEach(x=>x.classList.toggle('active',x.dataset.nav===name));
       const title=$('#pageTitle');if(title)title.textContent={dashboard:'Dashboard',add:'Add',insights:'Insights',settings:'Settings'}[name]||name;
       if(name==='insights'&&typeof renderInsights==='function')requestAnimationFrame(()=>safeCall('insights render',()=>renderInsights()));
-      if(name==='settings')requestAnimationFrame(()=>window.MGWLoadSettingsFeatures?.());
+      if(name==='settings')requestAnimationFrame(()=>{window.MGWLoadSettingsFeatures?.();window.MGWLoadImportFeatures?.();});
+      if(name==='add')requestAnimationFrame(()=>window.MGWLoadImportFeatures?.());
       return;
     }
     if(target.matches('[data-open]')){
