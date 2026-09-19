@@ -61,18 +61,35 @@ function fallbackRefresh(button){
   setTimeout(async()=>{const after=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;if(before!==after)return;try{if(!('serviceWorker'in navigator))return location.reload();const reg=await navigator.serviceWorker.getRegistration();if(reg?.waiting){reg.waiting.postMessage({type:'SKIP_WAITING'});return}if(reg)await reg.update();if(status)status.textContent='Latest';const sub=$('#updateSub');if(sub)sub.textContent=`v${RELEASE} checked`}catch(err){console.warn('MoneyGoWhere refresh recovery failed',err);location.reload()}},160);
 }
 function installDelegatedRecovery(){
-  if(document.documentElement.dataset.mgwInteractionRecovery==='1')return;
-  document.documentElement.dataset.mgwInteractionRecovery='1';
+  if(document.documentElement.dataset.mgwInteractionRecovery==='2')return;
+  document.documentElement.dataset.mgwInteractionRecovery='2';
+  // One capture listener owns navigation. Do not wait for a second handler,
+  // microtask or post-click verification before changing views.
   document.addEventListener('click',e=>{
-    const target=e.target.closest('button,[data-nav],[data-open],#closeModal,.settings-button');if(!target)return;
-    if(target.matches('[data-nav]')){const name=target.dataset.nav;queueMicrotask(()=>{if(!$(`#view-${name}`)?.classList.contains('active'))coreNav(name)});return}
-    if(target.matches('[data-open]')){const type=target.dataset.open;queueMicrotask(()=>{const modal=$('#modal');if(!modal?.open&&typeof window.openModal==='function')safeCall('modal open',()=>window.openModal(type))});return}
-    if(target.id==='closeModal'){queueMicrotask(()=>{try{$('#modal')?.close()}catch{}});return}
-    if(target.id==='prevMonth'||target.id==='nextMonth'){if(typeof target.onclick!=='function')safeCall('month switch',()=>fallbackMonth(target.id==='prevMonth'?-1:1));return}
-    if(target.matches('#insightRange button')){if(typeof target.onclick!=='function')safeCall('insight range',()=>fallbackRange(target));return}
-    if(target.id==='exportBtn'&&typeof target.onclick!=='function'&&typeof window.exportData==='function')return safeCall('export',()=>window.exportData());
-    if(target.id==='integrityBtn'&&typeof target.onclick!=='function'&&typeof window.integrity==='function')return safeCall('integrity',()=>window.integrity());
-    if(target.id==='alertBtn'&&typeof target.onclick!=='function'&&typeof window.toast==='function')return safeCall('alert',()=>window.toast($('#budgetAlertText')?.textContent||'No active alert'));
+    const target=e.target.closest('[data-nav],[data-open],#closeModal,#prevMonth,#nextMonth,#insightRange button,#exportBtn,#integrityBtn,#alertBtn,#refreshBtn');
+    if(!target)return;
+    if(target.matches('[data-nav]')){
+      const name=target.dataset.nav;
+      e.preventDefault();
+      const view=$(`#view-${name}`);
+      if(!view)return;
+      $$('.view').forEach(x=>x.classList.toggle('active',x===view));
+      $$('[data-nav]').forEach(x=>x.classList.toggle('active',x.dataset.nav===name));
+      const title=$('#pageTitle');if(title)title.textContent={dashboard:'Dashboard',add:'Add',insights:'Insights',settings:'Settings'}[name]||name;
+      if(name==='insights'&&typeof renderInsights==='function')requestAnimationFrame(()=>safeCall('insights render',()=>renderInsights()));
+      return;
+    }
+    if(target.matches('[data-open]')){
+      const type=target.dataset.open;
+      if(typeof target.onclick!=='function'&&typeof openModal==='function'){e.preventDefault();safeCall('modal open',()=>openModal(type))}
+      return;
+    }
+    if(target.id==='closeModal'){if(!target.onclick){e.preventDefault();try{$('#modal')?.close()}catch{}}return}
+    if(target.id==='prevMonth'||target.id==='nextMonth'){if(typeof target.onclick!=='function'){e.preventDefault();safeCall('month switch',()=>fallbackMonth(target.id==='prevMonth'?-1:1))}return}
+    if(target.matches('#insightRange button')){if(typeof target.onclick!=='function'){e.preventDefault();safeCall('insight range',()=>fallbackRange(target))}return}
+    if(target.id==='exportBtn'&&typeof target.onclick!=='function'&&typeof exportData==='function')return safeCall('export',()=>exportData());
+    if(target.id==='integrityBtn'&&typeof target.onclick!=='function'&&typeof integrity==='function')return safeCall('integrity',()=>integrity());
+    if(target.id==='alertBtn'&&typeof target.onclick!=='function'&&typeof toast==='function')return safeCall('alert',()=>toast($('#budgetAlertText')?.textContent||'No active alert'));
     if(target.id==='refreshBtn')fallbackRefresh(target);
   },true);
 }
