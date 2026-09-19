@@ -10,6 +10,19 @@ const originalSet=Storage.prototype.setItem;
 let gated=true,hydrated=false,loadingFeatures=false;
 const state={release:RELEASE,phase:'ui',dataReady:false,featuresReady:false,deferredReady:false,loaded:[],failed:[],timings:{started:performance.now()}};
 window.MGWBootState=state;
+const MGW_LOADING_TIPS=[
+  'Review small daily expenses—they add up quickly.',
+  'Pending imports let you verify transactions before they enter your records.',
+  'Your MoneyGoWhere finance data stays on this device.',
+  'A quick monthly review can reveal subscriptions you no longer use.'
+];
+let mgwTipTimer=0;
+function startLoadingTips(){
+  const el=document.querySelector('#mgwLoadingTip span');if(!el||mgwTipTimer)return;
+  let n=0;mgwTipTimer=setInterval(()=>{n=(n+1)%MGW_LOADING_TIPS.length;el.animate?.([{opacity:.25},{opacity:1}],{duration:220});el.textContent='Quick tip: '+MGW_LOADING_TIPS[n]},2600);
+}
+function stopLoadingTips(){if(mgwTipTimer){clearInterval(mgwTipTimer);mgwTipTimer=0}}
+
 // DEV-only, data-free startup diagnostics. No finance values are captured.
 const perf=window.MGWPerf=window.MGWPerf||{release:RELEASE,marks:{},longTasks:[],modules:[]};
 const perfMark=name=>{perf.marks[name]=Math.round(performance.now()-state.timings.started)};
@@ -35,7 +48,7 @@ Storage.prototype.setItem=function(key,value){
 function updateLoadingScreen(phase,detail=''){
   const screen=document.querySelector('#mgwLoadingScreen'),message=document.querySelector('#mgwLoadingMessage'),stage=document.querySelector('#mgwLoadingStage'),percent=document.querySelector('#mgwLoadingPercent'),bar=document.querySelector('#mgwLoadingProgress');
   if(!screen)return;
-  if(phase!=='ready'){screen.hidden=false;screen.classList.remove('is-ready')}
+  if(phase!=='ready'){screen.hidden=false;screen.classList.remove('is-ready');startLoadingTips()}
   const d=String(detail||'').toLowerCase();
   let step='ui',pct=8,label='Starting';
   if(phase==='features'){step=d.includes('finishing')?'features':'accounts';pct=d.includes('finishing')?82:34;label=d.includes('finishing')?'Finalizing':'Accounts'}
@@ -46,7 +59,7 @@ function updateLoadingScreen(phase,detail=''){
   const copy={ui:'Initializing MoneyGoWhere…',features:'Setting up app features…',data:'Loading your finance data…',ready:'Ready',error:'Could not finish loading'};
   if(message)message.textContent=detail||copy[phase]||'Working…';
   if(stage)stage.textContent=label;if(percent)percent.textContent=pct+'%';if(bar)bar.style.width=pct+'%';
-  if(phase==='ready'){screen.classList.add('is-ready');setTimeout(()=>screen.hidden=true,260)}
+  if(phase==='ready'){stopLoadingTips();screen.classList.add('is-ready');setTimeout(()=>screen.hidden=true,260)}
   if(phase==='error')screen.classList.remove('is-ready');
 }
 function setPhase(phase,detail=''){
