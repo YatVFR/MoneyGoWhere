@@ -5,22 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.5.5-dev.93" />
-    <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.93" type="image/svg+xml" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.93" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.93" />
+  <link rel="manifest" href="manifest.json?v=1.5.5-dev.94" />
+    <link rel="icon" href="assets/icons/icon.svg?v=1.5.5-dev.94" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.94" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.5.5-dev.94" />
       <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.5.5-dev.93" />
+  <link rel="stylesheet" href="style.css?v=1.5.5-dev.94" />
 </head>
 <body>
   <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
-    <div class="mgw-loading-card">
-      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/loading-logo.svg?v=1.5.5-dev.93" alt="" /></div>
-      <h2>MoneyGoWhere</h2>
-      <p id="mgwLoadingMessage">Preparing interface…</p>
-      <div class="mgw-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div>
-      <div class="mgw-loading-stage" id="mgwLoadingStage">Starting</div>
-      <div class="mgw-loading-track" aria-hidden="true"><i></i></div>
+    <div class="mgw-loading-card mgw-loader-a">
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/loading-logo.svg?v=1.5.5-dev.94" alt="" /></div>
+      <h2>Money<span>Go</span>Where</h2>
+      <p class="mgw-loader-tagline">SPEND SMARTER · LIVE BETTER</p>
+      <p class="mgw-loader-journey">Preparing your financial journey…</p>
+      <div class="mgw-loader-steps" id="mgwLoaderSteps">
+        <div class="mgw-loader-step" data-step="ui"><i>⚙️</i><div><b>Initializing app</b><small>Preparing the interface</small></div></div>
+        <div class="mgw-loader-step" data-step="data"><i>🗄️</i><div><b>Loading finance data</b><small>Reading your local database</small></div></div>
+        <div class="mgw-loader-step" data-step="accounts"><i>👛</i><div><b>Setting up accounts</b><small>Cards, wallets & PayLater</small></div></div>
+        <div class="mgw-loader-step" data-step="dashboard"><i>📊</i><div><b>Preparing dashboard</b><small>Summarizing your finances</small></div></div>
+        <div class="mgw-loader-step" data-step="features"><i>✨</i><div><b>Finalizing features</b><small>Almost there…</small></div></div>
+      </div>
+      <p id="mgwLoadingMessage" class="mgw-loader-live">Preparing interface…</p>
+      <div class="mgw-loading-track" aria-hidden="true"><i id="mgwLoadingProgress"></i></div>
+      <div class="mgw-loader-progress-row"><span id="mgwLoadingStage">Starting</span><b id="mgwLoadingPercent">8%</b></div>
+      <div class="mgw-loader-tip" id="mgwLoadingTip">💡 <span>Quick tip: Review small daily expenses—they add up quickly.</span></div>
+      <div class="mgw-loader-trust"><span>🛡️ PRIVATE</span><span>⚡ FAST</span><span>🔒 SECURE</span></div>
     </div>
   </div>
   <div class="app-shell">
@@ -162,7 +172,7 @@
         };
       };
       captureLaunch();
-      const BUILD='1.5.5-dev.93';
+      const BUILD='1.5.5-dev.94';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:1,dataVersion:14,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
@@ -180,8 +190,8 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="data-stability.js?v=1.5.5-dev.93"></script>
-  <script src="boot-phases.js?v=1.5.5-dev.93"></script>
-  <script src="app.js?v=1.5.5-dev.93"></script>
+  <script src="data-stability.js?v=1.5.5-dev.94"></script>
+  <script src="boot-phases.js?v=1.5.5-dev.94"></script>
+  <script src="app.js?v=1.5.5-dev.94"></script>
 </body>
 </html>
