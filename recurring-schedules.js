@@ -2,7 +2,7 @@
 // Local-first: schedules are stored only in the user's MoneyGoWhere browser database.
 (()=>{
 'use strict';
-const RELEASE='feature-recurring-schedules';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const STEPS=Object.freeze({monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12});
 const num=v=>Math.max(0,Number(v)||0);
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
@@ -18,7 +18,7 @@ function ensure(){
   db.settings.collapsedDashboard=db.settings.collapsedDashboard||{};
   return true;
 }
-function save(render=true){if(!ensure())return;localStorage.setItem(MGW.key,JSON.stringify(db));summarySignature='';if(render&&typeof renderAll==='function')renderAll()}
+function save(render=true){if(!ensure())return;try{window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere recurring sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'recurring-schedules'}}));summarySignature='';if(render&&typeof renderAll==='function')renderAll()}
 function monthIndex(key){const [y,m]=String(key||'').split('-').map(Number);return Number.isFinite(y)&&Number.isFinite(m)?y*12+m-1:NaN}
 function monthKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`}
 function currentMonth(){return monthKey(new Date())}
