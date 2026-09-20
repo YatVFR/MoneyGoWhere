@@ -233,9 +233,13 @@ async function mgwLoadDeferredModules(){
   return MGW_RUNTIME_HEALTH;
 }
 function mgwExportCurrent(){
-  const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
+  const exportedAt=new Date().toISOString();
+  db.backupMeta={...(db.backupMeta||{}),appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,lastExportedAt:exportedAt};
+  try{localStorage.setItem(MGW.key,JSON.stringify(db))}catch(err){console.warn('MoneyGoWhere backup metadata could not be saved',err)}
+  const payload={...db,backupMeta:{...db.backupMeta,exportedAt}};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');
   a.href=URL.createObjectURL(blob);a.download=`MoneyGoWhere-backup-v${MGW_RUNTIME_RELEASE.appVersion}-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);
+  document.dispatchEvent(new CustomEvent('mgw:backup-exported',{detail:{exportedAt}}));
   if(typeof toast==='function')toast('Complete backup exported');
 }
 function mgwBootRuntime(){
