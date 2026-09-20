@@ -2,7 +2,7 @@
 // Local-first recurring bill manager. No personal finance records are bundled with the app.
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.50';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const STEPS=Object.freeze({monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12});
 const num=v=>Math.max(0,Number(v)||0);
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,7 +17,7 @@ function ensure(){
   db.settings=db.settings||{};
   return true;
 }
-function save(){if(!ensure())return;localStorage.setItem(MGW.key,JSON.stringify(db));signature='';if(typeof renderAll==='function')renderAll();}
+function save(){if(!ensure())return;try{window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere recurring sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'recurring-bills'}}));signature='';if(typeof renderAll==='function')renderAll();}
 function active(rule,key){
   if(!rule||rule.active===false)return false;
   const cur=monthIndex(key),start=monthIndex(rule.startMonth||key),end=rule.endMonth?monthIndex(rule.endMonth):Infinity;
