@@ -9,7 +9,7 @@ const CACHE=`${CACHE_PREFIX}${safeVersion}`;
 const SHELL_URL=new URL('index.html',self.registration.scope).href;
 
 const SHELL=[
-  './','./index.html','./style.css','./data-stability.js','./db-schema-v2.js','./boot-phases.js','./app.js',
+  './','./index.html','./style.css','./data-stability.js','./db-schema-v2.js','./account-registry.js','./boot-phases.js','./app.js',
   './import-normalizer.js','./interaction-recovery.js','./version-badge-authority.js','./finance-fix.js',
   './payment-form-core.js','./historical-data.js','./db-health.js','./cards-wallets.js','./wallet-visibility-fix.js',
   './apple-pay-queue-bridge.js','./manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.jpg','./assets/icons/apple-touch-icon.jpg','./assets/branding/loading-logo.svg'
