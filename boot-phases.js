@@ -90,8 +90,15 @@ async function hydrateData(){
   restoreStorage();
   try{
     const raw=originalGet.call(localStorage,DB_KEY),parsed=raw?JSON.parse(raw):{};
-    const stable=window.MGWStability?.sanitize?window.MGWStability.sanitize(parsed):parsed;
+    const migration=window.MGWDatabaseSchema?.migrate?window.MGWDatabaseSchema.migrate(parsed,{persist:false,createSnapshot:true}):{database:parsed,migrated:false};
+    const stable=window.MGWStability?.sanitize?window.MGWStability.sanitize(migration.database):migration.database;
     if(typeof emptyDB==='function')db=Object.assign(emptyDB(),stable||{});else db=stable||{};
+    if(window.MGWDatabaseSchema?.shape)db=window.MGWDatabaseSchema.shape(db);
+    if(migration.migrated){
+      try{originalSet.call(localStorage,DB_KEY,JSON.stringify(db))}catch(writeErr){console.error('MoneyGoWhere migrated database could not be persisted',writeErr)}
+      state.migration={fromSchema:migration.fromSchema,toSchema:migration.toSchema,snapshotCreated:migration.snapshotCreated};
+      document.dispatchEvent(new CustomEvent('mgw:schema-migrated',{detail:state.migration}));
+    }
     db.expenses=Array.isArray(db.expenses)?db.expenses:[];
     db.income=Array.isArray(db.income)?db.income:[];
     db.budgets=db.budgets&&typeof db.budgets==='object'?db.budgets:{monthly:0,categories:{}};
