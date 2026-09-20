@@ -1,7 +1,7 @@
 // MoneyGoWhere v1.5.5-dev.54 — collapsible Cards & Pay-Later UI
 // Visual-only enhancement. No finance records or schema changes.
 (() => {
-  const RELEASE='1.5.5-dev.54';
+  const RELEASE='1.5.5-dev.104';
   const SECTION_KEY='mgw-ui-cards-paylater-open';
   const ACCOUNT_KEY='mgw-ui-credit-account-open:';
   const getBool=(key,fallback=false)=>{try{const v=localStorage.getItem(key);return v===null?fallback:v==='1'}catch{return fallback}};
@@ -27,7 +27,10 @@
       #mgwAccountsDashboard .mgw-account-summary .mgw-chevron{display:inline-block;transition:transform .18s ease}
       #mgwAccountsDashboard .mgw-account-summary[aria-expanded="true"] .mgw-chevron{transform:rotate(90deg)}
       #mgwAccountsDashboard .mgw-account-body{padding:0 14px 14px}
-      #mgwAccountsDashboard .mgw-collapse-body{padding-top:12px}
+      #mgwAccountsDashboard .mgw-collapse-body{padding:12px 2px 24px;max-height:min(62dvh,680px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+      #mgwAccountsDashboard .mgw-account-grid{min-height:0;padding-bottom:4px}
+      #mgwAccountsDashboard .mgw-account-grid>.mgw-account:last-child,#mgwAccountsDashboard #mgwWalletDashboardBlock:last-child{margin-bottom:12px}
+      @media(max-height:700px){#mgwAccountsDashboard .mgw-collapse-body{max-height:55dvh}}
     `;
     document.head.appendChild(style);
   }
