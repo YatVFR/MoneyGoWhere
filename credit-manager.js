@@ -1,7 +1,7 @@
 // MoneyGoWhere v1.5.5-dev.54 — Credit, Debt & Pay-Later Manager
 // Local-first: this file contains no personal account names, balances, limits or finance records.
 (() => {
-  const RELEASE='1.5.5-dev.54';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Math.max(0,Number(v)||0);
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
@@ -17,7 +17,7 @@
     };
     if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);
   };
-  const persist=()=>{localStorage.setItem(MGW.key,JSON.stringify(db));scheduleRender()};
+  const persist=()=>{try{window.MGWAccountRegistry?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere account registry sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:accounts-changed',{detail:{source:'credit-manager'}}));scheduleRender()};
 
   function ensureStore(){
     db.creditAccounts=Array.isArray(db.creditAccounts)?db.creditAccounts:[];
@@ -30,7 +30,7 @@
 
   function cycleExpenses(){return typeof monthExpenses==='function'?monthExpenses(MGW.state.month):[]}
   function cycleIncome(){return typeof monthIncome==='function'?monthIncome(MGW.state.month):[]}
-  function expenseMatchesAccount(x,a){const c=norm(x.card||x.paymentSource||x.paymentMethod);return c&&(c===norm(a.name)||c.includes(norm(a.name))||norm(a.name).includes(c))}
+  function expenseMatchesAccount(x,a){const linked=x.paymentSourceId||x.paymentAccountId||'';if(linked&&a?.id)return linked===a.id;const c=norm(x.card||x.cardIdentity||x.paymentSource||x.paymentMethod);return c&&(c===norm(a.name)||c===norm(a.nickname)||c===norm(a.cardProduct)||c.includes(norm(a.name))||norm(a.name).includes(c))}
   function cycleSpendForCard(a){return cycleExpenses().filter(x=>expenseMatchesAccount(x,a)).reduce((t,x)=>t+num(x.amount),0)}
   function cycleSpendForPayLater(a){return cycleExpenses().filter(x=>expenseMatchesAccount(x,a)).reduce((t,x)=>t+num(x.amount),0)}
   function paidInCycle(type,accountId){
@@ -40,8 +40,8 @@
   function cycleNetIncome(){return cycleIncome().reduce((t,x)=>t+num(x.netSalary),0)}
   function payLaterNames(){return db.payLaterAccounts.map(a=>norm(a.name)).filter(Boolean)}
   function immediateSpend(){
-    const deferred=payLaterNames();
-    return cycleExpenses().filter(x=>!deferred.some(n=>{const c=norm(x.card||x.paymentSource||x.paymentMethod);return c&&(c===n||c.includes(n)||n.includes(c))})).reduce((t,x)=>t+num(x.amount),0);
+    const deferredIds=new Set(db.payLaterAccounts.map(a=>a.id).filter(Boolean)),deferred=payLaterNames();
+    return cycleExpenses().filter(x=>{const linked=x.paymentSourceId||x.paymentAccountId||'';if(linked)return !deferredIds.has(linked);return !deferred.some(n=>{const c=norm(x.card||x.cardIdentity||x.paymentSource||x.paymentMethod);return c&&(c===n||c.includes(n)||n.includes(c))})}).reduce((t,x)=>t+num(x.amount),0);
   }
   function debtCommitments(){return db.creditAccounts.filter(a=>a.role==='debt'||a.role==='emergency-debt').reduce((t,a)=>t+num(a.plannedPayment),0)}
   function payLaterDue(){return db.payLaterAccounts.reduce((t,a)=>t+num(a.cycleDue),0)}
