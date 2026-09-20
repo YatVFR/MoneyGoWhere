@@ -205,9 +205,9 @@ function commitmentModal(x={}){
   f.addEventListener('submit',e=>{
     e.preventDefault();const o=Object.fromEntries(new FormData(f));o.amount=num(o.amount);o.dueDay=o.dueDay===''?'':Math.min(31,Math.max(1,Number(o.dueDay)||1));o.id=x.id||`COMMIT-${Date.now()}`;o.active=x.active!==false;
     if(edit)Object.assign(x,o);else db.monthlyCommitments.push(o);
-    localStorage.setItem(MGW.key,JSON.stringify(db));m.close();if(typeof renderAll==='function')renderAll();if(typeof toast==='function')toast(edit?'Commitment updated':'Commitment added');
+    try{window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch{}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'fixed-commitment'}}));m.close();if(typeof renderAll==='function')renderAll();if(typeof toast==='function')toast(edit?'Commitment updated':'Commitment added');
   },{once:true});
-  body.querySelector('#mgwCoreDeleteCommit')?.addEventListener('click',()=>{if(!confirm('Delete this fixed commitment?'))return;db.monthlyCommitments=db.monthlyCommitments.filter(a=>a.id!==x.id);localStorage.setItem(MGW.key,JSON.stringify(db));m.close();if(typeof renderAll==='function')renderAll();if(typeof toast==='function')toast('Commitment deleted')},{once:true});
+  body.querySelector('#mgwCoreDeleteCommit')?.addEventListener('click',()=>{if(!confirm('Delete this fixed commitment?'))return;db.monthlyCommitments=db.monthlyCommitments.filter(a=>a.id!==x.id);try{window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch{}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'fixed-commitment'}}));m.close();if(typeof renderAll==='function')renderAll();if(typeof toast==='function')toast('Commitment deleted')},{once:true});
 }
 function bind(){
   const host=document.querySelector('#mgwCommitmentSettings');if(!host||host.dataset.mgwCoreBound==='1')return;host.dataset.mgwCoreBound='1';
@@ -215,7 +215,7 @@ function bind(){
     const b=e.target.closest('button');if(!b)return;
     if(b.hasAttribute('data-core-add-commitment'))return commitmentModal();
     if(b.dataset.coreEdit){const x=db.monthlyCommitments.find(v=>String(v.id)===String(b.dataset.coreEdit));if(x)return commitmentModal(x)}
-    if(b.dataset.coreToggle){const x=db.monthlyCommitments.find(v=>String(v.id)===String(b.dataset.coreToggle));if(x){x.active=x.active===false;localStorage.setItem(MGW.key,JSON.stringify(db));if(typeof renderAll==='function')renderAll()}}
+    if(b.dataset.coreToggle){const x=db.monthlyCommitments.find(v=>String(v.id)===String(b.dataset.coreToggle));if(x){x.active=x.active===false;try{window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch{}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'fixed-commitment'}}));if(typeof renderAll==='function')renderAll()}}
   });
 }
 let applying=false;
