@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=1.7.0-dev.1" />
-    <link rel="icon" href="assets/icons/icon.svg?v=1.7.0-dev.1" type="image/svg+xml" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.7.0-dev.1" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.7.0-dev.1" />
+  <link rel="manifest" href="manifest.json?v=1.8.0-dev.1" />
+    <link rel="icon" href="assets/icons/icon.svg?v=1.8.0-dev.1" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.8.0-dev.1" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=1.8.0-dev.1" />
       <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=1.7.0-dev.1" />
+  <link rel="stylesheet" href="style.css?v=1.8.0-dev.1" />
 </head>
 <body>
   <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
     <div class="mgw-loading-card mgw-loader-a">
-      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/emblem.jpg?v=1.7.0-dev.1" alt="" /></div>
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/emblem.jpg?v=1.8.0-dev.1" alt="" /></div>
       <h2>Money<span>Go</span>Where</h2>
       <p class="mgw-loader-tagline">SPEND SMARTER · LIVE BETTER</p>
       <p class="mgw-loader-journey">Preparing your financial journey…</p>
@@ -172,8 +172,8 @@
         };
       };
       captureLaunch();
-      const BUILD='1.7.0-dev.1';
-      window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:2,dataVersion:16,cacheVersion:BUILD.replace(/\./g,'-')});
+      const BUILD='1.8.0-dev.1';
+      window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:2,dataVersion:17,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
       window.MGWPageBuild=BUILD;
@@ -190,10 +190,11 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="data-stability.js?v=1.7.0-dev.1"></script>
-  <script src="db-schema-v2.js?v=1.7.0-dev.1"></script>
-  <script src="account-registry.js?v=1.7.0-dev.1"></script>
-  <script src="boot-phases.js?v=1.7.0-dev.1"></script>
-  <script src="app.js?v=1.7.0-dev.1"></script>
+  <script src="data-stability.js?v=1.8.0-dev.1"></script>
+  <script src="db-schema-v2.js?v=1.8.0-dev.1"></script>
+  <script src="account-registry.js?v=1.8.0-dev.1"></script>
+  <script src="recurring-engine.js?v=1.8.0-dev.1"></script>
+  <script src="boot-phases.js?v=1.8.0-dev.1"></script>
+  <script src="app.js?v=1.8.0-dev.1"></script>
 </body>
 </html>
