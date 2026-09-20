@@ -26,7 +26,8 @@ function report(database=window.db||{}){
   const migratedFrom=database?.schemaMeta?.migratedFrom??null;
   const migratedAt=database?.schemaMeta?.lastMigratedAt||null;
   const rollback=Boolean(window.MGWDatabaseSchema?.rollbackAvailable?.());
-  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,schema,dataVersion,migratedFrom,migratedAt,rollback,healthy:duplicates===0&&invalid===0&&quarantined===0,collections};
+  const accountInfo=window.MGWAccountRegistry?.describe?window.MGWAccountRegistry.describe(database):{total:Array.isArray(database.accounts)?database.accounts.length:0,orphans:0,byType:{}};
+  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,schema,dataVersion,migratedFrom,migratedAt,rollback,accountInfo,healthy:duplicates===0&&invalid===0&&quarantined===0&&accountInfo.orphans===0,collections};
 }
 function fmtDate(v){if(!v)return 'Never';const d=new Date(v);return Number.isNaN(d.getTime())?'Unknown':d.toLocaleString('en-SG',{dateStyle:'medium',timeStyle:'short'})}
 function installStyles(){
@@ -51,6 +52,8 @@ function render(){
     <div><small>Duplicate IDs</small><strong>${r.duplicates}</strong></div>
     <div><small>Invalid records</small><strong>${r.invalid}</strong></div>
     <div><small>Quarantined</small><strong>${r.quarantined}</strong></div>
+    <div><small>Accounts</small><strong>${r.accountInfo.total}</strong></div>
+    <div><small>Orphan payment links</small><strong>${r.accountInfo.orphans}</strong></div>
   </div>
   <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
   <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">BACKUP NOW</button></div>`;
