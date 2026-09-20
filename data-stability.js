@@ -2,7 +2,7 @@
 // Keeps malformed/legacy records from blocking startup and coalesces heavy refreshes.
 (()=>{'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
-const arrays=['expenses','income','creditAccounts','creditPayments','payLaterAccounts','payLaterPayments','monthlyCommitments','recurringIncome','recurringCommitments','recurringBills','walletAccounts','importQueue','importHistory','receiptImportQueue','receiptImportHistory','bankAccounts'];
+const arrays=['expenses','income','creditAccounts','creditPayments','payLaterAccounts','payLaterPayments','monthlyCommitments','recurringIncome','recurringCommitments','recurringBills','walletAccounts','importQueue','importHistory','receiptImportQueue','receiptImportHistory','bankAccounts','accounts'];
 const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const ymd=s=>{if(typeof s!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s.slice(0,10)))return false;const d=new Date(`${s.slice(0,10)}T00:00:00`);return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===s.slice(0,10)};
 const uniqueById=rows=>{const seen=new Set();return rows.filter(x=>{if(!isObj(x))return false;const id=String(x.id||'');if(!id)return true;if(seen.has(id))return false;seen.add(id);return true})};
@@ -17,6 +17,8 @@ function sanitize(input){
   clean('expenses','expenses');clean('income','income');clean('importHistory','history');clean('receiptImportHistory','receiptHistory');
   // Keep valid user data even when categories/fields come from older releases.
   db.backupMeta=isObj(db.backupMeta)?db.backupMeta:{};
+  db.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
+  db.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1};
   return db;
 }
 let renderPending=false;
