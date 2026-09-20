@@ -2,7 +2,7 @@
 // No personal finance data is bundled here. Provider rules are application configuration only.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.14';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const PROVIDERS=['Atome','Grab PayLater','SPayLater','ABNK','CIMB PayLater','Credit Card Instalment','Merchant Instalment','Other / Custom Provider'];
   const COMMON_DURATIONS=[1,3,4,6,8,12,18,24];
   const START_RULES={
@@ -22,7 +22,7 @@
   const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
   const money2=v=>Math.round((Number(v)||0)*100)/100;
-  const persist=()=>localStorage.setItem(MGW.key,JSON.stringify(db));
+  const persist=()=>{try{window.MGWRecurringEngine?.sync?.(db,{persist:false});window.MGWAccountRegistry?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere recurrence sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:recurring-changed',{detail:{source:'paylater'}}));document.dispatchEvent(new CustomEvent('mgw:accounts-changed',{detail:{source:'paylater'}}))};
   const safeDate=(y,m,d)=>new Date(y,m,Math.min(d,new Date(y,m+1,0).getDate()));
   const key=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const parseDate=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(s||'')))return null;const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
