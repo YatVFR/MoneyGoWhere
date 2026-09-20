@@ -7,7 +7,7 @@ MoneyGoWhere remains local-first. The live database is stored in browser storage
 - `app`: `MoneyGoWhere`
 - `version`: 2
 - `schemaVersion`: 2
-- `dataVersion`: 15
+- `dataVersion`: 16
 - `createdAt`: database creation timestamp
 - `updatedAt`: last application save timestamp
 
@@ -27,6 +27,7 @@ The storage key is intentionally unchanged in schema v2 so existing browsers can
 - `recurringBills[]`
 - `walletAccounts[]`
 - `bankAccounts[]`
+- `accounts[]` — canonical Phase 3 account registry
 - `importQueue[]`
 - `importHistory[]`
 - `receiptImportQueue[]`
@@ -39,6 +40,8 @@ The storage key is intentionally unchanged in schema v2 so existing browsers can
 - `importQuarantine`: malformed import records retained for review instead of being silently discarded.
 - `backupMeta`: local backup metadata.
 - `schemaMeta`: migration provenance.
+- `paymentSourceMap`: normalized payment-source token to stable account ID map.
+- `accountModelMeta`: unified account-registry metadata.
 
 ## Migration
 
@@ -63,4 +66,4 @@ No existing feature collection is renamed or intentionally deleted in Phase 2.
 
 Legacy MoneyGoWhere backups that contain `expenses[]` and `income[]` remain accepted. They pass through the schema migration and stability sanitization layers before becoming the live database.
 
-Schema v2 is a compatibility foundation. Account normalization and relationship changes belong to later phases and are not part of this schema migration.
+Schema v2 remains the compatibility foundation. Phase 3 extends data version 16 with a canonical `accounts[]` registry and stable payment-source IDs while preserving the legacy account collections as compatibility mirrors.
