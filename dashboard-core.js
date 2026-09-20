@@ -2,7 +2,7 @@
 // One source of truth for commitments, planned balance, safe-to-spend and cycle budget.
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.57';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const STEPS={monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12};
 const num=v=>Math.max(0,Number(v)||0);
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -30,9 +30,20 @@ function activeRule(rule,key=cycleKey()){
   return (cur-start)%(STEPS[rule.frequency]||1)===0;
 }
 function actualIncome(){return (db.income||[]).filter(inCycle).reduce((t,x)=>t+num(x.netSalary),0)}
-function scheduledIncome(){return db.recurringIncome.filter(x=>activeRule(x)).reduce((t,x)=>t+num(x.netSalary),0)}
+function scheduledIncome(){if(window.MGWRecurringEngine?.incomeForMonth)return window.MGWRecurringEngine.incomeForMonth(cycleKey(),db).reduce((t,x)=>t+num(x.amount),0);return db.recurringIncome.filter(x=>activeRule(x)).reduce((t,x)=>t+num(x.netSalary),0)}
 function cyclePayment(rows,id){return rows.filter(x=>String(x.accountId||'')===String(id||'')&&inCycle(x)).reduce((t,x)=>t+num(x.amount),0)}
 function fixedItems(){
+  if(window.MGWRecurringEngine?.commitmentItemsForMonth){
+    return window.MGWRecurringEngine.commitmentItemsForMonth(cycleKey(),db).filter(x=>num(x.amount)>0).map(x=>({
+      kind:x.type==='bill'?'bill':x.metadata?.fixed?'fixed':'schedule',
+      source:x.type==='bill'?'Recurring bill':x.type==='savings'?'Savings commitment':x.type==='loan'?'Loan commitment':x.metadata?.fixed?'Fixed monthly':'Recurring schedule',
+      name:x.name||'Recurring commitment',
+      merchant:x.merchant||'',
+      amount:num(x.amount),
+      term:x.metadata?.fixed?'':[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → '),
+      recurringId:x.id
+    }));
+  }
   const out=[];
   for(const x of db.monthlyCommitments)if(x.active!==false&&num(x.amount)>0)out.push({kind:'fixed',source:'Fixed monthly',name:x.name||x.type||'Monthly commitment',merchant:x.merchant||'',amount:num(x.amount),term:''});
   for(const x of db.recurringCommitments)if(activeRule(x)&&num(x.amount)>0)out.push({kind:'schedule',source:'Recurring schedule',name:x.name||'Recurring commitment',merchant:x.merchant||'',amount:num(x.amount),term:[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → ')});
