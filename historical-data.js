@@ -94,7 +94,6 @@ const MGW_CORE_MODULES=[
   // on the blocking startup path. Everything else is staged after app-ready.
   './currency-normalization.js',
   './dashboard-core.js',
-  './account-registry.js',
   './credit-manager.js',
   './wallet-import-queue.js',
   './apple-pay-inbox.js'
