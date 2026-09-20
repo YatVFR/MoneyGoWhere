@@ -2,7 +2,7 @@
 // Generic app configuration only. No personal card/account data is bundled here.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.54';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const TYPES={credit:'Credit Card',debit:'Debit Card',wallet:'Multi-Currency / Travel Wallet',prepaid:'Prepaid / Stored Value',other:'Other'};
   const CATALOG={
     credit:{
@@ -44,7 +44,7 @@
   const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Math.max(0,Number(v)||0);
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
-  const persist=()=>{window.db=db;localStorage.setItem(MGW.key,JSON.stringify(db))};
+  const persist=()=>{window.db=db;try{window.MGWAccountRegistry?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere account registry sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db))};
   const persistedAccount=id=>{try{const x=JSON.parse(localStorage.getItem(MGW.key)||'{}');return [...(Array.isArray(x.creditAccounts)?x.creditAccounts:[]),...(Array.isArray(x.walletAccounts)?x.walletAccounts:[])].some(a=>a?.id===id)}catch{return false}};
   const opts=(xs,sel='')=>xs.map(x=>`<option value="${esc(x)}" ${x===sel?'selected':''}>${esc(x)}</option>`).join('');
   const typeOptions=sel=>Object.entries(TYPES).map(([k,label])=>`<option value="${k}" ${k===sel?'selected':''}>${esc(label)}</option>`).join('');
@@ -128,10 +128,10 @@
       f.dataset.mgwSaving='1';const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
       try{
         if(accountType==='credit'){
-          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,role:String(fd.get('role')||'spending')};savedAccount=o;['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
+          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,paymentIdentifier:String(fd.get('paymentIdentifier')||a.paymentIdentifier||'').trim(),role:String(fd.get('role')||'spending')};savedAccount=o;['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
           if(source==='wallet'&&edit)db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);if(!edit||source==='wallet')db.creditAccounts.push(o);else Object.assign(a,o);
         }else{
-          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};savedAccount=o;
+          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,paymentIdentifier:String(fd.get('paymentIdentifier')||a.paymentIdentifier||'').trim(),balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};savedAccount=o;
           if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
         }
         persist();if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');try{document.querySelector('#modal')?.close()}catch{document.querySelector('#modal')?.removeAttribute('open')}toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');setTimeout(()=>{refreshAccountsUI();enhance();window.MGWWalletVisibility?.refresh?.()},0);
