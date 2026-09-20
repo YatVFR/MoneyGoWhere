@@ -21,7 +21,12 @@ function report(database=window.db||{}){
   }
   const quarantined=quarantineCount(database);
   const backup=database?.backupMeta?.lastExportedAt||database?.backupMeta?.exportedAt||null;
-  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,healthy:duplicates===0&&invalid===0&&quarantined===0,collections};
+  const schema=Number(database?.schemaVersion)||Number(database?.version)||1;
+  const dataVersion=Number(database?.dataVersion)||null;
+  const migratedFrom=database?.schemaMeta?.migratedFrom??null;
+  const migratedAt=database?.schemaMeta?.lastMigratedAt||null;
+  const rollback=Boolean(window.MGWDatabaseSchema?.rollbackAvailable?.());
+  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,schema,dataVersion,migratedFrom,migratedAt,rollback,healthy:duplicates===0&&invalid===0&&quarantined===0,collections};
 }
 function fmtDate(v){if(!v)return 'Never';const d=new Date(v);return Number.isNaN(d.getTime())?'Unknown':d.toLocaleString('en-SG',{dateStyle:'medium',timeStyle:'short'})}
 function installStyles(){
@@ -47,7 +52,7 @@ function render(){
     <div><small>Invalid records</small><strong>${r.invalid}</strong></div>
     <div><small>Quarantined</small><strong>${r.quarantined}</strong></div>
   </div>
-  <p class="mgw-muted">App v${RELEASE} · Schema ${window.MGW_RELEASE?.schemaVersion??1} · Data ${window.MGW_RELEASE?.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}</p>
+  <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
   <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">BACKUP NOW</button></div>`;
   card.querySelector('#mgwDbHealthRun')?.addEventListener('click',()=>{render();window.toast?.(report().healthy?'Database health check passed':'Database health check found items to review')});
   card.querySelector('#mgwDbHealthBackup')?.addEventListener('click',()=>document.querySelector('#exportBtn')?.click());
@@ -55,6 +60,8 @@ function render(){
 document.addEventListener('mgw:backup-exported',()=>setTimeout(render,50));
 document.addEventListener('mgw:settings-features-ready',()=>setTimeout(render,20));
 document.addEventListener('mgw:accounts-changed',()=>setTimeout(render,40));
+document.addEventListener('mgw:schema-migrated',()=>setTimeout(render,40));
+document.addEventListener('mgw:data-restored',()=>setTimeout(render,40));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(render,180),{once:true});else setTimeout(render,180);
 window.MGWDatabaseHealth=Object.freeze({version:RELEASE,report,render});
 })();
