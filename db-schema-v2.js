@@ -2,7 +2,7 @@
 // Backward-compatible: keeps current feature arrays while adding explicit schema metadata.
 (()=>{'use strict';
 const CURRENT_SCHEMA=2;
-const CURRENT_DATA=16;
+const CURRENT_DATA=17;
 const DB_KEY='moneygowhere-db-v1';
 const SNAPSHOT_KEY='moneygowhere-rollback-pre-schema2-v1';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
@@ -35,6 +35,8 @@ function empty(){
     recurringIncome:[],
     recurringCommitments:[],
     recurringBills:[],
+    recurringItems:[],
+    recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0},
     walletAccounts:[],
     bankAccounts:[],
     accounts:[],
@@ -61,6 +63,8 @@ function shape(input){
   out.importQuarantine=isObj(db.importQuarantine)?db.importQuarantine:base.importQuarantine;
   ['expenses','income','history','receiptHistory'].forEach(k=>out.importQuarantine[k]=Array.isArray(out.importQuarantine[k])?out.importQuarantine[k]:[]);
   out.backupMeta=isObj(db.backupMeta)?db.backupMeta:{};
+  out.recurringItems=Array.isArray(db.recurringItems)?db.recurringItems:[];
+  out.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0};
   out.accounts=Array.isArray(db.accounts)?db.accounts:[];
   out.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
   out.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1,lastSyncedAt:null,accountCount:0};
