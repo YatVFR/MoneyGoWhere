@@ -233,6 +233,7 @@ async function mgwLoadDeferredModules(){
   return MGW_RUNTIME_HEALTH;
 }
 function mgwExportCurrent(){
+  if(window.MGWMasterDB?.exportMasterDB)return window.MGWMasterDB.exportMasterDB();
   try{window.MGWAccountRegistry?.sync?.(db,{persist:false});window.MGWRecurringEngine?.sync?.(db,{persist:false})}catch(err){console.warn('MoneyGoWhere registry sync before backup failed',err)}
   const exportedAt=new Date().toISOString();
   db.backupMeta={...(db.backupMeta||{}),appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,lastExportedAt:exportedAt};
