@@ -101,8 +101,12 @@ function normalizeCurrent(){
   }catch(err){console.warn('MoneyGoWhere existing DB normalization skipped',err)}
 }
 window.MGWImportNormalizer={normalizeBackup,importFile:normalizedImport,normalizeCurrent};
-window.importData=normalizedImport;
-const input=document.querySelector('#importInput');if(input)input.onchange=e=>e.target.files?.[0]&&normalizedImport(e.target.files[0]);
+if(window.MGWMasterDB?.restoreFile){
+  window.importData=file=>window.MGWMasterDB.restoreFile(file);
+}else{
+  window.importData=normalizedImport;
+  const input=document.querySelector('#importInput');if(input)input.onchange=e=>e.target.files?.[0]&&normalizedImport(e.target.files[0]);
+}
 if(window.MGWBootState?.dataReady)normalizeCurrent();
 else document.addEventListener('mgw:data-ready',normalizeCurrent,{once:true});
 })();
