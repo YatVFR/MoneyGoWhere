@@ -8,6 +8,7 @@ const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const clone=v=>JSON.parse(JSON.stringify(v));
 const now=()=>new Date().toISOString();
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const app=()=>typeof MGW!=='undefined'?MGW:null;
 
 function sync(database){
   try{window.MGWAccountRegistry?.sync?.(database,{persist:false})}catch(err){console.warn('MoneyGoWhere account sync before backup failed',err)}
@@ -48,17 +49,17 @@ function captureUiPreferences(){
     }
   }catch{}
   return {
-    selectedMonth:window.MGW?.state?.month instanceof Date?window.MGW.state.month.toISOString():null,
-    insightRange:Number(window.MGW?.state?.range)||1,
+    selectedMonth:app()?.state?.month instanceof Date?app().state.month.toISOString():null,
+    insightRange:Number(app()?.state?.range)||1,
     ui
   };
 }
 function applyUiPreferences(prefs){
   if(!isObj(prefs))return;
   try{for(const [key,value] of Object.entries(isObj(prefs.ui)?prefs.ui:{}))if(key.startsWith('mgw-ui-')&&typeof value==='string')localStorage.setItem(key,value)}catch{}
-  if(window.MGW?.state){
-    if(prefs.selectedMonth){const d=new Date(prefs.selectedMonth);if(!Number.isNaN(d.getTime()))window.MGW.state.month=d}
-    if(Number.isFinite(Number(prefs.insightRange)))window.MGW.state.range=Number(prefs.insightRange);
+  if(app()?.state){
+    if(prefs.selectedMonth){const d=new Date(prefs.selectedMonth);if(!Number.isNaN(d.getTime()))app().state.month=d}
+    if(Number.isFinite(Number(prefs.insightRange)))app().state.range=Number(prefs.insightRange);
   }
 }
 function stampBackup(database,kind,exportedAt){
