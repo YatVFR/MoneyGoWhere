@@ -244,8 +244,6 @@ function mgwBootRuntime(){
   window.db=db;
   MGW.state.month=mgwActiveCycleAnchor(new Date());
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
-  const exportBtn=document.querySelector('#exportBtn');
-  if(exportBtn&&!exportBtn.dataset.mgwRuntimeBound){exportBtn.dataset.mgwRuntimeBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCurrent()},true)}
   window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDashboardFeatures=()=>mgwLoadDashboardModules().catch(err=>{console.error('MoneyGoWhere dashboard feature loading failed',err);return MGW_RUNTIME_HEALTH});
   requestAnimationFrame(()=>window.MGWLoadDashboardFeatures());
