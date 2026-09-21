@@ -70,7 +70,7 @@ function historicalRecurring(database,existing=[]){
     if(months.length<6)continue;
     let consecutive=0;for(let i=1;i<months.length;i++)if(months[i]-months[i-1]===1)consecutive++;
     if(months.length>1&&consecutive/(months.length-1)<.7)continue;
-    if(existing.some(x=>similarName(x.merchant||x.name,g.vendor)))continue;
+    if(existing.some(x=>x?.active!==false&&similarName(x.merchant||x.name,g.vendor)))continue;
     const sorted=[...g.rows].sort((a,b)=>String(a.date).localeCompare(String(b.date))),latest=sorted[sorted.length-1];
     const lastMonth=monthIndex(latest.date),ended=Number.isFinite(latestMonth)&&Number.isFinite(lastMonth)&&latestMonth-lastMonth>2;
     const t=String(g.category||'').toLowerCase();
