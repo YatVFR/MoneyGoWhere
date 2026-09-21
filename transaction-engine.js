@@ -20,7 +20,13 @@ function ensure(database=window.db||{}){
   return database;
 }
 function provenance(row){
-  const raw=String(row?.provenance||row?.source||row?.scanSource||'').toLowerCase().replace(/\s+/g,'_');
+  const declared=String(row?.provenance||'').toLowerCase().replace(/\s+/g,'_');
+  const source=String(row?.source||row?.scanSource||'').toLowerCase().replace(/\s+/g,'_');
+  const notes=String(row?.notes||'').toLowerCase();
+  const importedFile=/\.(pdf|csv|xlsx?|json)$/.test(source)||/\b(imported|migrated|reconciled)\b/.test(notes);
+  if(declared&&declared!=='manual'&&sourceMap[declared])return sourceMap[declared];
+  if(importedFile)return 'migration';
+  const raw=declared||source;
   if(sourceMap[raw])return sourceMap[raw];
   if(raw.includes('apple'))return 'apple-pay';
   if(raw.includes('receipt')||raw.includes('scan')||raw.includes('ocr'))return 'receipt';
@@ -69,9 +75,11 @@ function recurringCandidates(expense,database){
   const hay=norm([expense.vendor,expense.merchant,expense.notes].filter(Boolean).join(' '));
   if(!hay)return[];
   return items.map(item=>{
-    const needle=norm(item.merchant||item.name);if(!needle)return null;
+    const needle=norm(item.merchant||item.name),category=norm(item.category||'');if(!needle)return null;
     const nameMatch=hay===needle?3:(hay.includes(needle)||needle.includes(hay)?2:0);if(!nameMatch)return null;
-    const expected=num(item.amount),actual=num(expense.amount),diff=Math.abs(actual-expected),tol=Math.max(2,expected*.35);
+    const expected=num(item.amount),actual=num(expense.amount),diff=Math.abs(actual-expected);
+    const variable=/UTILIT|TELECOM|INSURANCE|SUBSCRIPTION/.test(category);
+    const tol=Math.max(2,expected*(variable?0.55:0.35));
     if(diff>tol)return null;
     return {item,score:nameMatch*100-Math.min(99,diff)};
   }).filter(Boolean).sort((a,b)=>b.score-a.score);
@@ -121,10 +129,15 @@ function cycle(anchor,database=window.db||{}){
   sync(database,{persist:false});
   const inCycle=x=>typeof mgwInCycle==='function'?mgwInCycle(x,anchor):String(x?.date||'').startsWith(`${anchor.getFullYear()}-${String(anchor.getMonth()+1).padStart(2,'0')}`);
   const expenses=database.expenses.filter(inCycle),income=database.income.filter(inCycle);
-  const recurring=expenses.filter(x=>x.recurringItemId),payLater=expenses.filter(x=>isPayLaterExpense(x,database)),dayToDay=expenses.filter(x=>!x.recurringItemId&&!isPayLaterExpense(x,database));
+  const recurring=expenses.filter(x=>x.recurringItemId),payLater=expenses.filter(x=>isPayLaterExpense(x,database));
+  const unclassified=expenses.filter(x=>!x.recurringItemId&&!isPayLaterExpense(x,database));
+  const recurringById=new Map((database.recurringItems||[]).map(x=>[x.id,x]));
+  const recurringOverage=recurring.reduce((t,x)=>{const plan=num(recurringById.get(x.recurringItemId)?.amount);return t+Math.max(0,num(x.amount)-plan)},0);
+  const dayToDay=[...unclassified];
+  const dayToDayTotal=dayToDay.reduce((t,x)=>t+num(x.amount),0)+recurringOverage;
   return {
-    expenses,income,recurring,payLater,dayToDay,
-    totals:{all:expenses.reduce((t,x)=>t+num(x.amount),0),recurring:recurring.reduce((t,x)=>t+num(x.amount),0),payLater:payLater.reduce((t,x)=>t+num(x.amount),0),dayToDay:dayToDay.reduce((t,x)=>t+num(x.amount),0)},
+    expenses,income,recurring,payLater,dayToDay,recurringOverage,
+    totals:{all:expenses.reduce((t,x)=>t+num(x.amount),0),recurring:recurring.reduce((t,x)=>t+num(x.amount),0),recurringOverage,payLater:payLater.reduce((t,x)=>t+num(x.amount),0),dayToDay:dayToDayTotal},
     byCategory:group(expenses,x=>x.category||'Other'),
     byAccount:group(expenses,x=>accountFor(x,database)?.name||x.paymentSource||x.card||x.paymentMethod||'Unassigned'),
     byProvenance:group(expenses,x=>x.provenance||provenance(x))
