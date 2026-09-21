@@ -140,9 +140,6 @@ async function loadFeaturesFirst(){
     './version-badge-authority.js',
     './finance-fix.js',
     './payment-form-core.js',
-    './account-registry.js',
-    './recurring-engine.js',
-    './transaction-engine.js',
     './cards-wallets.js',
     './wallet-visibility-fix.js'
   ];
