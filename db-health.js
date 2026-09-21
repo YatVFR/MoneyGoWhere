@@ -58,7 +58,7 @@ function render(){
     <div><small>Orphan payment links</small><strong>${r.accountInfo.orphans}</strong></div>
     <div><small>Recurring items</small><strong>${r.recurringInfo.total}</strong></div>
     <div><small>Active recurring</small><strong>${r.recurringInfo.active}</strong></div>
-    <div><small>Recurring links</small><strong>${r.transactionInfo.recurringLinked}</strong></div>
+    <div><small>Recurring links</small><strong>${r.transactionInfo.recurringLinkedTotal??r.transactionInfo.recurringLinked??0}</strong></div>
     <div><small>Potential duplicates</small><strong>${r.transactionInfo.duplicates}</strong></div>
   </div>
   <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
