@@ -99,28 +99,18 @@ const MGW_CORE_MODULES=[
   './apple-pay-inbox.js'
 ];
 const MGW_DEFERRED_MODULES=[
+  // Only genuinely optional modules live here. Settings/import/dashboard modules
+  // have dedicated loaders and are intentionally not repeated in this list.
   './credit-collapse.js',
   './ui-navigation-history.js',
-  './recurring-schedules.js',
-  './recurring-bills.js',
-  './paylater-recurrence.js',
-  './paylater-rule-hotfix.js',
-  './dashboard-breakdown.js',
   './salary-trends.js',
   './transaction-editor.js',
-  './currency-ui.js',
-  './payment-source-linker.js',
   './performance-optimizer.js',
-  './ocr-enhance.js',
-  './ocr-runtime.js',
   './onboarding-dev.js',
   './recurring-onboarding.js',
   './history-collapse.js',
   './salary-collapse.js',
-  './icloud-folder-scanner.js',
-  './startup-import-assistant.js',
-  './guided-walkthrough.js',
-  './receipt-match-hint.js'
+  './guided-walkthrough.js'
 ];
 const MGW_RUNTIME_HEALTH={release:MGW_RUNTIME_RELEASE.appVersion,loaded:[],failed:[],coreReady:false,deferredReady:false,ready:false};
 window.MGWRuntimeHealth=MGW_RUNTIME_HEALTH;
@@ -199,7 +189,8 @@ const MGW_SETTINGS_MODULES=[
   './paylater-recurrence.js',
   './paylater-rule-hotfix.js',
   './currency-ui.js',
-  './payment-source-linker.js'
+  './payment-source-linker.js',
+  './release-readiness.js'
 ];
 let mgwSettingsPromise=null;
 async function mgwLoadSettingsModules(){
