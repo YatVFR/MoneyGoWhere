@@ -2,7 +2,7 @@
 // Backward-compatible: keeps current feature arrays while adding explicit schema metadata.
 (()=>{'use strict';
 const CURRENT_SCHEMA=2;
-const CURRENT_DATA=19;
+const CURRENT_DATA=20;
 const DB_KEY='moneygowhere-db-v1';
 const SNAPSHOT_KEY='moneygowhere-rollback-pre-schema2-v1';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
