@@ -13,6 +13,7 @@ const app=()=>typeof MGW!=='undefined'?MGW:null;
 function sync(database){
   try{window.MGWAccountRegistry?.sync?.(database,{persist:false})}catch(err){console.warn('MoneyGoWhere account sync before backup failed',err)}
   try{window.MGWRecurringEngine?.sync?.(database,{persist:false})}catch(err){console.warn('MoneyGoWhere recurring sync before backup failed',err)}
+  try{window.MGWTransactionEngine?.sync?.(database,{persist:false})}catch(err){console.warn('MoneyGoWhere transaction sync before backup failed',err)}
   return database;
 }
 function shaped(database){
@@ -145,7 +146,7 @@ function restoreValidated(preview){
   window.db=restored;
   if(typeof db!=='undefined')db=restored;
   document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta}}));
-  try{window.MGWAccountRegistry?.sync?.(restored,{persist:true});window.MGWRecurringEngine?.sync?.(restored,{persist:true})}catch{}
+  try{window.MGWAccountRegistry?.sync?.(restored,{persist:false});window.MGWRecurringEngine?.sync?.(restored,{persist:false});window.MGWTransactionEngine?.sync?.(restored,{persist:true})}catch{}
   if(typeof renderAll==='function')renderAll();
   return {snapshotCreated,database:restored};
 }
