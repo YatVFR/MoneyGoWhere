@@ -2,7 +2,7 @@
 // Canonical recurringItems[] model with compatibility mirrors for legacy recurring collections.
 (()=>{'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
-const MODEL_VERSION=1;
+const MODEL_VERSION=2;
 const STEPS=Object.freeze({monthly:1,bimonthly:2,quarterly:3,halfyearly:6,yearly:12});
 const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const num=v=>Math.max(0,Number(v)||0);
