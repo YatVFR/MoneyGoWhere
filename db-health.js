@@ -28,7 +28,8 @@ function report(database=window.db||{}){
   const rollback=Boolean(window.MGWDatabaseSchema?.rollbackAvailable?.());
   const accountInfo=window.MGWAccountRegistry?.describe?window.MGWAccountRegistry.describe(database):{total:Array.isArray(database.accounts)?database.accounts.length:0,orphans:0,byType:{}};
   const recurringInfo=window.MGWRecurringEngine?.describe?window.MGWRecurringEngine.describe(database):{total:Array.isArray(database.recurringItems)?database.recurringItems.length:0,active:0,byType:{}};
-  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,schema,dataVersion,migratedFrom,migratedAt,rollback,accountInfo,recurringInfo,healthy:duplicates===0&&invalid===0&&quarantined===0&&accountInfo.orphans===0,collections};
+  const transactionInfo=window.MGWTransactionEngine?.describe?window.MGWTransactionEngine.describe(database):{expenses:Array.isArray(database.expenses)?database.expenses.length:0,income:Array.isArray(database.income)?database.income.length:0,recurringLinked:0,duplicates:Number(database.transactionModelMeta?.duplicateFingerprintCount)||0};
+  return {release:RELEASE,total,duplicates,invalid,quarantined,backup,schema,dataVersion,migratedFrom,migratedAt,rollback,accountInfo,recurringInfo,transactionInfo,healthy:duplicates===0&&invalid===0&&quarantined===0&&accountInfo.orphans===0&&transactionInfo.duplicates===0,collections};
 }
 function fmtDate(v){if(!v)return 'Never';const d=new Date(v);return Number.isNaN(d.getTime())?'Unknown':d.toLocaleString('en-SG',{dateStyle:'medium',timeStyle:'short'})}
 function installStyles(){
@@ -57,6 +58,8 @@ function render(){
     <div><small>Orphan payment links</small><strong>${r.accountInfo.orphans}</strong></div>
     <div><small>Recurring items</small><strong>${r.recurringInfo.total}</strong></div>
     <div><small>Active recurring</small><strong>${r.recurringInfo.active}</strong></div>
+    <div><small>Recurring links</small><strong>${r.transactionInfo.recurringLinked}</strong></div>
+    <div><small>Potential duplicates</small><strong>${r.transactionInfo.duplicates}</strong></div>
   </div>
   <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
   <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">MASTERDB BACKUP</button>${window.MGWMasterDB?.rollbackAvailable?.()?'<button type="button" class="secondary-btn" id="mgwRestoreRollback">ROLLBACK LAST RESTORE</button>':''}</div>`;
@@ -68,6 +71,7 @@ document.addEventListener('mgw:settings-features-ready',()=>setTimeout(render,20
 document.addEventListener('mgw:accounts-changed',()=>setTimeout(render,40));
 document.addEventListener('mgw:recurring-changed',()=>setTimeout(render,40));
 document.addEventListener('mgw:recurring-registry-ready',()=>setTimeout(render,40));
+document.addEventListener('mgw:transaction-model-ready',()=>setTimeout(render,40));
 document.addEventListener('mgw:schema-migrated',()=>setTimeout(render,40));
 document.addEventListener('mgw:data-restored',()=>setTimeout(render,40));
 document.addEventListener('mgw:backup-exported',()=>setTimeout(render,40));
