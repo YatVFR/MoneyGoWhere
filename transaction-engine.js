@@ -2,7 +2,7 @@
 // Keeps transaction facts in the DB; dashboards derive views from these records.
 (()=>{'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
-const MODEL_VERSION=1;
+const MODEL_VERSION=2;
 const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const num=v=>Math.max(0,Number(v)||0);
 const norm=v=>String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
