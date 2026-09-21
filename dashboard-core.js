@@ -86,21 +86,28 @@ function model(){
   const fixedTotal=fixed.reduce((t,x)=>t+x.amount,0),debtTotal=debt.reduce((t,x)=>t+x.amount,0),laterTotal=later.reduce((t,x)=>t+x.amount,0);
   const commitmentsTotal=fixedTotal+debtTotal+laterTotal+reserve;
   const plannedBalance=Math.max(0,income-commitmentsTotal);
-  const expenses=(db.expenses||[]).filter(inCycle),{used:matchedRecurring}=matchRecurring(fixed,expenses),deferred=payLaterNames();
-  let dayToDay=0,postedRecurring=0;
-  for(let i=0;i<expenses.length;i++){
-    const row=expenses[i];
-    if(matchedRecurring.has(i)){postedRecurring+=fx(row);continue}
-    const payment=norm(row.card||row.paymentSource||row.paymentMethod);
-    if(payment&&deferred.some(n=>payment===n||payment.includes(n)||n.includes(payment)))continue;
-    dayToDay+=fx(row);
+  let activity=null,dayToDay=0,postedRecurring=0,payLaterSpend=0;
+  if(window.MGWTransactionEngine?.cycle){
+    activity=window.MGWTransactionEngine.cycle(MGW.state.month,db);
+    dayToDay=num(activity.totals?.dayToDay);
+    postedRecurring=num(activity.totals?.recurring);
+    payLaterSpend=num(activity.totals?.payLater);
+  }else{
+    const expenses=(db.expenses||[]).filter(inCycle),{used:matchedRecurring}=matchRecurring(fixed,expenses),deferred=payLaterNames();
+    for(let i=0;i<expenses.length;i++){
+      const row=expenses[i];
+      if(matchedRecurring.has(i)){postedRecurring+=fx(row);continue}
+      const payment=norm(row.card||row.paymentSource||row.paymentMethod);
+      if(payment&&deferred.some(n=>payment===n||payment.includes(n)||n.includes(payment))){payLaterSpend+=fx(row);continue}
+      dayToDay+=fx(row);
+    }
   }
   const liveBalance=Math.max(0,plannedBalance-dayToDay);
   const budget=num(db.budgets?.monthly),budgetUsed=commitmentsTotal+dayToDay,budgetRemaining=budget?Math.max(0,budget-budgetUsed):null;
   const safe=budgetRemaining===null?liveBalance:Math.min(liveBalance,budgetRemaining);
   let days=1;
   if(typeof mgwCycleBounds==='function'){const end=new Date(mgwCycleBounds(MGW.state.month).end),now=new Date();now.setHours(0,0,0,0);end.setHours(0,0,0,0);days=Math.max(1,Math.ceil((end-now)/86400000))}
-  return {income,actualIncome:actual,scheduledIncome:scheduled,fixed,debt,later,reserve,fixedTotal,debtTotal,laterTotal,commitmentsTotal,plannedBalance,dayToDay,postedRecurring,liveBalance,budget,budgetUsed,budgetRemaining,safe,days};
+  return {income,actualIncome:actual,scheduledIncome:scheduled,fixed,debt,later,reserve,fixedTotal,debtTotal,laterTotal,commitmentsTotal,plannedBalance,dayToDay,postedRecurring,payLaterSpend,activity,liveBalance,budget,budgetUsed,budgetRemaining,safe,days};
 }
 function moneyText(v){return typeof money==='function'?money(v):`SGD ${num(v).toFixed(2)}`}
 function groupLines(items){
@@ -121,6 +128,7 @@ function installStyles(){
 .mgw-obligation-details{margin-top:12px;border-top:1px solid var(--line,#e4e9e7);padding-top:8px}.mgw-obligation-details>summary{cursor:pointer;list-style:none;font-weight:800;display:flex;justify-content:space-between;align-items:center;padding:7px 0}.mgw-obligation-details>summary::-webkit-details-marker{display:none}.mgw-obligation-details[open]>summary i{transform:rotate(90deg)}.mgw-obligation-details i{font-style:normal;transition:.15s}
 .mgw-obligation-body{display:grid;gap:4px;padding-top:4px}.mgw-obligation-body h4{margin:8px 0 2px}.mgw-obligation-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:6px 0;border-bottom:1px solid var(--line,#eef2f1)}.mgw-obligation-line span,.mgw-obligation-line small{display:block}.mgw-obligation-line small{opacity:.62;margin-top:2px}.mgw-obligation-line strong{white-space:nowrap}
 .mgw-budget-reserve-breakdown{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--muted,#6b7774)}.mgw-budget-reserve-breakdown b{color:var(--text,#18221f)}
+.mgw-activity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px}.mgw-activity-grid>div{padding:10px;border:1px solid var(--line,#e4e9e7);border-radius:12px;background:rgba(127,127,127,.05)}.mgw-activity-grid small,.mgw-activity-grid strong{display:block}.mgw-activity-groups{display:grid;gap:8px}.mgw-activity-group{border-top:1px solid var(--line,#e4e9e7);padding-top:8px}.mgw-activity-line{display:flex;justify-content:space-between;gap:12px;padding:4px 0}.mgw-activity-line span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mgw-activity-line strong{white-space:nowrap}
 .mgw-advice{display:grid;gap:9px}.mgw-advice-item{padding:10px 12px;border-radius:12px;background:rgba(127,127,127,.07)}.mgw-advice-item b{display:block;margin-bottom:3px}
 .mgw-commit-list{display:grid;gap:10px;margin-top:12px}.mgw-commit{border:1px solid var(--line,#dbe4e4);border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:12px;align-items:center}.mgw-commit small{display:block;opacity:.7}.mgw-commit-actions{display:flex;gap:6px;flex-wrap:wrap}.mgw-commit-actions button{border:0;border-radius:9px;padding:7px 9px}
 .mgw-advisor-priority{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent,#0f9d8a) 34%,var(--line,#dbe4e4));background:linear-gradient(145deg,color-mix(in srgb,var(--accent,#0f9d8a) 10%,white),var(--card,#fff) 55%);box-shadow:0 8px 24px rgba(20,70,65,.08)}
@@ -138,6 +146,8 @@ function ensureUi(){
   if(month&&!document.querySelector('#mgwCycleFocus')){const el=document.createElement('div');el.id='mgwCycleFocus';el.className='mgw-cycle-focus';month.insertAdjacentElement('afterend',el)}
   if(dashboard&&advisor&&month){const anchor=document.querySelector('#mgwCycleFocus')||month;anchor.insertAdjacentElement('afterend',advisor);advisor.classList.add('mgw-advisor-priority')}
   if(dashboard&&advisor&&!document.querySelector('#mgwBudgetAfterCommitments')){const card=document.createElement('article');card.className='card mgw-budget-after';card.id='mgwBudgetAfterCommitments';advisor.insertAdjacentElement('afterend',card)}
+  const planned=document.querySelector('#mgwBudgetAfterCommitments');
+  if(dashboard&&planned&&!document.querySelector('#mgwCycleActivity')){const card=document.createElement('article');card.className='card';card.id='mgwCycleActivity';planned.insertAdjacentElement('afterend',card)}
   const settings=document.querySelector('#view-settings');
   if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
 }
@@ -165,6 +175,19 @@ function renderSafe(p){
   const grid=card.querySelector('.mgw-safe-grid');
   if(grid)grid.innerHTML=`<span>Balance after commitments</span><strong>${moneyText(p.plannedBalance)}</strong><span>Day-to-day spent</span><strong>−${moneyText(p.dayToDay)}</strong>${p.budgetRemaining!==null?`<span>Cycle budget remaining</span><strong>${moneyText(p.budgetRemaining)}</strong>`:''}<span><b>Available now</b></span><strong><b>${moneyText(p.safe)}</b></strong>`;
   const note=card.querySelector('.mgw-muted');if(note)note.textContent='Recurring bills already reserved above are excluded from day-to-day spending to prevent double counting.';
+}
+function activityLines(rows,limit=5){
+  if(!rows?.length)return'<p class="mgw-muted">No activity in this view.</p>';
+  return rows.slice(0,limit).map(x=>`<div class="mgw-activity-line"><span>${esc(x.name)}</span><strong>${moneyText(x.amount)}</strong></div>`).join('');
+}
+function renderActivity(p){
+  const card=document.querySelector('#mgwCycleActivity');if(!card)return;
+  const a=p.activity;
+  if(!a){card.innerHTML='<div class="card-head"><div><span class="section-icon">🔎</span><b>Cycle Activity</b></div></div><p class="mgw-muted">Transaction model is still loading.</p>';return}
+  card.innerHTML=`<div class="card-head"><div><span class="section-icon">🔎</span><b>Cycle Activity</b></div></div>
+  <div class="mgw-activity-grid"><div><small>Day-to-day</small><strong>${moneyText(a.totals.dayToDay)}</strong></div><div><small>Posted recurring</small><strong>${moneyText(a.totals.recurring)}</strong></div><div><small>Pay-Later purchases</small><strong>${moneyText(a.totals.payLater)}</strong></div></div>
+  <details class="mgw-obligation-details"><summary>Drill down <i>›</i></summary><div class="mgw-activity-groups"><div class="mgw-activity-group"><b>Top categories</b>${activityLines(a.byCategory)}</div><div class="mgw-activity-group"><b>Payment sources</b>${activityLines(a.byAccount)}</div><div class="mgw-activity-group"><b>How records were added</b>${activityLines(a.byProvenance)}</div></div></details>
+  <p class="mgw-muted">Dashboard values are derived from transaction records, stable payment-source IDs and recurring links. Pay-Later purchases and already-reserved recurring charges are excluded from day-to-day Safe to Spend.</p>`;
 }
 function renderBudget(p){
   const card=document.querySelector('.budget-card');if(!card)return;
@@ -223,7 +246,7 @@ function apply(){
   if(applying)return;applying=true;
   try{
     ensure();installStyles();ensureUi();const p=model();
-    renderCycleFocus();renderMetrics(p);renderPlanned(p);renderSafe(p);renderBudget(p);renderAdvisor(p);renderCommitmentSettings();bind();
+    renderCycleFocus();renderMetrics(p);renderPlanned(p);renderActivity(p);renderSafe(p);renderBudget(p);renderAdvisor(p);renderCommitmentSettings();bind();
     window.MGWDashboardCore.last=p;
   }finally{applying=false}
 }
