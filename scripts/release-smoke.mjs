@@ -20,7 +20,7 @@ const build=(index.match(/const BUILD='([^']+)'/)||[])[1]||'';
 const release=index.match(/MGW_RELEASE=Object\.freeze\(\{appVersion:BUILD,schemaVersion:(\d+),dataVersion:(\d+)/);
 check('BUILD declared',Boolean(build),build||'not found');
 check('schema >= 2',Number(release?.[1])>=2,`schema ${release?.[1]||'—'}`);
-check('data version >= 19',Number(release?.[2])>=19,`data ${release?.[2]||'—'}`);
+check('data version >= 20',Number(release?.[2])>=20,`data ${release?.[2]||'—'}`);
 
 const staticScripts=[...index.matchAll(/<script src="([^"]+\.js)\?v=([^"]+)"/g)];
 for(const [,src,v] of staticScripts)check('cache version: '+src,v===build,`${v} vs ${build}`);
@@ -49,7 +49,7 @@ const dashboard=read('dashboard-core.js');
 check('dashboard uses transaction engine',dashboard.includes('MGWTransactionEngine?.cycle'),'derived cycle calculations');
 
 const tx=read('transaction-engine.js');
-for(const field of ['provenance','transactionFingerprint','paymentSourceId','recurringItemId']){
+for(const field of ['provenance','transactionFingerprint','paymentSourceId','recurringItemId','recurringOverage']){
   check('transaction field: '+field,tx.includes(field),'transaction model');
 }
 
@@ -62,3 +62,10 @@ console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} f
 for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
 for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
 if(fail.length)process.exit(1);
+
+const accounts=read('account-registry.js');
+check('observed wallets supported',accounts.includes('discoverObservedWallets'),'transaction payment sources can become stable wallet accounts');
+const recurring=read('recurring-engine.js');
+check('historical recurring inference supported',recurring.includes('historicalRecurring'),'strong imported monthly patterns can be normalized');
+const app=read('app.js');
+for(const category of ['Healthcare','Installments','Subscription','Insurance','Telecom'])check('category UI: '+category,app.includes(category),'extended category display');
