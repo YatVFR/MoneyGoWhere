@@ -64,7 +64,7 @@ function applyUiPreferences(prefs){
   }
 }
 function stampBackup(database,kind,exportedAt){
-  database.backupMeta={...(database.backupMeta||{}),lastExportedAt:exportedAt,lastExportKind:kind,appVersion:RELEASE,schemaVersion:window.MGW_RELEASE?.schemaVersion||database.schemaVersion||2,dataVersion:window.MGW_RELEASE?.dataVersion||database.dataVersion||18};
+  database.backupMeta={...(database.backupMeta||{}),lastExportedAt:exportedAt,lastExportKind:kind,appVersion:RELEASE,schemaVersion:window.MGW_RELEASE?.schemaVersion||database.schemaVersion||2,dataVersion:window.MGW_RELEASE?.dataVersion||database.dataVersion||20};
   try{localStorage.setItem(DB_KEY,JSON.stringify(database))}catch(err){console.warn('MoneyGoWhere backup metadata could not be persisted',err)}
 }
 function masterPayload(database=window.db||{}){
@@ -76,7 +76,7 @@ function masterPayload(database=window.db||{}){
     formatVersion:FORMAT_VERSION,
     appVersion:RELEASE,
     schemaVersion:Number(d.schemaVersion)||2,
-    dataVersion:Number(d.dataVersion)||18,
+    dataVersion:Number(d.dataVersion)||20,
     exportedAt,
     summary:summary(d),
     database:clone(d)
@@ -91,7 +91,7 @@ function fullBackupPayload(database=window.db||{}){
     formatVersion:FORMAT_VERSION,
     appVersion:RELEASE,
     schemaVersion:Number(d.schemaVersion)||2,
-    dataVersion:Number(d.dataVersion)||18,
+    dataVersion:Number(d.dataVersion)||20,
     exportedAt,
     capabilities:{financeData:true,accounts:true,recurring:true,imports:true,settings:true,uiPreferences:true},
     summary:summary(d),
