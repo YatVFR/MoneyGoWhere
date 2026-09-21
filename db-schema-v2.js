@@ -2,7 +2,7 @@
 // Backward-compatible: keeps current feature arrays while adding explicit schema metadata.
 (()=>{'use strict';
 const CURRENT_SCHEMA=2;
-const CURRENT_DATA=18;
+const CURRENT_DATA=19;
 const DB_KEY='moneygowhere-db-v1';
 const SNAPSHOT_KEY='moneygowhere-rollback-pre-schema2-v1';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
@@ -37,6 +37,7 @@ function empty(){
     recurringBills:[],
     recurringItems:[],
     recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0},
+    transactionModelMeta:{version:1,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0},
     walletAccounts:[],
     bankAccounts:[],
     accounts:[],
@@ -65,6 +66,7 @@ function shape(input){
   out.backupMeta=isObj(db.backupMeta)?db.backupMeta:{};
   out.recurringItems=Array.isArray(db.recurringItems)?db.recurringItems:[];
   out.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0};
+  out.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:1,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0};
   out.accounts=Array.isArray(db.accounts)?db.accounts:[];
   out.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
   out.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1,lastSyncedAt:null,accountCount:0};
