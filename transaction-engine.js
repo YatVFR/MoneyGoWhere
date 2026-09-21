@@ -58,7 +58,7 @@ function prepareExpense(row,index=0){
   x.provenance=provenance(x);
   x.paymentSourceId=x.paymentSourceId||x.paymentAccountId||x.paymentBankAccountId||'';
   if(x.paymentSourceId&&!x.paymentAccountId)x.paymentAccountId=x.paymentSourceId;
-  x.transactionFingerprint=x.transactionFingerprint||fingerprint(x);
+  x.transactionFingerprint=fingerprint(x);
   return x;
 }
 function prepareIncome(row,index=0){
