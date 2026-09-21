@@ -7,7 +7,7 @@ MoneyGoWhere remains local-first. The live database is stored in browser storage
 - `app`: `MoneyGoWhere`
 - `version`: 2
 - `schemaVersion`: 2
-- `dataVersion`: 18
+- `dataVersion`: 19
 - `createdAt`: database creation timestamp
 - `updatedAt`: last application save timestamp
 
@@ -74,3 +74,8 @@ Schema v2 remains the compatibility foundation. Phase 3 introduced the canonical
 ## Phase 5 backup contract
 
 Data version 18 adds the versioned MasterDB and Full App Backup contract. The live schema remains v2; portable backups now identify their kind and format explicitly and are validated before restore.
+
+
+## Phase 6 transaction model
+
+Data version 19 adds transaction provenance, stable payment-source references, local duplicate fingerprints and recurring-item links. Dashboard balances are derived from these normalized records rather than stored as separate financial totals.
