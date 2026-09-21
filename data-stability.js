@@ -20,6 +20,7 @@ function sanitize(input){
   db.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
   db.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1};
   db.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:1};
+  db.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:1};
   return db;
 }
 let renderPending=false;
