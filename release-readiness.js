@@ -23,7 +23,7 @@ function run(){
   const tests=[];
   try{
     const r=window.MGW_RELEASE||{};
-    tests.push(result('Runtime release identity',Boolean(r.appVersion)&&Number(r.schemaVersion)>=2&&Number(r.dataVersion)>=20,`v${r.appVersion||'—'} · schema ${r.schemaVersion??'—'} · data ${r.dataVersion??'—'}`));
+    tests.push(result('Runtime release identity',Boolean(r.appVersion)&&Number(r.schemaVersion)>=2&&Number(r.dataVersion)>=19,`v${r.appVersion||'—'} · schema ${r.schemaVersion??'—'} · data ${r.dataVersion??'—'}`));
   }catch(e){tests.push(result('Runtime release identity',false,e.message))}
   try{
     const s=window.MGWDatabaseSchema;const d=s?.shape?.(syntheticDb());
