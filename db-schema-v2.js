@@ -36,13 +36,13 @@ function empty(){
     recurringCommitments:[],
     recurringBills:[],
     recurringItems:[],
-    recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0},
-    transactionModelMeta:{version:1,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0},
+    recurringModelMeta:{version:2,lastSyncedAt:null,itemCount:0},
+    transactionModelMeta:{version:2,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0},
     walletAccounts:[],
     bankAccounts:[],
     accounts:[],
     paymentSourceMap:{},
-    accountModelMeta:{version:1,lastSyncedAt:null,accountCount:0},
+    accountModelMeta:{version:2,lastSyncedAt:null,accountCount:0},
     importQueue:[],
     importHistory:[],
     receiptImportQueue:[],
@@ -65,11 +65,11 @@ function shape(input){
   ['expenses','income','history','receiptHistory'].forEach(k=>out.importQuarantine[k]=Array.isArray(out.importQuarantine[k])?out.importQuarantine[k]:[]);
   out.backupMeta=isObj(db.backupMeta)?db.backupMeta:{};
   out.recurringItems=Array.isArray(db.recurringItems)?db.recurringItems:[];
-  out.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:1,lastSyncedAt:null,itemCount:0};
-  out.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:1,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0};
+  out.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:2,lastSyncedAt:null,itemCount:0};
+  out.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:2,lastSyncedAt:null,expenseCount:0,incomeCount:0,duplicateFingerprintCount:0};
   out.accounts=Array.isArray(db.accounts)?db.accounts:[];
   out.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
-  out.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1,lastSyncedAt:null,accountCount:0};
+  out.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:2,lastSyncedAt:null,accountCount:0};
   out.schemaMeta=isObj(db.schemaMeta)?db.schemaMeta:{migratedFrom:null,lastMigratedAt:null};
   out.app='MoneyGoWhere';
   out.version=2;
