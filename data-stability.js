@@ -18,9 +18,9 @@ function sanitize(input){
   // Keep valid user data even when categories/fields come from older releases.
   db.backupMeta=isObj(db.backupMeta)?db.backupMeta:{};
   db.paymentSourceMap=isObj(db.paymentSourceMap)?db.paymentSourceMap:{};
-  db.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:1};
-  db.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:1};
-  db.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:1};
+  db.accountModelMeta=isObj(db.accountModelMeta)?db.accountModelMeta:{version:2};
+  db.recurringModelMeta=isObj(db.recurringModelMeta)?db.recurringModelMeta:{version:2};
+  db.transactionModelMeta=isObj(db.transactionModelMeta)?db.transactionModelMeta:{version:2};
   return db;
 }
 let renderPending=false;
