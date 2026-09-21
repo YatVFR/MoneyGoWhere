@@ -58,14 +58,14 @@ check('MasterDB kind',master.includes("moneygowhere-masterdb"),'portable DB cont
 check('Full backup kind',master.includes("moneygowhere-full-backup"),'full app contract');
 check('restore rollback',master.includes("moneygowhere-restore-rollback-v1"),'rollback snapshot');
 
-console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} failed`);
-for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
-for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
-if(fail.length)process.exit(1);
-
 const accounts=read('account-registry.js');
 check('observed wallets supported',accounts.includes('discoverObservedWallets'),'transaction payment sources can become stable wallet accounts');
 const recurring=read('recurring-engine.js');
 check('historical recurring inference supported',recurring.includes('historicalRecurring'),'strong imported monthly patterns can be normalized');
 const app=read('app.js');
 for(const category of ['Healthcare','Installments','Subscription','Insurance','Telecom'])check('category UI: '+category,app.includes(category),'extended category display');
+
+console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} failed`);
+for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
+for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
+if(fail.length)process.exit(1);
