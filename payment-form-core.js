@@ -67,7 +67,7 @@ function paymentFields(d={}){
   return `<div class="field" data-mgw-payment-core-field><label for="mgwPaymentMethodSelect">Payment Method</label><select id="mgwPaymentMethodSelect" name="paymentMethodPicker">${methodOptions(selected)}</select></div>
   <div class="field" id="mgwPaymentSourceField" data-mgw-payment-core-field><label for="mgwPaymentSourceSelect">Payment Source</label><select id="mgwPaymentSourceSelect" name="paymentSourcePicker"></select></div>
   <div class="field full" id="mgwPaymentCustomField" data-mgw-payment-core-field hidden><label for="mgwPaymentCustomInput">Payment Source Details</label><input id="mgwPaymentCustomInput" name="paymentSourceCustom" placeholder="Enter the card, bank, wallet or payment source"></div>
-  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType">
+  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentSourceId"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType">
   <div class="field full" data-mgw-payment-core-field><small class="mgw-form-note">Choose a payment method, then select your configured account or a known bank/card/wallet. Manual typing is only needed for Other / Custom.</small></div>`;
 }
 function stripLegacyPaymentFields(html){
@@ -127,7 +127,9 @@ function bindPaymentForm(form){
     if(hidden('paymentMethod'))hidden('paymentMethod').value=label;
     if(hidden('paymentSource'))hidden('paymentSource').value=sourceLabel;
     if(hidden('card'))hidden('card').value=sourceLabel;
-    if(hidden('paymentAccountId'))hidden('paymentAccountId').value=accountId;
+    const stableId=accountId||bankAccountId||'';
+    if(hidden('paymentSourceId'))hidden('paymentSourceId').value=stableId;
+    if(hidden('paymentAccountId'))hidden('paymentAccountId').value=accountId||stableId;
     if(hidden('paymentBankAccountId'))hidden('paymentBankAccountId').value=bankAccountId;
     if(hidden('paymentSourceType'))hidden('paymentSourceType').value=sourceType||code;
   };
