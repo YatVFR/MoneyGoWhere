@@ -106,6 +106,12 @@ async function hydrateData(){
         state.recurringRegistry=recurringResult;
       }catch(recurringErr){console.error('MoneyGoWhere recurring registry hydration failed',recurringErr)}
     }
+    if(window.MGWTransactionEngine?.sync){
+      try{
+        const txResult=window.MGWTransactionEngine.sync(db,{persist:false});
+        state.transactionModel=txResult;
+      }catch(txErr){console.error('MoneyGoWhere transaction model hydration failed',txErr)}
+    }
     if(migration.migrated){
       try{originalSet.call(localStorage,DB_KEY,JSON.stringify(db))}catch(writeErr){console.error('MoneyGoWhere migrated database could not be persisted',writeErr)}
       state.migration={fromSchema:migration.fromSchema,toSchema:migration.toSchema,snapshotCreated:migration.snapshotCreated};
@@ -136,6 +142,7 @@ async function loadFeaturesFirst(){
     './payment-form-core.js',
     './account-registry.js',
     './recurring-engine.js',
+    './transaction-engine.js',
     './cards-wallets.js',
     './wallet-visibility-fix.js'
   ];
