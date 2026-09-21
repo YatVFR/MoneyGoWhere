@@ -115,6 +115,7 @@ function mgwInstallVersionBadge(){
   const badge=document.createElement('span');badge.id='appVersionBadge';badge.className='app-version-badge';badge.textContent=`v${MGW_FINANCE_RELEASE.appVersion}`;badge.title=`App ${MGW_FINANCE_RELEASE.appVersion} · Schema ${MGW_FINANCE_RELEASE.schemaVersion} · Data ${MGW_FINANCE_RELEASE.dataVersion}`;header.appendChild(badge);
 }
 function mgwExportCompleteBackup(){
+  if(window.MGWMasterDB?.exportMasterDB)return window.MGWMasterDB.exportMasterDB();
   const payload={...db,backupMeta:{appVersion:MGW_FINANCE_RELEASE.appVersion,schemaVersion:MGW_FINANCE_RELEASE.schemaVersion,dataVersion:MGW_FINANCE_RELEASE.dataVersion,cacheVersion:MGW_FINANCE_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`MoneyGoWhere-backup-v${MGW_FINANCE_RELEASE.appVersion}-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);toast?.('Complete backup exported');
 }
