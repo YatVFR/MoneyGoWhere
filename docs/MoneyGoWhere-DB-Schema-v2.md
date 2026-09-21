@@ -7,7 +7,7 @@ MoneyGoWhere remains local-first. The live database is stored in browser storage
 - `app`: `MoneyGoWhere`
 - `version`: 2
 - `schemaVersion`: 2
-- `dataVersion`: 17
+- `dataVersion`: 18
 - `createdAt`: database creation timestamp
 - `updatedAt`: last application save timestamp
 
@@ -69,3 +69,8 @@ No existing feature collection is renamed or intentionally deleted in Phase 2.
 Legacy MoneyGoWhere backups that contain `expenses[]` and `income[]` remain accepted. They pass through the schema migration and stability sanitization layers before becoming the live database.
 
 Schema v2 remains the compatibility foundation. Phase 3 introduced the canonical `accounts[]` registry and stable payment-source IDs. Phase 4 extends data version 17 with canonical `recurringItems[]` while preserving legacy recurring collections as compatibility mirrors.
+
+
+## Phase 5 backup contract
+
+Data version 18 adds the versioned MasterDB and Full App Backup contract. The live schema remains v2; portable backups now identify their kind and format explicitly and are validated before restore.
