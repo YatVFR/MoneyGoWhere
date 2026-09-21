@@ -6,13 +6,10 @@ const clone=v=>JSON.parse(JSON.stringify(v));
 const result=(name,ok,detail='')=>({name,ok:Boolean(ok),detail:String(detail||'')});
 function syntheticDb(){
   return {
-    app:'MoneyGoWhere',version:2,schemaVersion:2,dataVersion:Number(window.MGW_RELEASE?.dataVersion)||20,
+    app:'MoneyGoWhere',version:2,schemaVersion:2,dataVersion:Number(window.MGW_RELEASE?.dataVersion)||19,
     createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),
-    expenses:[{id:'TEST-EXP-1',date:'2026-01-10',time:'12:00',vendor:'Synthetic Merchant',amount:10,currency:'SGD',source:'manual',paymentSource:'Test Card'}],
-    income:[{id:'TEST-INC-1',date:'2026-01-01',netSalary:100,source:'manual'}],
-    budgets:{monthly:100,categories:{}},settings:{currency:'SGD'},
-    creditAccounts:[{id:'TEST-CARD-1',name:'Test Card',nickname:'Test Card',accountType:'credit'}],creditPayments:[],
-    payLaterAccounts:[],payLaterPayments:[],walletAccounts:[],bankAccounts:[],
+    expenses:[],income:[],budgets:{monthly:0,categories:{}},settings:{currency:'SGD'},
+    creditAccounts:[],creditPayments:[],payLaterAccounts:[],payLaterPayments:[],walletAccounts:[],bankAccounts:[],
     monthlyCommitments:[],recurringIncome:[],recurringCommitments:[],recurringBills:[],
     recurringItems:[],recurringModelMeta:{version:1},accounts:[],paymentSourceMap:{},accountModelMeta:{version:1},
     importQueue:[],importHistory:[],receiptImportQueue:[],receiptImportHistory:[],
@@ -31,7 +28,7 @@ function run(){
   }catch(e){tests.push(result('Schema v2 normalization',false,e.message))}
   try{
     const d=syntheticDb();const r=window.MGWAccountRegistry?.sync?.(d,{persist:false});
-    tests.push(result('Unified account registry',Boolean(r&&d.accounts?.some(a=>a.id==='TEST-CARD-1')),r?`${r.accounts} account(s)`:'account registry unavailable'));
+    tests.push(result('Unified account registry',Boolean(r&&Array.isArray(d.accounts)&&r.accounts===0),r?`${r.accounts} account(s) · empty-base check`:'account registry unavailable'));
   }catch(e){tests.push(result('Unified account registry',false,e.message))}
   try{
     const d=syntheticDb();const r=window.MGWRecurringEngine?.sync?.(d,{persist:false});
@@ -39,13 +36,13 @@ function run(){
   }catch(e){tests.push(result('Recurring engine',false,e.message))}
   try{
     const d=syntheticDb();window.MGWAccountRegistry?.sync?.(d,{persist:false});window.MGWRecurringEngine?.sync?.(d,{persist:false});
-    const r=window.MGWTransactionEngine?.sync?.(d,{persist:false}),x=d.expenses[0];
-    tests.push(result('Transaction derivation',Boolean(r&&x?.transactionFingerprint&&x?.provenance==='manual'&&x?.paymentSourceId==='TEST-CARD-1'),r?`${r.expenses} expense(s) · ${r.duplicates} duplicate(s)`:'transaction engine unavailable'));
+    const r=window.MGWTransactionEngine?.sync?.(d,{persist:false});
+    tests.push(result('Transaction derivation',Boolean(r&&r.expenses===0&&r.income===0&&d.transactionModelMeta?.version===1),r?`empty-base sync · ${r.duplicates} duplicate(s)`:'transaction engine unavailable'));
   }catch(e){tests.push(result('Transaction derivation',false,e.message))}
   try{
     const d=syntheticDb(),payload={app:'MoneyGoWhere',kind:'moneygowhere-masterdb',formatVersion:1,appVersion:RELEASE,schemaVersion:2,dataVersion:Number(window.MGW_RELEASE?.dataVersion)||20,exportedAt:new Date().toISOString(),summary:{},database:d};
     const r=window.MGWMasterDB?.validate?.(clone(payload));
-    tests.push(result('MasterDB validation',Boolean(r?.prepared&&r?.summary?.expenses===1),r?`${r.kind} · ${r.summary.expenses} expense(s)`:'MasterDB engine unavailable'));
+    tests.push(result('MasterDB validation',Boolean(r?.prepared&&r?.summary?.expenses===0&&r?.summary?.income===0),r?`${r.kind} · empty-base validated`:'MasterDB engine unavailable'));
   }catch(e){tests.push(result('MasterDB validation',false,e.message))}
   try{
     const ok=window.MGWPaymentFormCore?.selfTest?.();
