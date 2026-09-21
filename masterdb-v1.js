@@ -196,7 +196,7 @@ function installSettings(){
   const full=document.getElementById('mgwFullBackupBtn');
   if(exportBtn&&!exportBtn.dataset.mgwMasterBound){exportBtn.dataset.mgwMasterBound='1';exportBtn.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();exportMasterDB()},{capture:true})}
   if(full&&!full.dataset.mgwMasterBound){full.dataset.mgwMasterBound='1';full.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();exportFullBackup()},{capture:true})}
-  if(importInput&&!importInput.dataset.mgwMasterBound){importInput.dataset.mgwMasterBound='1';importInput.onchange=null;importInput.addEventListener('change',e=>{const file=e.target.files?.[0];if(file)restoreFile(file);e.target.value=''},{capture:true})}
+  if(importInput&&!importInput.dataset.mgwMasterBound){importInput.dataset.mgwMasterBound='1';importInput.onchange=null;importInput.addEventListener('change',e=>{e.preventDefault();e.stopImmediatePropagation();const file=e.target.files?.[0];if(file)restoreFile(file);e.target.value=''},{capture:true})}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installSettings,{once:true});else installSettings();
 document.addEventListener('mgw:app-ready',installSettings);
