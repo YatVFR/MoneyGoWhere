@@ -59,9 +59,10 @@ function render(){
     <div><small>Active recurring</small><strong>${r.recurringInfo.active}</strong></div>
   </div>
   <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
-  <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">BACKUP NOW</button></div>`;
+  <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">MASTERDB BACKUP</button>${window.MGWMasterDB?.rollbackAvailable?.()?'<button type="button" class="secondary-btn" id="mgwRestoreRollback">ROLLBACK LAST RESTORE</button>':''}</div>`;
   card.querySelector('#mgwDbHealthRun')?.addEventListener('click',()=>{render();window.toast?.(report().healthy?'Database health check passed':'Database health check found items to review')});
   card.querySelector('#mgwDbHealthBackup')?.addEventListener('click',()=>document.querySelector('#exportBtn')?.click());
+  card.querySelector('#mgwRestoreRollback')?.addEventListener('click',()=>{if(!confirm('Restore the database that existed immediately before the last restore?'))return;const r=window.MGWMasterDB?.rollbackRestore?.();window.toast?.(r?.ok?'Previous database restored':'No valid restore rollback snapshot found');render()});
 }
 document.addEventListener('mgw:backup-exported',()=>setTimeout(render,50));
 document.addEventListener('mgw:settings-features-ready',()=>setTimeout(render,20));
@@ -70,6 +71,7 @@ document.addEventListener('mgw:recurring-changed',()=>setTimeout(render,40));
 document.addEventListener('mgw:recurring-registry-ready',()=>setTimeout(render,40));
 document.addEventListener('mgw:schema-migrated',()=>setTimeout(render,40));
 document.addEventListener('mgw:data-restored',()=>setTimeout(render,40));
+document.addEventListener('mgw:backup-exported',()=>setTimeout(render,40));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(render,180),{once:true});else setTimeout(render,180);
 window.MGWDatabaseHealth=Object.freeze({version:RELEASE,report,render});
 })();
