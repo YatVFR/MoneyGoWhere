@@ -47,13 +47,13 @@ function ensureCard(){
 }
 function render(){
   installStyles();const card=ensureCard();if(!card)return;
-  const r=report(),state=r.healthy?'DATABASE HEALTHY':'REVIEW DATABASE';
+  const r=report(),onlyQuarantine=!r.healthy&&r.quarantined>0&&r.duplicates===0&&r.invalid===0&&r.accountInfo.orphans===0&&r.transactionInfo.duplicates===0,state=r.healthy?'DATABASE HEALTHY':onlyQuarantine?'REVIEW QUARANTINE':'REVIEW DATABASE';
   card.innerHTML=`<div class="card-head"><div><span class="section-icon">🩺</span><b>Database Health</b></div><span class="mgw-db-health-state ${r.healthy?'good':'warn'}">${state}</span></div>
   <div class="mgw-db-health-grid">
     <div><small>Stored records</small><strong>${r.total}</strong></div>
     <div><small>Duplicate IDs</small><strong>${r.duplicates}</strong></div>
     <div><small>Invalid records</small><strong>${r.invalid}</strong></div>
-    <div><small>Quarantined</small><strong>${r.quarantined}</strong></div>
+    <div><small>Quarantined import rows</small><strong>${r.quarantined}</strong></div>
     <div><small>Accounts</small><strong>${r.accountInfo.total}</strong></div>
     <div><small>Orphan payment links</small><strong>${r.accountInfo.orphans}</strong></div>
     <div><small>Recurring items</small><strong>${r.recurringInfo.total}</strong></div>
@@ -61,7 +61,7 @@ function render(){
     <div><small>Recurring links</small><strong>${r.transactionInfo.recurringLinkedTotal??r.transactionInfo.recurringLinked??0}</strong></div>
     <div><small>Potential duplicates</small><strong>${r.transactionInfo.duplicates}</strong></div>
   </div>
-  <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
+  <p class="mgw-muted">App v${RELEASE} · Schema ${r.schema} · Data ${r.dataVersion??'—'}<br>Last backup: ${fmtDate(r.backup)}${r.quarantined?'<br>Quarantined rows are isolated from live calculations and kept for review.':''}${r.migratedFrom!==null?'<br>Migrated from schema '+r.migratedFrom+': '+fmtDate(r.migratedAt):''}${r.rollback?'<br>Pre-schema-v2 rollback snapshot: Available':''}</p>
   <div class="mgw-db-health-actions"><button type="button" class="secondary-btn" id="mgwDbHealthRun">RUN CHECK</button><button type="button" class="primary-btn" id="mgwDbHealthBackup">MASTERDB BACKUP</button>${window.MGWMasterDB?.rollbackAvailable?.()?'<button type="button" class="secondary-btn" id="mgwRestoreRollback">ROLLBACK LAST RESTORE</button>':''}</div>`;
   card.querySelector('#mgwDbHealthRun')?.addEventListener('click',()=>{render();window.toast?.(report().healthy?'Database health check passed':'Database health check found items to review')});
   card.querySelector('#mgwDbHealthBackup')?.addEventListener('click',()=>document.querySelector('#exportBtn')?.click());
