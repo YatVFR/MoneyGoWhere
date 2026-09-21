@@ -2,7 +2,7 @@
 // Adds stable account IDs and payment-source relationships while preserving legacy feature arrays.
 (()=>{'use strict';
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
-const MODEL_VERSION=1;
+const MODEL_VERSION=2;
 const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toUpperCase();
 const clone=v=>JSON.parse(JSON.stringify(v));
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
