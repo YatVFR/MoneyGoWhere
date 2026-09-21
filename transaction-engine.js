@@ -80,11 +80,12 @@ function linkRecurring(database=window.db||{}){
   ensure(database);let linked=0;
   const used=new Set();
   for(const x of database.expenses){
-    if(x.recurringItemId){used.add(x.recurringItemId);continue}
-    const matches=recurringCandidates(x,database).filter(m=>!used.has(m.item.id));
+    const month=monthKeyFromDate(x.date),slot=id=>`${id}|${month}`;
+    if(x.recurringItemId){used.add(slot(x.recurringItemId));continue}
+    const matches=recurringCandidates(x,database).filter(m=>!used.has(slot(m.item.id)));
     if(!matches.length)continue;
     if(matches.length>1&&matches[0].score===matches[1].score)continue;
-    x.recurringItemId=matches[0].item.id;used.add(matches[0].item.id);linked++;
+    x.recurringItemId=matches[0].item.id;used.add(slot(matches[0].item.id));linked++;
   }
   return linked;
 }
