@@ -11,9 +11,9 @@ function syntheticDb(){
     expenses:[],income:[],budgets:{monthly:0,categories:{}},settings:{currency:'SGD'},
     creditAccounts:[],creditPayments:[],payLaterAccounts:[],payLaterPayments:[],walletAccounts:[],bankAccounts:[],
     monthlyCommitments:[],recurringIncome:[],recurringCommitments:[],recurringBills:[],
-    recurringItems:[],recurringModelMeta:{version:1},accounts:[],paymentSourceMap:{},accountModelMeta:{version:1},
+    recurringItems:[],recurringModelMeta:{version:2},accounts:[],paymentSourceMap:{},accountModelMeta:{version:2},
     importQueue:[],importHistory:[],receiptImportQueue:[],receiptImportHistory:[],
-    importQuarantine:{expenses:[],income:[],history:[],receiptHistory:[]},backupMeta:{},schemaMeta:{},transactionModelMeta:{version:1}
+    importQuarantine:{expenses:[],income:[],history:[],receiptHistory:[]},backupMeta:{},schemaMeta:{},transactionModelMeta:{version:2}
   };
 }
 function run(){
@@ -37,7 +37,7 @@ function run(){
   try{
     const d=syntheticDb();window.MGWAccountRegistry?.sync?.(d,{persist:false});window.MGWRecurringEngine?.sync?.(d,{persist:false});
     const r=window.MGWTransactionEngine?.sync?.(d,{persist:false});
-    tests.push(result('Transaction derivation',Boolean(r&&r.expenses===0&&r.income===0&&d.transactionModelMeta?.version===1),r?`empty-base sync · ${r.duplicates} duplicate(s)`:'transaction engine unavailable'));
+    tests.push(result('Transaction derivation',Boolean(r&&r.expenses===0&&r.income===0&&d.transactionModelMeta?.version===2),r?`empty-base sync · ${r.duplicates} duplicate(s)`:'transaction engine unavailable'));
   }catch(e){tests.push(result('Transaction derivation',false,e.message))}
   try{
     const d=syntheticDb(),payload={app:'MoneyGoWhere',kind:'moneygowhere-masterdb',formatVersion:1,appVersion:RELEASE,schemaVersion:2,dataVersion:Number(window.MGW_RELEASE?.dataVersion)||20,exportedAt:new Date().toISOString(),summary:{},database:d};
