@@ -132,7 +132,8 @@ function cycle(anchor,database=window.db||{}){
 }
 function describe(database=window.db||{}){
   ensure(database);const r=sync(database,{persist:false});
-  return {version:MODEL_VERSION,...r};
+  const recurringLinkedTotal=database.expenses.filter(x=>Boolean(x.recurringItemId)).length;
+  return {version:MODEL_VERSION,...r,recurringLinkedTotal};
 }
 function onReady(){try{const info=sync(window.db||{},{persist:true});document.dispatchEvent(new CustomEvent('mgw:transaction-model-ready',{detail:info}))}catch(err){console.error('MoneyGoWhere transaction model sync failed',err)}}
 document.addEventListener('mgw:data-ready',onReady);
