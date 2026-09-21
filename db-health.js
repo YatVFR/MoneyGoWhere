@@ -64,7 +64,6 @@ function render(){
   card.querySelector('#mgwDbHealthBackup')?.addEventListener('click',()=>document.querySelector('#exportBtn')?.click());
   card.querySelector('#mgwRestoreRollback')?.addEventListener('click',()=>{if(!confirm('Restore the database that existed immediately before the last restore?'))return;const r=window.MGWMasterDB?.rollbackRestore?.();window.toast?.(r?.ok?'Previous database restored':'No valid restore rollback snapshot found');render()});
 }
-document.addEventListener('mgw:backup-exported',()=>setTimeout(render,50));
 document.addEventListener('mgw:settings-features-ready',()=>setTimeout(render,20));
 document.addEventListener('mgw:accounts-changed',()=>setTimeout(render,40));
 document.addEventListener('mgw:recurring-changed',()=>setTimeout(render,40));
