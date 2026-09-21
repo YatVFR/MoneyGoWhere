@@ -134,7 +134,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   mgwInstallVersionBadge();
   const trend=document.querySelector('#trendBars')?.closest('.card');if(trend&&!document.querySelector('#monthlyDetails')){const wrap=document.createElement('article');wrap.className='card';wrap.id='monthlyDetails';trend.insertAdjacentElement('beforebegin',wrap)}
   if(typeof renderAll==='function')renderAll();else renderMonthlyDetails();
-  const exportBtn=document.querySelector('#exportBtn');exportBtn?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();mgwExportCompleteBackup()},{capture:true});
   const refreshBtn=document.querySelector('#refreshBtn');refreshBtn?.addEventListener('click',e=>{if(!refreshBtn.classList.contains('update-available'))return;const proceed=window.confirm('Backup recommended before updating MoneyGoWhere. Export your database and preferences first if you have not done so. Continue installing the update?');if(!proceed){e.preventDefault();e.stopImmediatePropagation();toast?.('Update paused — create a backup first')}},{capture:true});
   mgwHandleApplePayURL();
 });
