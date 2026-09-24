@@ -29,7 +29,7 @@ function activeRule(rule,key=cycleKey()){
   if(!Number.isFinite(cur)||!Number.isFinite(start)||cur<start||cur>end)return false;
   return (cur-start)%(STEPS[rule.frequency]||1)===0;
 }
-function actualIncome(){return (db.income||[]).filter(inCycle).reduce((t,x)=>t+num(x.netSalary),0)}
+function actualIncome(){return (db.income||[]).filter(inCycle).reduce((t,x)=>t+num(x.netSalary)+num(x.bonus)+num(x.oneOff),0)}
 function scheduledIncome(){if(window.MGWRecurringEngine?.incomeForMonth)return window.MGWRecurringEngine.incomeForMonth(cycleKey(),db).reduce((t,x)=>t+num(x.amount),0);return db.recurringIncome.filter(x=>activeRule(x)).reduce((t,x)=>t+num(x.netSalary),0)}
 function cyclePayment(rows,id){return rows.filter(x=>String(x.accountId||'')===String(id||'')&&inCycle(x)).reduce((t,x)=>t+num(x.amount),0)}
 function fixedItems(){
