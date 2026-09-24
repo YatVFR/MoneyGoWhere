@@ -69,3 +69,8 @@ console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} f
 for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
 for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
 if(fail.length)process.exit(1);
+
+const salary=read('salary-trends.js');
+check('salary module uses runtime release',salary.includes("window.MGW_RELEASE?.appVersion||'dev'"),'salary module release identity');
+check('Insights preserves salary module',hist.includes('MGWSalaryTrends?.render'),'enhanced salary view survives Insights render');
+check('cycle income includes extras',dashboard.includes('num(x.bonus)+num(x.oneOff)'),'bonus and one-off included in actual cycle income');
