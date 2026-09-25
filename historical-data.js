@@ -1,6 +1,6 @@
 // MoneyGoWhere runtime coordinator. Global build identity comes from index.html.
 // Keeps pay-cycle behaviour and loads feature modules once, in deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze(window.MGW_RELEASE||{appVersion:'dev',schemaVersion:1,dataVersion:13,cacheVersion:'dev'});
+const MGW_RUNTIME_RELEASE=Object.freeze(window.MGW_RELEASE||{appVersion:'dev',schemaVersion:2,dataVersion:20,cacheVersion:'dev'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
