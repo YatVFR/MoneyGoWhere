@@ -2,7 +2,7 @@
 // UI-only behavior; no personal finance records are bundled here.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.42';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const state=new Map();
   let installPending=false;
 
