@@ -1,7 +1,7 @@
 // MoneyGoWhere v1.5.5-dev.51 — recurring-data onboarding and one-time existing-user notice
 // Local-first: this module stores only the recurring rules the user chooses in their browser database.
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.51',FEATURE='recurring-setup-v1';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev',FEATURE='recurring-setup-v1';
 const FREQ={monthly:'Monthly',bimonthly:'Every 2 months',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
 const num=v=>Math.max(0,Number(v)||0);
 const uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
