@@ -1,7 +1,7 @@
 // MoneyGoWhere DEV Pay-Later UI interaction patch
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.17';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const manualRules=new WeakMap();
   function repair(form){
     if(!form)return;
