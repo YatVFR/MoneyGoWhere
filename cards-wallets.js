@@ -208,6 +208,10 @@
     const dash=document.querySelector('#mgwAccountsDashboard .mgw-account-grid');if(dash&&!document.querySelector('#mgwWalletDashboardBlock')&&db.walletAccounts.length){const block=document.createElement('div');block.id='mgwWalletDashboardBlock';block.innerHTML=`<p class="mgw-muted"><b>Wallets & Debit</b></p>${db.walletAccounts.map(walletCard).join('')}`;dash.appendChild(block)}
   }
   document.addEventListener('click',e=>{const add=e.target.closest?.('#mgwAddCard');if(add){e.preventDefault();e.stopImmediatePropagation();openAccount();return}const edit=e.target.closest?.('[data-card-edit]');if(edit){const a=(db.creditAccounts||[]).find(x=>x.id===edit.dataset.cardEdit);if(a){e.preventDefault();e.stopImmediatePropagation();openAccount(a,'credit')}return}const we=e.target.closest?.('[data-wallet-edit]');if(we){const a=(db.walletAccounts||[]).find(x=>x.id===we.dataset.walletEdit);if(a){e.preventDefault();e.stopImmediatePropagation();openAccount(a,'wallet')}}},true);
-  function boot(){ensure();if(typeof renderAll==='function'&&!renderAll.__mgwCardsWallets){const base=renderAll;renderAll=function(){base();queueMicrotask(enhance)};renderAll.__mgwCardsWallets=true}queueMicrotask(enhance);window.MGWCardsWallets={version:RELEASE,types:{...TYPES},catalog:CATALOG,open:openAccount}}
+  function boot(){
+    try{ensure()}catch(err){reportError(err,'cards-wallets-boot')}
+    window.MGWCardsWallets={version:RELEASE,types:{...TYPES},catalog:CATALOG,open:openAccount,enhance};
+    queueMicrotask(()=>{try{enhance()}catch(err){reportError(err,'cards-wallets-initial-enhance')}});
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

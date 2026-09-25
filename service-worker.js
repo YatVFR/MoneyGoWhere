@@ -1,5 +1,5 @@
 const APP_VERSION='1.5.5-dev.51';
-const CACHE='moneygowhere-uat-dev51-card-wallet-hotfix-v9';
+const CACHE='moneygowhere-uat-dev51-card-wallet-hotfix-v10';
 const CORE=[
   './','./index.html','./style.css','./uat-runtime-diagnostics.js','./app.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',

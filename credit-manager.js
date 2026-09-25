@@ -120,7 +120,7 @@
     const wrapped=function(type,d={}){let html=base(type,d);const names=[...db.creditAccounts,...db.payLaterAccounts].map(a=>a.name).filter(Boolean);if(!names.length)return html;const list=`<datalist id="mgwPaymentSources">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;html=html.replace(/<input name="card"([^>]*)>/,`<input name="card" list="mgwPaymentSources"$1>${list}`);return html};wrapped.__mgwCreditEnhanced=true;expenseForm=wrapped;
   }
 
-  function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit()}
+  function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit();try{window.MGWCardsWallets?.enhance?.()}catch(err){console.error('[MoneyGoWhere UAT] cards-wallets enhance failed',err);try{window.MGWUATDiagnostics?.capture?.(err,'credit-manager-wallet-enhance')}catch(_){}}}
   function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit();const badge=document.querySelector('#appVersionBadge');if(badge)badge.textContent=`v${RELEASE}`}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
