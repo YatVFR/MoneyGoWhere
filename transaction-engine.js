@@ -7,6 +7,7 @@ const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const num=v=>Math.max(0,Number(v)||0);
 const norm=v=>String(v||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
 const money2=v=>Math.round((Number(v)||0)*100)/100;
+const value=x=>window.MGWCurrency?.sgdAmount?num(window.MGWCurrency.sgdAmount(x)):num(x?.amount);
 const sourceMap=Object.freeze({
   manual:'manual',receipt_scan:'receipt',receipt:'receipt',ocr:'receipt',
   apple_pay:'apple-pay',applepay:'apple-pay',apple_wallet:'apple-pay',
@@ -77,7 +78,7 @@ function recurringCandidates(expense,database){
   return items.map(item=>{
     const needle=norm(item.merchant||item.name),category=norm(item.category||'');if(!needle)return null;
     const nameMatch=hay===needle?3:(hay.includes(needle)||needle.includes(hay)?2:0);if(!nameMatch)return null;
-    const expected=num(item.amount),actual=num(expense.amount),diff=Math.abs(actual-expected);
+    const expected=num(item.amount),actual=value(expense),diff=Math.abs(actual-expected);
     const variable=/UTILIT|TELECOM|INSURANCE|SUBSCRIPTION/.test(category);
     const tol=Math.max(2,expected*(variable?0.55:0.35));
     if(diff>tol)return null;
@@ -120,7 +121,7 @@ function isPayLaterExpense(row,database=window.db||{}){
   const id=row?.paymentSourceId||row?.paymentAccountId||'';
   return Boolean(id&&(database.payLaterAccounts||[]).some(x=>String(x.id)===String(id)));
 }
-function group(rows,keyFn,amountFn=x=>num(x.amount)){
+function group(rows,keyFn,amountFn=value){
   const map=new Map();
   for(const row of rows){const key=String(keyFn(row)||'Other');map.set(key,(map.get(key)||0)+amountFn(row))}
   return [...map.entries()].map(([name,amount])=>({name,amount:money2(amount)})).sort((a,b)=>b.amount-a.amount);
@@ -132,12 +133,12 @@ function cycle(anchor,database=window.db||{}){
   const recurring=expenses.filter(x=>x.recurringItemId),payLater=expenses.filter(x=>isPayLaterExpense(x,database));
   const unclassified=expenses.filter(x=>!x.recurringItemId&&!isPayLaterExpense(x,database));
   const recurringById=new Map((database.recurringItems||[]).map(x=>[x.id,x]));
-  const recurringOverage=recurring.reduce((t,x)=>{const plan=num(recurringById.get(x.recurringItemId)?.amount);return t+Math.max(0,num(x.amount)-plan)},0);
+  const recurringOverage=recurring.reduce((t,x)=>{const plan=num(recurringById.get(x.recurringItemId)?.amount);return t+Math.max(0,value(x)-plan)},0);
   const dayToDay=[...unclassified];
-  const dayToDayTotal=dayToDay.reduce((t,x)=>t+num(x.amount),0)+recurringOverage;
+  const dayToDayTotal=dayToDay.reduce((t,x)=>t+value(x),0)+recurringOverage;
   return {
     expenses,income,recurring,payLater,dayToDay,recurringOverage,
-    totals:{all:expenses.reduce((t,x)=>t+num(x.amount),0),recurring:recurring.reduce((t,x)=>t+num(x.amount),0),recurringOverage,payLater:payLater.reduce((t,x)=>t+num(x.amount),0),dayToDay:dayToDayTotal},
+    totals:{all:expenses.reduce((t,x)=>t+value(x),0),recurring:recurring.reduce((t,x)=>t+value(x),0),recurringOverage,payLater:payLater.reduce((t,x)=>t+value(x),0),dayToDay:dayToDayTotal},
     byCategory:group(expenses,x=>x.category||'Other'),
     byAccount:group(expenses,x=>accountFor(x,database)?.name||x.paymentSource||x.card||x.paymentMethod||'Unassigned'),
     byProvenance:group(expenses,x=>x.provenance||provenance(x))
@@ -153,5 +154,5 @@ document.addEventListener('mgw:data-ready',onReady);
 document.addEventListener('mgw:data-restored',()=>setTimeout(onReady,0));
 document.addEventListener('mgw:accounts-changed',()=>{try{sync(window.db||{},{persist:true})}catch{}});
 document.addEventListener('mgw:recurring-changed',()=>{try{sync(window.db||{},{persist:true})}catch{}});
-window.MGWTransactionEngine=Object.freeze({version:RELEASE,modelVersion:MODEL_VERSION,ensure,sync,prepareExpense,prepareIncome,provenance,fingerprint,linkRecurring,accountFor,isPayLaterExpense,cycle,describe});
+window.MGWTransactionEngine=Object.freeze({version:RELEASE,modelVersion:MODEL_VERSION,ensure,sync,prepareExpense,prepareIncome,provenance,fingerprint,linkRecurring,accountFor,isPayLaterExpense,value,cycle,describe});
 })();
