@@ -2,7 +2,7 @@
 // Global app version identity and Purchase History are owned by newer runtime modules.
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.10';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v)||0;
 const norm=v=>String(v||'').replace(/^[^A-Za-z0-9]+/,'').trim().replace(/\s+/g,' ').toUpperCase();
