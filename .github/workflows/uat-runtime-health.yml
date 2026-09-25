@@ -1,0 +1,80 @@
+name: UAT Runtime Health Guard
+
+on:
+  push:
+    branches: ["preview/uat"]
+  pull_request:
+    branches: ["preview/uat"]
+
+permissions:
+  contents: read
+
+jobs:
+  uat-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: JavaScript syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find . -maxdepth 1 -type f -name '*.js' -print0)
+
+      - name: Manifest JSON validation
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest.json valid')"
+
+      - name: Card and wallet regression guards
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "persistNext(next)" cards-wallets.js
+          grep -q "mgwSaving" cards-wallets.js
+          grep -q "requestRender" cards-wallets.js
+          grep -q "Duplicate card/wallet identifier detected" cards-wallets.js
+          grep -q "MGWUATDiagnostics" cards-wallets.js
+          if grep -q "renderAll?.()" cards-wallets.js; then
+            echo "Synchronous optional render call returned to Cards & Wallets save path"
+            exit 1
+          fi
+
+      - name: Runtime diagnostics wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s uat-runtime-diagnostics.js
+          grep -q 'uat-runtime-diagnostics.js' index.html
+          grep -q 'uat-runtime-diagnostics.js' service-worker.js
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const diag=html.indexOf('src="uat-runtime-diagnostics.js"');
+          const app=html.indexOf('src="app.js"');
+          if(diag<0||app<0||diag>app)throw new Error('UAT diagnostics must load before app.js');
+          console.log('diagnostics load order OK');
+          NODE
+
+      - name: Active module collision scan
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const html=fs.readFileSync('index.html','utf8');
+          const hist=fs.readFileSync('historical-data.js','utf8');
+          const direct=[...html.matchAll(/<script[^>]+src="([^"]+\.js)(?:\?[^"]*)?"/g)]
+            .map(m=>m[1].replace(/^\.\//,''));
+          const dynamic=[...hist.matchAll(/'\.\/([^']+\.js)'/g)].map(m=>m[1]);
+          const dup=dynamic.filter((x,i)=>dynamic.indexOf(x)!==i);
+          if(dup.length)throw new Error('Duplicate dynamic modules: '+[...new Set(dup)].join(', '));
+          const overlap=dynamic.filter(x=>direct.includes(x)&&x!=='cards-wallets.js');
+          if(overlap.length)console.warn('WARN direct/dynamic overlap:',[...new Set(overlap)].join(', '));
+          const wrappers=[...new Set([...direct,...dynamic])].filter(p=>fs.existsSync(p))
+            .reduce((n,p)=>n+(fs.readFileSync(p,'utf8').match(/renderAll\s*=\s*function/g)||[]).length,0);
+          console.log('Active modules:',new Set([...direct,...dynamic]).size,'renderAll wrappers:',wrappers);
+          if(wrappers>12)throw new Error('Render wrapper depth is too high for mobile Safari: '+wrappers);
+          NODE
