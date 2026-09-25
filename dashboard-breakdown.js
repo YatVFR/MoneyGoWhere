@@ -121,7 +121,7 @@ function enforce(){
   wrapped.__mgwDashboardBreakdown=true;renderCats=wrapped;
   if(typeof renderDashboard==='function')renderDashboard();
   const badge=document.querySelector('#mgwRuntimeVersionBadge');
-  if(badge){badge.textContent=`v${RELEASE} · DEV`;badge.title=`Development build ${RELEASE}`}
+  if(badge){badge.textContent=`v${RELEASE} · UAT`;badge.title=`UAT build ${RELEASE}`}
 }
 function boot(){enforce();setTimeout(enforce,0);setTimeout(enforce,250);setTimeout(enforce,1000)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();

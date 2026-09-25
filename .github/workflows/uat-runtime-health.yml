@@ -38,9 +38,12 @@ jobs:
           grep -q "mgwSaving" cards-wallets.js
           grep -q "requestRender" cards-wallets.js
           grep -q "Duplicate card/wallet identifier detected" cards-wallets.js
+          grep -q "Saved account failed database read-back verification" cards-wallets.js
+          grep -q "MGWCreditManager?.render" cards-wallets.js
           grep -q "MGWUATDiagnostics" cards-wallets.js
-          if grep -q "renderAll?.()" cards-wallets.js; then
-            echo "Synchronous optional render call returned to Cards & Wallets save path"
+          grep -q "window.MGWCreditManager={version:RELEASE,render:renderCredit}" credit-manager.js
+          if grep -q "renderAll()" cards-wallets.js; then
+            echo "Full renderAll call returned to Cards & Wallets module; this can freeze mobile Safari"
             exit 1
           fi
 
@@ -57,6 +60,7 @@ jobs:
           const diag=html.indexOf('src="uat-runtime-diagnostics.js"');
           const app=html.indexOf('src="app.js"');
           if(diag<0||app<0||diag>app)throw new Error('UAT diagnostics must load before app.js');
+          if(html.includes('</script>\\n  <script'))throw new Error('Literal backslash-n found between script tags');
           console.log('diagnostics load order OK');
           NODE
 
