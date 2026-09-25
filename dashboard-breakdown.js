@@ -1,7 +1,7 @@
 // MoneyGoWhere feature v1.5.5-dev.9 — clean grouped dashboard breakdown
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.9';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v)||0;
 const sum=rows=>rows.reduce((t,x)=>t+num(x.amount),0);
