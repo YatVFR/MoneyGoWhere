@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.5-dev.45 — first-run onboarding with payment setup
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.45',num=v=>Number(v)||0,uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev',num=v=>Number(v)||0,uid=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
 const PAYMENT_METHODS=[['cash','Cash'],['card','Card'],['apple_pay','Apple Pay'],['paynow','PayNow'],['ewallet','E-Wallet / App'],['bank_transfer','Bank Transfer'],['nets','NETS'],['voucher','Voucher / Gift Card'],['other','Other']];
 const BANKS=['DBS / POSB','OCBC','UOB','Standard Chartered','Citibank','HSBC','Maybank','CIMB','Trust Bank','GXS Bank','MariBank','Other bank'];
 const WALLETS=['GrabPay','ShopeePay','Touch ’n Go eWallet','Singtel Dash','DBS PayLah!','YouTrip','Revolut','Wise','Alipay+','WeChat Pay','Other app / wallet'];
