@@ -1,7 +1,7 @@
 // MoneyGoWhere DEV — collapsible salary and bonus sections
 (()=>{
 'use strict';
-const RELEASE='1.5.5-dev.23';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const KEY_SALARY='mgw-salary-expanded';
 const KEY_BONUS='mgw-bonus-expanded';
 
