@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — foreign-currency labels and SGD display helpers.
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.35';let editing='';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';let editing='';
 const fx=()=>window.MGWCurrency;
 const expense=id=>(db.expenses||[]).find(x=>String(x.id||'')===String(id||''));
 const amountHtml=x=>fx()?.amountHtml(x)||money(Number(x?.amount)||0);
