@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — first-launch helping bubbles
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.52';let step=0,root=null,activeTarget=null;
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';let step=0,root=null,activeTarget=null;
 const steps=[
  {sel:'#mgwCycleFocus',title:'Your current cycle',text:'MoneyGoWhere now starts with the active pay cycle, so the numbers you see belong to one clear period.'},
  {sel:'.metric-grid',title:'Three numbers first',text:'Income, Spent and Left are the main figures. Extra detail stays out of the way until you need it.'},
