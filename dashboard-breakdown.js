@@ -4,7 +4,8 @@
 const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const num=v=>Number(v)||0;
-const sum=rows=>rows.reduce((t,x)=>t+num(x.amount),0);
+const value=x=>window.MGWCurrency?.sgdAmount?num(window.MGWCurrency.sgdAmount(x)):num(x?.amount);
+const sum=rows=>rows.reduce((t,x)=>t+value(x),0);
 const key=()=>`${MGW.state.month.getFullYear()}-${String(MGW.state.month.getMonth()+1).padStart(2,'0')}`;
 const expenses=()=>typeof monthExpenses==='function'?monthExpenses(MGW.state.month):[];
 const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toUpperCase();
@@ -56,7 +57,7 @@ function styles(){
 
 function line(x){
   const meta=[String(x.date||'').slice(0,10),x.location,x.notes].filter(Boolean).join(' · ');
-  return `<div class="mgw-line"><div><b>${esc(x.vendor||x.notes||x.category||'Expense')}</b><small>${esc(meta)}</small></div><strong>${money(num(x.amount))}</strong></div>`
+  return `<div class="mgw-line"><div><b>${esc(x.vendor||x.notes||x.category||'Expense')}</b><small>${esc(meta)}</small></div><strong>${money(value(x))}</strong></div>`
 }
 function childExpenseLine(x){
   const title=String(x.date||'').slice(0,10)||'Transaction';
