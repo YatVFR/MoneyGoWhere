@@ -1,6 +1,6 @@
 // MoneyGoWhere DEV — normalize foreign-currency expenses to SGD for dashboards while preserving original currency labels.
 (()=>{'use strict';
-const RELEASE='1.5.5-dev.42';
+const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const BASE='SGD';
 const API='https://api.frankfurter.dev/v1';
 const COMMON=['SGD','MYR','USD','EUR','GBP','AUD','JPY','THB','IDR','CNY','HKD','KRW','PHP','INR','NZD','CAD','CHF'];
