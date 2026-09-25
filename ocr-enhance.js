@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.5-dev.41 — calibrated local receipt OCR.
 // Uses multiple orientations and receipt-aware parsing. Receipt images remain local to the browser.
-const MGW_OCR_RELEASE=Object.freeze({appVersion:'1.5.5-dev.41',schemaVersion:1,dataVersion:12,cacheVersion:'1.5.5-dev-41'});
+const MGW_OCR_RELEASE=Object.freeze(window.MGW_RELEASE||{appVersion:'dev',schemaVersion:2,dataVersion:20,cacheVersion:'dev'});
 
 function mgwLoadImage(file){
   return new Promise((resolve,reject)=>{
