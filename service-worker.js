@@ -11,8 +11,12 @@ const SHELL_URL=new URL('index.html',self.registration.scope).href;
 const SHELL=[
   './','./index.html','./style.css','./data-stability.js','./db-schema-v2.js','./account-registry.js','./recurring-engine.js','./masterdb-v1.js','./transaction-engine.js','./boot-phases.js','./app.js',
   './import-normalizer.js','./interaction-recovery.js','./version-badge-authority.js','./finance-fix.js',
-  './payment-form-core.js','./historical-data.js','./db-health.js','./release-readiness.js','./cards-wallets.js','./wallet-visibility-fix.js',
-  './apple-pay-queue-bridge.js','./manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.jpg','./assets/icons/apple-touch-icon.jpg','./assets/branding/loading-logo.svg'
+  './payment-form-core.js','./historical-data.js','./db-health.js','./release-readiness.js','./cards-wallets.js','./wallet-visibility-fix.js','./apple-pay-queue-bridge.js',
+  './currency-normalization.js','./dashboard-core.js','./credit-manager.js','./wallet-import-queue.js','./apple-pay-inbox.js',
+  './credit-collapse.js','./ui-navigation-history.js','./salary-trends.js','./transaction-editor.js','./performance-optimizer.js','./onboarding-dev.js','./recurring-onboarding.js','./history-collapse.js','./salary-collapse.js','./guided-walkthrough.js',
+  './ocr-enhance.js','./ocr-runtime.js','./icloud-folder-scanner.js','./startup-import-assistant.js','./receipt-match-hint.js','./dashboard-breakdown.js',
+  './recurring-schedules.js','./recurring-bills.js','./paylater-recurrence.js','./paylater-rule-hotfix.js','./currency-ui.js','./payment-source-linker.js',
+  './manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.jpg','./assets/icons/apple-touch-icon.jpg','./assets/branding/loading-logo.svg'
 ];
 
 self.addEventListener('install',event=>{
@@ -60,7 +64,7 @@ async function navigationNetworkFirst(request){
 
 async function versionedCacheFirst(request){
   const cache=await caches.open(CACHE);
-  const cached=await cache.match(request);
+  const cached=(await cache.match(request))||(await cache.match(request,{ignoreSearch:true}));
   if(cached)return cached;
   try{
     const response=await fetch(request,{cache:'no-store'});
