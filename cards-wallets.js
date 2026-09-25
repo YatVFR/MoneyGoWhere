@@ -71,7 +71,6 @@
           return;
         }
         targeted();
-        enhance();
         const elapsed=(globalThis.performance?.now?.()??Date.now())-started;
         if(elapsed>350)reportError(new Error('Slow account UI refresh: '+Math.round(elapsed)+'ms'),context+'-slow-render');
       }catch(err){

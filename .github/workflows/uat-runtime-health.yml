@@ -46,6 +46,13 @@ jobs:
             echo "Full renderAll call returned to Cards & Wallets module; this can freeze mobile Safari"
             exit 1
           fi
+          grep -q "Credit data storage verification failed" credit-manager.js
+          grep -q "Pay-Later data storage verification failed" paylater-recurrence.js
+          grep -q "Saved Pay-Later plan failed database read-back verification" paylater-recurrence.js
+          if grep -q "document.querySelector(\x27#modal\x27).close();renderAll" paylater-recurrence.js; then
+            echo "Pay-Later save returned to unsafe modal-close/full-render sequence"
+            exit 1
+          fi
 
       - name: Runtime diagnostics wiring
         shell: bash
