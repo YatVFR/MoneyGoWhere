@@ -196,14 +196,18 @@ let mgwSettingsPromise=null;
 async function mgwLoadSettingsModules(){
   if(mgwSettingsPromise)return mgwSettingsPromise;
   mgwSettingsPromise=(async()=>{
+    // Settings must become interactive immediately. Loading seven DOM-heavy
+    // modules in one animation frame can monopolise Safari's main thread.
     mgwPreloadModules(MGW_SETTINGS_MODULES);
     for(const src of MGW_SETTINGS_MODULES){
+      await mgwWaitForInteractionIdle();
       await mgwLoadModule(src);
-      await new Promise(resolve=>setTimeout(resolve,16));
+      // Give Safari a paint opportunity between Settings feature installs.
+      await new Promise(resolve=>setTimeout(resolve,32));
     }
     document.dispatchEvent(new CustomEvent('mgw:settings-features-ready'));
     return MGW_RUNTIME_HEALTH;
-  })();
+  })().finally(()=>{if(MGW_RUNTIME_HEALTH.failed.some(src=>MGW_SETTINGS_MODULES.includes(src)))mgwSettingsPromise=null});
   return mgwSettingsPromise;
 }
 async function mgwLoadDeferredModules(){
