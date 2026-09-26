@@ -150,9 +150,9 @@ function restoreValidated(preview){
   try{window.MGWAccountRegistry?.sync?.(restored,{persist:false});window.MGWRecurringEngine?.sync?.(restored,{persist:false});window.MGWTransactionEngine?.sync?.(restored,{persist:false})}catch(err){console.warn('MoneyGoWhere post-restore sync failed',err)}
   localStorage.setItem(DB_KEY,JSON.stringify(restored));
   window.db=restored;
-  if(typeof db!=='undefined')db=restored;
+  window.MGWAdoptDatabase?.(restored);
   if(typeof renderAll==='function')renderAll();
-  document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta,expenses:Array.isArray(restored.expenses)?restored.expenses.length:0,income:Array.isArray(restored.income)?restored.income.length:0}}));
+  document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta,database:restored,expenses:Array.isArray(restored.expenses)?restored.expenses.length:0,income:Array.isArray(restored.income)?restored.income.length:0}}));
   return {snapshotCreated,database:restored};
 }
 function rollbackRestore(){
@@ -160,9 +160,9 @@ function rollbackRestore(){
     const raw=localStorage.getItem(RESTORE_ROLLBACK_KEY);if(!raw)return {ok:false,reason:'missing'};
     const snap=JSON.parse(raw);if(!isObj(snap.database))return {ok:false,reason:'invalid'};
     localStorage.setItem(DB_KEY,JSON.stringify(snap.database));applyUiPreferences(snap.localPreferences);
-    window.db=snap.database;if(typeof db!=='undefined')db=snap.database;
+    window.db=snap.database;window.MGWAdoptDatabase?.(snap.database);
     if(typeof renderAll==='function')renderAll();
-    document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:'rollback'}}));
+    document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:'rollback',database:snap.database}}));
     return {ok:true};
   }catch(err){console.error('MoneyGoWhere restore rollback failed',err);return {ok:false,reason:'error'}}
 }
