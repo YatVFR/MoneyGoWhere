@@ -71,6 +71,10 @@ check('transaction totals are currency-normalized',tx.includes('MGWCurrency?.sgd
 const dashboard=read('dashboard-core.js');
 check('cycle income includes bonus and one-off',dashboard.includes('num(x.bonus)+num(x.oneOff)'),'actual cycle income composition');
 check('salary insights preserve enhanced renderer',historical.includes('MGWSalaryTrends?.render'),'Insights does not overwrite salary module');
+check('settings loader yields between modules',historical.includes('await mgwWaitForInteractionIdle();')&&historical.includes('setTimeout(resolve,32)'),'Settings remains responsive while feature modules load');
+const currencyUi=read('currency-ui.js'),paymentLinker=read('payment-source-linker.js'),recSchedules=read('recurring-schedules.js');
+check('settings modules avoid body observers',!currencyUi.includes("observe(document.body")&&!paymentLinker.includes("observe(document.body"),'currency/payment Settings refresh is event-driven');
+check('recurring schedules avoid dashboard observer',!recSchedules.includes("observer.observe(root"),'recurring UI refreshes through deterministic render events');
 
 if(renderWrappers>8)warn('renderAll wrapper depth',`${renderWrappers} runtime wrappers; prefer events for future modules`);
 if(bodyObservers>4)warn('document.body MutationObservers',`${bodyObservers} observers; watch Safari redraw cost`);
