@@ -1,14 +1,14 @@
 // MoneyGoWhere UAT — single authoritative visible build badge
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.55',TEXT=`v${RELEASE} · UAT`;
+  const RELEASE='1.5.5-dev.56',TEXT=`v${RELEASE} · UAT`;
   function apply(){
     const header=document.querySelector('.topbar > div:first-child');if(!header)return;
     document.querySelector('#appVersionBadge')?.remove();
     let badge=document.querySelector('#mgwRuntimeVersionBadge');
     if(!badge){badge=document.createElement('span');badge.id='mgwRuntimeVersionBadge';badge.className='app-version-badge';header.appendChild(badge)}
     if(badge.textContent!==TEXT)badge.textContent=TEXT;
-    badge.title=`UAT · App ${RELEASE} · render coordinator architecture cleanup`;
+    badge.title=`UAT · App ${RELEASE} · Safari startup recovery and phased loading`;
   }
   function observe(){apply();const target=document.querySelector('.topbar')||document.body;if(target)new MutationObserver(()=>queueMicrotask(apply)).observe(target,{subtree:true,childList:true,characterData:true})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observe,{once:true});else observe();
