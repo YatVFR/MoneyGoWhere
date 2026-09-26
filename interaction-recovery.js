@@ -57,8 +57,27 @@ function coreNav(name){
 function fallbackMonth(delta){if(typeof MGW==='undefined'||typeof monthShift!=='function'||typeof renderAll!=='function')return;MGW.state.month=monthShift(MGW.state.month,delta);renderAll()}
 function fallbackRange(button){if(typeof MGW==='undefined'||typeof renderInsights!=='function')return;$$('#insightRange button').forEach(x=>x.classList.remove('active'));button.classList.add('active');MGW.state.range=Number(button.dataset.range)||1;renderInsights()}
 function fallbackRefresh(button){
-  const status=$('#updateStatus');const before=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;
-  setTimeout(async()=>{const after=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;if(before!==after)return;try{if(!('serviceWorker'in navigator))return location.reload();const reg=await navigator.serviceWorker.getRegistration();if(reg?.waiting){reg.waiting.postMessage({type:'SKIP_WAITING'});return}if(reg)await reg.update();if(status)status.textContent='Latest';const sub=$('#updateSub');if(sub)sub.textContent=`v${RELEASE} checked`}catch(err){console.warn('MoneyGoWhere refresh recovery failed',err);location.reload()}},160);
+  // The page owns update checks. Recovery only intervenes if that handler
+  // never started; using the exact DEV/UAT scope avoids grabbing PROD's SW.
+  const status=$('#updateStatus'),sub=$('#updateSub');
+  const before=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;
+  setTimeout(async()=>{
+    const after=`${status?.textContent||''}|${button.getAttribute('aria-busy')||''}`;
+    if(before!==after)return;
+    try{
+      if(!('serviceWorker'in navigator))return location.reload();
+      button.setAttribute('aria-busy','true');button.classList.add('is-checking');
+      if(status)status.textContent='Checking';if(sub)sub.textContent='Checking latest app files…';
+      const scope=new URL('./',location.href).href;
+      let reg=await navigator.serviceWorker.getRegistration(scope);
+      if(!reg)reg=await navigator.serviceWorker.register(`./service-worker.js?v=${encodeURIComponent(RELEASE)}`,{scope:new URL('./',location.href).pathname,updateViaCache:'none'});
+      if(reg.waiting){if(status)status.textContent='Update available';if(sub)sub.textContent='Tap again to install';button.classList.add('update-available');return}
+      await reg.update();
+      if(reg.waiting){if(status)status.textContent='Update available';if(sub)sub.textContent='Tap again to install';button.classList.add('update-available');return}
+      if(status)status.textContent='Latest';if(sub)sub.textContent=`v${RELEASE} checked`;
+    }catch(err){console.warn('MoneyGoWhere refresh recovery failed',err);if(status)status.textContent='Refresh';if(sub)sub.textContent='Update check failed'}
+    finally{button.removeAttribute('aria-busy');button.classList.remove('is-checking')}
+  },220);
 }
 function installDelegatedRecovery(){
   if(document.documentElement.dataset.mgwInteractionRecovery==='2')return;
