@@ -1,5 +1,5 @@
-const APP_VERSION='1.5.5-dev.55';
-const CACHE='moneygowhere-uat-dev55-render-coordinator-v17';
+const APP_VERSION='1.5.5-dev.56';
+const CACHE='moneygowhere-uat-dev56-startup-recovery-v18';
 const CORE=[
   './','./index.html','./style.css','./uat-runtime-diagnostics.js','./app.js','./db-compatibility.js','./render-coordinator.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
