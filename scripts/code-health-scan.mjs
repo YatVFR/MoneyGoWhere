@@ -90,3 +90,7 @@ console.log(`MoneyGoWhere code health: ${passes.length} passed, ${failures.lengt
 for(const x of warnings)console.warn('WARN',x.name,x.detail?'- '+x.detail:'');
 for(const x of failures)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
 if(failures.length)process.exit(1);
+
+check('Food & Beverages category available',appJs.includes("'Food & Beverages':'🍴'"),'expense and budget forms expose the new category');
+const indexHtml=read('index.html');
+check('manual refresh reloads latest app',indexHtml.includes("3,'Refreshing','Reloading current data'")&&indexHtml.includes("setTimeout(()=>location.reload(),180)"),'refresh works even when no service-worker update is waiting');
