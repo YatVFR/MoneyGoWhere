@@ -88,4 +88,7 @@
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+  // A database restore replaces the in-memory transaction collections without
+  // reloading the page. Re-bind the history shell after the core render.
+  document.addEventListener('mgw:data-restored',()=>requestAnimationFrame(()=>{install();window.MGWHistoryCollapse?.refresh?.()}));
 })();
