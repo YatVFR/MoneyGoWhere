@@ -187,8 +187,11 @@ function renderSummary(){
 function render(){if(!ensure())return;installRecurringSettings();renderSummary();installAddActions();installCollapse()}
 function boot(){
   if(!ensure())return;installStyles();render();
-  const root=document.querySelector('#view-dashboard');if(root&&window.MutationObserver){observer=new MutationObserver(installCollapse);observer.observe(root,{childList:true,subtree:true})}
+  // Avoid a subtree observer on the dashboard: renderAll already gives this
+  // feature a deterministic refresh point and the observer caused redundant
+  // work while Settings modules were being installed.
   if(typeof renderAll==='function'&&!renderAll.__mgwRecurringSchedules){const base=renderAll;const wrapped=function(){base();render()};wrapped.__mgwRecurringSchedules=true;renderAll=wrapped}
+  document.addEventListener('mgw:data-restored',()=>requestAnimationFrame(render));
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
