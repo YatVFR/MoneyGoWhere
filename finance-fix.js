@@ -156,10 +156,9 @@ function renderMonthlyDetails(){
   host.innerHTML=`<details class="mgw-month-details"><summary><span><b>Monthly Details</b><small>Tap to expand income, bills, shopping channels & payment sources</small></span><strong>${ex.length} records <i>›</i></strong></summary><div class="mgw-month-body"><section><h3>💰 Income</h3>${inc.length?mgwIncomeRows(inc):'<p class="empty-state">No income recorded this month.</p>'}</section><section><h3>🧾 Payments & Allocations</h3>${groupHtml}</section><section><h3>🛍️ Online Platforms</h3>${platformHtml||'<p class="empty-state">No online platform spending tagged this month.</p>'}</section><section><h3>💳 Payment Sources</h3>${paymentHtml||'<p class="empty-state">No payment source information recorded this month.</p>'}</section></div></details>`;
 }
 
-// Extend the existing renderer without forcing a second full render during initial load.
-if (typeof renderAll === 'function') {
-  const mgwBaseRenderAll=renderAll;
-  renderAll=function(){mgwBaseRenderAll();renderMonthlyDetails()};
+// UAT architecture: register feature rendering instead of wrapping the global renderer.
+if(window.MGWRenderCoordinator?.register){
+  window.MGWRenderCoordinator.register('monthly-details',renderMonthlyDetails,20);
 }
 
 function mgwInstallVersionBadge(){
