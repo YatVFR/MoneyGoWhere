@@ -6,10 +6,11 @@ const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const num=v=>Number(v)||0;
 const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 let range='12m';
-function rows(){return [...(db?.income||[])].filter(x=>x?.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
+function activeDB(){return window.db&&typeof window.db==='object'?window.db:(typeof db!=='undefined'?db:{})}
+function rows(){return [...(activeDB().income||[])].filter(x=>x?.date).sort((a,b)=>String(a.date).localeCompare(String(b.date)))}
 function filtered(){const all=rows();if(range==='all')return all;const months=range==='12m'?12:36;if(!all.length)return all;const end=new Date();const start=new Date(end.getFullYear(),end.getMonth()-months+1,1);return all.filter(x=>{const d=new Date(String(x.date).slice(0,10)+'T00:00:00');return !Number.isNaN(d.getTime())&&d>=start})}
 function pct(a,b){return a?((b-a)/a*100):0}
-function moneyText(v){return typeof money==='function'?money(v):new Intl.NumberFormat('en-SG',{style:'currency',currency:db?.settings?.currency||'SGD'}).format(num(v))}
+function moneyText(v){return typeof money==='function'?money(v):new Intl.NumberFormat('en-SG',{style:'currency',currency:activeDB()?.settings?.currency||'SGD'}).format(num(v))}
 function installStyles(){
   let s=document.querySelector('#mgwSalaryTrendStyles');if(s)s.remove();s=document.createElement('style');s.id='mgwSalaryTrendStyles';s.textContent=`
 #salaryTrend{display:block!important;min-height:0!important;padding:0!important}
