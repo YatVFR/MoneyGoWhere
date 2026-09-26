@@ -124,6 +124,6 @@
 
   function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit();try{window.MGWCardsWallets?.enhance?.()}catch(err){console.error('[MoneyGoWhere UAT] cards-wallets enhance failed',err);try{window.MGWUATDiagnostics?.capture?.(err,'credit-manager-wallet-enhance')}catch(_){}}}
   window.MGWCreditManager={version:RELEASE,render:renderCredit};
-  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit();const badge=document.querySelector('#appVersionBadge');if(badge)badge.textContent=`v${RELEASE}`}
+  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();if(window.MGWRenderCoordinator?.register)window.MGWRenderCoordinator.register('credit-manager',renderCredit,40);renderCredit();const badge=document.querySelector('#appVersionBadge');if(badge)badge.textContent=`v${RELEASE}`}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
