@@ -145,9 +145,14 @@ function restoreValidated(preview){
   if(preview.kind==='full-backup')applyUiPreferences(preview.preferences);
   window.db=restored;
   if(typeof db!=='undefined')db=restored;
-  document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta}}));
-  try{window.MGWAccountRegistry?.sync?.(restored,{persist:false});window.MGWRecurringEngine?.sync?.(restored,{persist:false});window.MGWTransactionEngine?.sync?.(restored,{persist:true})}catch{}
+  // Canonical engines may enrich the restored object. Complete that work
+  // before notifying UI modules so history/insights read the final database.
+  try{window.MGWAccountRegistry?.sync?.(restored,{persist:false});window.MGWRecurringEngine?.sync?.(restored,{persist:false});window.MGWTransactionEngine?.sync?.(restored,{persist:false})}catch(err){console.warn('MoneyGoWhere post-restore sync failed',err)}
+  localStorage.setItem(DB_KEY,JSON.stringify(restored));
+  window.db=restored;
+  if(typeof db!=='undefined')db=restored;
   if(typeof renderAll==='function')renderAll();
+  document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta,expenses:Array.isArray(restored.expenses)?restored.expenses.length:0,income:Array.isArray(restored.income)?restored.income.length:0}}));
   return {snapshotCreated,database:restored};
 }
 function rollbackRestore(){
