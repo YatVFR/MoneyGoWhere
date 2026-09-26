@@ -142,8 +142,7 @@ function mgwLoadModule(src){
 async function mgwLoadFeatureModules(){
   mgwPreloadFeatureModules();
   for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
-  if(typeof renderAll==='function')renderAll();
-  mgwInstallRuntimeBadge();
+  queueMicrotask(()=>{if(typeof renderAll==='function')renderAll();mgwInstallRuntimeBadge()});
 }
 function mgwExportCurrent(){
   const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
