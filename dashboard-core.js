@@ -218,10 +218,8 @@ function apply(){
 }
 function boot(){
   apply();
-  if(typeof renderAll==='function'&&!renderAll.__mgwDashboardCore){
-    const base=renderAll;
-    renderAll=function(){base();queueMicrotask(apply)};
-    renderAll.__mgwDashboardCore=true;
+  if(window.MGWRenderCoordinator?.register){
+    window.MGWRenderCoordinator.register('dashboard-core',apply,60);
   }
 }
 window.MGWDashboardCore={version:RELEASE,model,refresh:apply,last:null};
