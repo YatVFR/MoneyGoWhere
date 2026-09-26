@@ -47,16 +47,26 @@ function mgwInstallRuntimeBadge(){
 if(typeof monthExpenses==='function')monthExpenses=d=>db.expenses.filter(x=>mgwInCycle(x,d));
 if(typeof monthIncome==='function')monthIncome=d=>db.income.filter(x=>mgwInCycle(x,d));
 if(typeof monthName==='function')monthName=d=>mgwCycleLabel(d);
+function mgwAnalyticsDB(){return window.db&&typeof window.db==='object'?window.db:db}
+function mgwAnalyticsExpenses(anchor=MGW.state.month){
+  const source=mgwAnalyticsDB(),rows=Array.isArray(source.expenses)?source.expenses:[];
+  return rows.filter(x=>mgwInCycle(x,anchor));
+}
+function mgwAnalyticsIncome(anchor=MGW.state.month){
+  const source=mgwAnalyticsDB(),rows=Array.isArray(source.income)?source.income:[];
+  return rows.filter(x=>mgwInCycle(x,anchor));
+}
 if(typeof renderInsights==='function'){
   renderInsights=function(){
-    const n=MGW.state.range,months=rangeMonths(n),list=months.flatMap(d=>monthExpenses(d)),cats=catTotals(list),total=sum(list),isPay=mgwCycleSettings().mode==='payday';
+    const source=mgwAnalyticsDB(),n=MGW.state.range,months=rangeMonths(n),list=months.flatMap(d=>mgwAnalyticsExpenses(d)),cats=catTotals(list),total=sum(list),isPay=mgwCycleSettings().mode==='payday';
     $('#insightSummary').innerHTML=total?`<strong>${money(total)}</strong><p>${n===1?(isPay?'this pay cycle':'this month'):`across the last ${n} ${isPay?'pay cycles':'months'}`}${cats[0]?` · Top: ${MGW.cats[cats[0][0]]||''} ${cats[0][0]}`:''}</p>`:'<p>No expenses in this period yet.</p>';
     renderCats($('#insightCategories'),cats);
-    if(window.MGWSalaryTrends?.render)window.MGWSalaryTrends.render();else renderTrend($('#salaryTrend'),12,'salary');
-    const byYear={};db.income.forEach(x=>{const y=String(x.date).slice(0,4),b=Number(x.bonus)||0;if(b)byYear[y]=(byYear[y]||0)+b});
+    if(window.MGWSalaryTrends?.render)window.MGWSalaryTrends.render(source);else renderTrend($('#salaryTrend'),12,'salary');
+    const byYear={};(Array.isArray(source.income)?source.income:[]).forEach(x=>{const y=String(x.date||'').slice(0,4),b=Number(x.bonus)||0;if(/^\\d{4}$/.test(y)&&b)byYear[y]=(byYear[y]||0)+b});
     $('#bonusHistory').innerHTML=Object.entries(byYear).sort().map(([y,v])=>`<div class="bonus-row"><span>${y} Bonus</span><strong>${money(v)}</strong></div>`).join('')||'<p class="empty-state">No bonus history yet.</p>';
   };
 }
+window.MGWRenderInsights=()=>renderInsights();
 function mgwCycleCard(){
   if(document.querySelector('#mgwPayCycleCard'))return;
   const settings=document.querySelector('#view-settings');if(!settings)return;
