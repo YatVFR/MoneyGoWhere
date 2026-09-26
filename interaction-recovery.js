@@ -69,8 +69,8 @@ function fallbackRefresh(button){
       button.setAttribute('aria-busy','true');button.classList.add('is-checking');
       if(status)status.textContent='Checking';if(sub)sub.textContent='Checking latest app files…';
       const scope=new URL('./',location.href).href;
-      let reg=await navigator.serviceWorker.getRegistration(scope);
-      if(!reg)reg=await navigator.serviceWorker.register(`./service-worker.js?v=${encodeURIComponent(RELEASE)}`,{scope:new URL('./',location.href).pathname,updateViaCache:'none'});
+      const reg=await navigator.serviceWorker.getRegistration(scope);
+      if(!reg){location.reload();return}
       if(reg.waiting){if(status)status.textContent='Update available';if(sub)sub.textContent='Tap again to install';button.classList.add('update-available');return}
       await reg.update();
       if(reg.waiting){if(status)status.textContent='Update available';if(sub)sub.textContent='Tap again to install';button.classList.add('update-available');return}
