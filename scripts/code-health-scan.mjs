@@ -98,3 +98,5 @@ const historicalData=read('historical-data.js'),salaryTrends=read('salary-trends
 check('insights read active restored DB',historicalData.includes('function mgwAnalyticsDB()')&&historicalData.includes('window.db'), 'spending insights no longer depend on a stale captured DB');
 check('insights render after view activation',appJs.includes("if(name==='insights')requestAnimationFrame"), 'visualization renders after Insights DOM is active');
 check('salary trends read active restored DB',salaryTrends.includes('function activeDB()')&&salaryTrends.includes('activeDB().income'), 'salary visualization follows restored database');
+check('date validator is timezone-safe',read('data-stability.js').includes('Date.UTC(y,m-1,d)'), 'valid YYYY-MM-DD dates must not shift a day in positive UTC offsets');
+check('timezone quarantine recovery exists',read('data-stability.js').includes("recover('income','income')")&&read('data-stability.js').includes("recover('expenses','expenses')"), 'valid records previously quarantined by the timezone bug are restored');
