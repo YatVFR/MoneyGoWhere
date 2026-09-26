@@ -85,9 +85,8 @@ function mgwCycleCard(){
   });
 }
 function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if(label)label.textContent=mgwCycleLabel(MGW.state.month)}
-if(typeof renderAll==='function'){
-  const baseRender=renderAll;
-  renderAll=function(){baseRender();mgwUpdateCycleUI()};
+if(window.MGWRenderCoordinator?.register){
+  window.MGWRenderCoordinator.register('cycle-ui',mgwUpdateCycleUI,25);
 }
 const MGW_FEATURE_MODULES=[
   './ocr-enhance.js',
