@@ -1,7 +1,7 @@
-const APP_VERSION='1.5.5-dev.53';
-const CACHE='moneygowhere-uat-dev53-freeze-guard-v15';
+const APP_VERSION='1.5.5-dev.54';
+const CACHE='moneygowhere-uat-dev54-render-coordinator-v16';
 const CORE=[
-  './','./index.html','./style.css','./uat-runtime-diagnostics.js','./app.js','./db-compatibility.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
+  './','./index.html','./style.css','./uat-runtime-diagnostics.js','./app.js','./db-compatibility.js','./render-coordinator.js','./finance-fix.js','./payment-form-core.js?v=1.5.5-dev.49','./historical-data.js',
   './ocr-enhance.js','./credit-manager.js','./credit-collapse.js','./recurring-schedules.js','./ui-navigation-history.js','./recurring-bills.js',
   './paylater-recurrence.js','./paylater-rule-hotfix.js','./cards-wallets.js','./currency-normalization.js',
   './dashboard-breakdown.js','./salary-trends.js','./onboarding-dev.js','./recurring-onboarding.js','./wallet-import-queue.js','./apple-pay-inbox.js',
