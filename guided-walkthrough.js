@@ -30,5 +30,5 @@ function maybeStart(){
   };
   setTimeout(wait,500);
 }
-function boot(){css();maybeStart();if(typeof renderAll==='function'&&!renderAll.__mgwWalk){const base=renderAll;renderAll=function(){base();queueMicrotask(installReplay)};renderAll.__mgwWalk=true}}
+function boot(){css();maybeStart();if(window.MGWRenderCoordinator?.register)window.MGWRenderCoordinator.register('guided-walkthrough',installReplay,90)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();window.MGWGuidedWalkthrough={version:RELEASE,start:()=>show(0)};})();
