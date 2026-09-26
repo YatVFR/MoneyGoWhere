@@ -1,13 +1,23 @@
-// MoneyGoWhere v1.5.1 — Credit, Debt & Pay-Later Manager
+// MoneyGoWhere v1.5.5-dev.54 — Credit, Debt & Pay-Later Manager
 // Local-first: this file contains no personal account names, balances, limits or finance records.
 (() => {
-  const RELEASE='1.5.1';
+  const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
   const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Math.max(0,Number(v)||0);
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
   const today=()=>new Date().toISOString().slice(0,10);
   const norm=v=>String(v||'').trim().toLowerCase();
-  const persist=()=>{localStorage.setItem(MGW.key,JSON.stringify(db)); if(typeof renderAll==='function')renderAll();};
+  let renderQueued=false;
+  const scheduleRender=()=>{
+    if(renderQueued)return;
+    renderQueued=true;
+    const run=()=>{
+      renderQueued=false;
+      try{if(typeof renderAll==='function')renderAll()}catch(err){console.error('MoneyGoWhere credit refresh failed',err)}
+    };
+    if(typeof requestAnimationFrame==='function')requestAnimationFrame(run);else setTimeout(run,0);
+  };
+  const persist=()=>{try{window.MGWAccountRegistry?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere account registry sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db));document.dispatchEvent(new CustomEvent('mgw:accounts-changed',{detail:{source:'credit-manager'}}));scheduleRender()};
 
   function ensureStore(){
     db.creditAccounts=Array.isArray(db.creditAccounts)?db.creditAccounts:[];
@@ -20,7 +30,7 @@
 
   function cycleExpenses(){return typeof monthExpenses==='function'?monthExpenses(MGW.state.month):[]}
   function cycleIncome(){return typeof monthIncome==='function'?monthIncome(MGW.state.month):[]}
-  function expenseMatchesAccount(x,a){const c=norm(x.card||x.paymentSource||x.paymentMethod);return c&&(c===norm(a.name)||c.includes(norm(a.name))||norm(a.name).includes(c))}
+  function expenseMatchesAccount(x,a){const linked=x.paymentSourceId||x.paymentAccountId||'';if(linked&&a?.id)return linked===a.id;const c=norm(x.card||x.cardIdentity||x.paymentSource||x.paymentMethod);return c&&(c===norm(a.name)||c===norm(a.nickname)||c===norm(a.cardProduct)||c.includes(norm(a.name))||norm(a.name).includes(c))}
   function cycleSpendForCard(a){return cycleExpenses().filter(x=>expenseMatchesAccount(x,a)).reduce((t,x)=>t+num(x.amount),0)}
   function cycleSpendForPayLater(a){return cycleExpenses().filter(x=>expenseMatchesAccount(x,a)).reduce((t,x)=>t+num(x.amount),0)}
   function paidInCycle(type,accountId){
@@ -30,8 +40,8 @@
   function cycleNetIncome(){return cycleIncome().reduce((t,x)=>t+num(x.netSalary),0)}
   function payLaterNames(){return db.payLaterAccounts.map(a=>norm(a.name)).filter(Boolean)}
   function immediateSpend(){
-    const deferred=payLaterNames();
-    return cycleExpenses().filter(x=>!deferred.some(n=>{const c=norm(x.card||x.paymentSource||x.paymentMethod);return c&&(c===n||c.includes(n)||n.includes(c))})).reduce((t,x)=>t+num(x.amount),0);
+    const deferredIds=new Set(db.payLaterAccounts.map(a=>a.id).filter(Boolean)),deferred=payLaterNames();
+    return cycleExpenses().filter(x=>{const linked=x.paymentSourceId||x.paymentAccountId||'';if(linked)return !deferredIds.has(linked);return !deferred.some(n=>{const c=norm(x.card||x.cardIdentity||x.paymentSource||x.paymentMethod);return c&&(c===n||c.includes(n)||n.includes(c))})}).reduce((t,x)=>t+num(x.amount),0);
   }
   function debtCommitments(){return db.creditAccounts.filter(a=>a.role==='debt'||a.role==='emergency-debt').reduce((t,a)=>t+num(a.plannedPayment),0)}
   function payLaterDue(){return db.payLaterAccounts.reduce((t,a)=>t+num(a.cycleDue),0)}
@@ -92,8 +102,8 @@
   function renderSettingsCredit(){
     const host=document.querySelector('#mgwCreditSettings');if(!host)return;
     host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Credit, Debt & Pay-Later</b></div></div><p class="mgw-muted">Track bank credit separately from what you can safely afford to spend. Card repayments are not counted as a second expense.</p><div class="mgw-inline-actions"><button class="primary-btn" id="mgwAddCard">＋ Credit Card</button><button class="primary-btn" id="mgwAddLater">＋ Pay-Later</button></div><div class="mgw-section-gap mgw-account-grid">${db.creditAccounts.map(renderCardManage).join('')}${db.payLaterAccounts.map(renderLaterManage).join('')||(!db.creditAccounts.length?'<p class="mgw-empty">Add your cards and installment accounts to begin.</p>':'')}</div>`;
-    host.querySelector('#mgwAddCard')?.addEventListener('click',()=>openCard());host.querySelector('#mgwAddLater')?.addEventListener('click',()=>openLater());
-    host.querySelectorAll('[data-card-edit]').forEach(b=>b.addEventListener('click',()=>openCard(db.creditAccounts.find(a=>a.id===b.dataset.cardEdit))));
+    host.querySelector('#mgwAddCard')?.addEventListener('click',()=>window.MGWCardsWallets?.open?window.MGWCardsWallets.open():openCard());host.querySelector('#mgwAddLater')?.addEventListener('click',()=>openLater());
+    host.querySelectorAll('[data-card-edit]').forEach(b=>b.addEventListener('click',()=>{const a=db.creditAccounts.find(a=>a.id===b.dataset.cardEdit);if(a)(window.MGWCardsWallets?.open?window.MGWCardsWallets.open(a,'credit'):openCard(a))}));
     host.querySelectorAll('[data-card-pay]').forEach(b=>b.addEventListener('click',()=>openPayment('card',db.creditAccounts.find(a=>a.id===b.dataset.cardPay))));
     host.querySelectorAll('[data-later-edit]').forEach(b=>b.addEventListener('click',()=>openLater(db.payLaterAccounts.find(a=>a.id===b.dataset.laterEdit))));
     host.querySelectorAll('[data-later-pay]').forEach(b=>b.addEventListener('click',()=>openPayment('later',db.payLaterAccounts.find(a=>a.id===b.dataset.laterPay))));
@@ -121,6 +131,7 @@
   }
 
   function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit()}
-  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit();const badge=document.querySelector('#appVersionBadge');if(badge)badge.textContent=`v${RELEASE}`}
+  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit()}
+  window.MGWCreditManager={version:RELEASE,refresh:renderCredit,openCard,openLater,openPayment};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
