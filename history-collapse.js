@@ -74,10 +74,8 @@
 
   function boot(){
     install();
-    if(typeof renderAll==='function'&&!renderAll.__mgwHistoryCollapse){
-      const base=renderAll;
-      renderAll=function(){base();scheduleInstall()};
-      renderAll.__mgwHistoryCollapse=true;
+    if(window.MGWRenderCoordinator?.register){
+      window.MGWRenderCoordinator.register('history-collapse',scheduleInstall,78);
     }
     const roots=[document.querySelector('#view-dashboard'),document.querySelector('#view-insights')].filter(Boolean);
     if(roots.length){
