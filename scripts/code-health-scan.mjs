@@ -79,6 +79,8 @@ const masterdb=read('masterdb-v1.js'),appJs=read('app.js'),historyCollapse=read(
 check('restore event follows canonical sync',masterdb.indexOf("MGWTransactionEngine?.sync?.(restored,{persist:false})")<masterdb.indexOf("new CustomEvent('mgw:data-restored'"),'restored history is canonical before UI notification');
 check('core UI refreshes on restore',appJs.includes("document.addEventListener('mgw:data-restored'")&&appJs.includes("MGWHistoryCollapse?.refresh?.()"),'history and active insights refresh without reload');
 check('history shell rebinds on restore',historyCollapse.includes("document.addEventListener('mgw:data-restored'"),'collapsible transaction history follows restored DOM');
+check('core runtime can adopt restored database',appJs.includes('function adoptDatabase(next)')&&appJs.includes('window.MGWAdoptDatabase=adoptDatabase'),'analytics closures switch to restored DB object');
+check('restore passes database object to UI',masterdb.includes('database:restored')&&masterdb.includes('MGWAdoptDatabase?.(restored)'),'restore event and core state share the same database');
 
 if(renderWrappers>8)warn('renderAll wrapper depth',`${renderWrappers} runtime wrappers; prefer events for future modules`);
 if(bodyObservers>4)warn('document.body MutationObservers',`${bodyObservers} observers; watch Safari redraw cost`);
