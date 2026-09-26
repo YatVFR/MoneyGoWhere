@@ -58,11 +58,13 @@
   const currentDue=(a,anchor=MGW.state.month)=>money2(Math.max(0,schedule(a).filter(x=>inCycle(x.date,anchor)).reduce((t,x)=>t+x.amount,0)-paidForCycle(a,anchor)));
   const nextDue=a=>{const now=new Date();now.setHours(0,0,0,0);return schedule(a).find(x=>parseDate(x.date)>=now)?.date||''};
 
+  let syncing=false;
   function syncAccounts(){
+    if(syncing)return false;syncing=true;
     db.payLaterAccounts=Array.isArray(db.payLaterAccounts)?db.payLaterAccounts:[];let changed=false;
     db.payLaterAccounts.forEach(a=>{if(!a.recurrenceEnabled)return;const total=totalRepayable(a),out=money2(Math.max(0,total-allPaid(a))),due=currentDue(a),next=nextDue(a),status=out<=0?'completed':'active';
       for(const [k,v] of Object.entries({totalRepayable:total,outstanding:out,cycleDue:due,nextDueDate:next,status})){if(a[k]!==v){a[k]=v;changed=true}}
-    });if(changed)persist();
+    });if(changed)persist();syncing=false;return changed;
   }
   const providerOptions=s=>PROVIDERS.map(p=>`<option value="${esc(p)}" ${p===s?'selected':''}>${esc(p)}</option>`).join('');
   const durationOptions=s=>COMMON_DURATIONS.map(n=>`<option value="${n}" ${n===s?'selected':''}>${n} month${n===1?'':'s'}</option>`).join('')+`<option value="custom" ${COMMON_DURATIONS.includes(s)?'':'selected'}>Custom duration</option>`;
