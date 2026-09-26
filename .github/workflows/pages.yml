@@ -1,8 +1,8 @@
-name: Deploy MoneyGoWhere Dev to GitHub Pages
+name: Deploy MoneyGoWhere Shared Preview to GitHub Pages
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["dev", "preview/uat"]
   workflow_dispatch:
 
 permissions:
