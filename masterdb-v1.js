@@ -191,7 +191,7 @@ function installSettings(){
   installStyles();
   const list=document.querySelector('#view-settings .settings-list');if(!list)return;
   const exportBtn=document.querySelector('#exportBtn'),importInput=document.querySelector('#importInput');
-  if(exportBtn){exportBtn.querySelector('b').textContent='Export MasterDB';exportBtn.querySelector('small').textContent='Portable versioned finance database';exportBtn.onclick=null}
+  if(exportBtn){const title=exportBtn.querySelector('b'),sub=exportBtn.querySelector('small');if(title)title.textContent='Export MasterDB';if(sub)sub.textContent='Portable versioned finance database';exportBtn.onclick=null}
   if(!document.getElementById('mgwFullBackupBtn')&&exportBtn){
     const b=document.createElement('button');b.id='mgwFullBackupBtn';b.innerHTML='<span>🛡️</span><div><b>Full App Backup</b><small>Finance data + local app preferences</small></div><i>›</i>';exportBtn.insertAdjacentElement('afterend',b);
   }
