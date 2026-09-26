@@ -48,11 +48,8 @@ function ensure(){
 
 function boot(){
   ensure();
-  if(typeof renderAll==='function'&&!renderAll.__mgwSalaryCollapse){
-    const base=renderAll;
-    const wrapped=function(){base();queueMicrotask(ensure)};
-    wrapped.__mgwSalaryCollapse=true;
-    renderAll=wrapped;
+  if(window.MGWRenderCoordinator?.register){
+    window.MGWRenderCoordinator.register('salary-collapse',ensure,79);
   }
   setTimeout(ensure,100);
   setTimeout(ensure,600);
