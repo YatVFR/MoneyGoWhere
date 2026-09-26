@@ -50,11 +50,8 @@
     vals.forEach((el,i)=>{if(out[i]!=null)el.textContent=out[i]});
   }
   const install=()=>{
-    if(typeof renderAll==='function'&&!renderAll.__mgwAccountingGuard){
-      const prior=renderAll;
-      const wrapped=function(){prior();fixSafeSpend()};
-      wrapped.__mgwAccountingGuard=true;
-      renderAll=wrapped;
+    if(window.MGWRenderCoordinator?.register){
+      window.MGWRenderCoordinator.register('credit-accounting-fix',fixSafeSpend,85);
     }
     fixSafeSpend();
   };
