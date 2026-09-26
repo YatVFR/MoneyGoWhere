@@ -1,6 +1,6 @@
 // MoneyGoWhere v1.5.5-dev.51 runtime coordinator.
 // Keeps pay-cycle behaviour and loads feature modules once, in a deterministic order.
-const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.55',schemaVersion:1,dataVersion:14,cacheVersion:'1.5.5-dev-55'});
+const MGW_RUNTIME_RELEASE=Object.freeze({appVersion:'1.5.5-dev.56',schemaVersion:1,dataVersion:14,cacheVersion:'1.5.5-dev-56'});
 
 function mgwCycleSettings(){
   const p=db?.settings?.payCycle||{};
@@ -88,8 +88,7 @@ function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if
 if(window.MGWRenderCoordinator?.register){
   window.MGWRenderCoordinator.register('cycle-ui',mgwUpdateCycleUI,25);
 }
-const MGW_FEATURE_MODULES=[
-  './ocr-enhance.js',
+const MGW_CORE_MODULES=[
   './credit-manager.js',
   './credit-collapse.js',
   './recurring-schedules.js',
@@ -98,6 +97,12 @@ const MGW_FEATURE_MODULES=[
   './paylater-rule-hotfix.js',
   './currency-normalization.js',
   './dashboard-breakdown.js',
+  './dashboard-core.js',
+  './performance-optimizer.js',
+  './version-badge-authority.js'
+];
+const MGW_DEFERRED_MODULES=[
+  './ocr-enhance.js',
   './salary-trends.js',
   './onboarding-dev.js',
   './recurring-onboarding.js',
@@ -112,11 +117,9 @@ const MGW_FEATURE_MODULES=[
   './guided-walkthrough.js',
   './receipt-match-hint.js',
   './payment-source-linker.js',
-  './ui-db-scan-button.js',
-  './dashboard-core.js',
-  './performance-optimizer.js',
-  './version-badge-authority.js'
+  './ui-db-scan-button.js'
 ];
+const MGW_FEATURE_MODULES=[...MGW_CORE_MODULES,...MGW_DEFERRED_MODULES];
 function mgwPreloadFeatureModules(){
   const frag=document.createDocumentFragment();let added=false;
   for(const src of MGW_FEATURE_MODULES){
@@ -139,9 +142,23 @@ function mgwLoadModule(src){
   });
 }
 async function mgwLoadFeatureModules(){
-  mgwPreloadFeatureModules();
-  for(const src of MGW_FEATURE_MODULES)await mgwLoadModule(src);
-  queueMicrotask(()=>{if(typeof renderAll==='function')renderAll();mgwInstallRuntimeBadge()});
+  // Keep first paint small. Core finance/account modules load first; secondary UI features
+  // are added only after the browser has returned control to Safari's event loop.
+  for(const src of MGW_CORE_MODULES){
+    await mgwLoadModule(src);
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  if(typeof renderAll==='function')renderAll();
+  mgwInstallRuntimeBadge();
+  const loadDeferred=async()=>{
+    for(const src of MGW_DEFERRED_MODULES){
+      await mgwLoadModule(src);
+      await new Promise(resolve=>setTimeout(resolve,0));
+    }
+    if(typeof renderAll==='function')renderAll();
+  };
+  if('requestIdleCallback'in window)requestIdleCallback(()=>loadDeferred(),{timeout:1800});
+  else setTimeout(()=>loadDeferred(),800);
 }
 function mgwExportCurrent(){
   const payload={...db,backupMeta:{appVersion:MGW_RUNTIME_RELEASE.appVersion,schemaVersion:MGW_RUNTIME_RELEASE.schemaVersion,dataVersion:MGW_RUNTIME_RELEASE.dataVersion,cacheVersion:MGW_RUNTIME_RELEASE.cacheVersion,exportedAt:new Date().toISOString()}};
