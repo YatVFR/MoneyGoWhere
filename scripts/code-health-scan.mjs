@@ -75,6 +75,10 @@ check('settings loader yields between modules',historical.includes('await mgwWai
 const currencyUi=read('currency-ui.js'),paymentLinker=read('payment-source-linker.js'),recSchedules=read('recurring-schedules.js');
 check('settings modules avoid body observers',!currencyUi.includes("observe(document.body")&&!paymentLinker.includes("observe(document.body"),'currency/payment Settings refresh is event-driven');
 check('recurring schedules avoid dashboard observer',!recSchedules.includes("observer.observe(root"),'recurring UI refreshes through deterministic render events');
+const masterdb=read('masterdb-v1.js'),appJs=read('app.js'),historyCollapse=read('history-collapse.js');
+check('restore event follows canonical sync',masterdb.indexOf("MGWTransactionEngine?.sync?.(restored,{persist:false})")<masterdb.indexOf("new CustomEvent('mgw:data-restored'"),'restored history is canonical before UI notification');
+check('core UI refreshes on restore',appJs.includes("document.addEventListener('mgw:data-restored'")&&appJs.includes("MGWHistoryCollapse?.refresh?.()"),'history and active insights refresh without reload');
+check('history shell rebinds on restore',historyCollapse.includes("document.addEventListener('mgw:data-restored'"),'collapsible transaction history follows restored DOM');
 
 if(renderWrappers>8)warn('renderAll wrapper depth',`${renderWrappers} runtime wrappers; prefer events for future modules`);
 if(bodyObservers>4)warn('document.body MutationObservers',`${bodyObservers} observers; watch Safari redraw cost`);
