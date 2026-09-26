@@ -1,7 +1,7 @@
 // MoneyGoWhere UAT database compatibility layer.
 (()=>{
   'use strict';
-  const RELEASE='1.5.5-dev.52', DATA_VERSION=14, SCHEMA_VERSION=1;
+  const RELEASE='1.5.5-dev.56', DATA_VERSION=14, SCHEMA_VERSION=1;
   const ARRAY_KEYS=['expenses','income','creditAccounts','creditPayments','payLaterAccounts','payLaterPayments','monthlyCommitments','recurringIncome','recurringCommitments','recurringBills','walletAccounts','importQueue','importHistory','receiptImportQueue','receiptImportHistory','bankAccounts'];
   const OBJECT_KEYS=['settings','migration','merchantRules','paymentSourceMap','importQuarantine','importMeta','devImportReview'];
   const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
@@ -30,7 +30,7 @@
     const good=[];for(const item of x.importQueue){if(item?.date&&!validDate(item.date)){if(!q.history.some(h=>h?.id===item.id))q.history.push({...item,status:'quarantined',quarantineReason:'invalid-date'});report.invalidPendingImportsQuarantined++}else good.push(item)}x.importQueue=good;
     x.version=1;
     const now=new Date().toISOString();
-    x.backupMeta={...(isObj(x.backupMeta)?x.backupMeta:{}),appVersion:RELEASE,schemaVersion:SCHEMA_VERSION,dataVersion:DATA_VERSION,cacheVersion:'1-5-5-dev-52',normalizedAt:now};
+    x.backupMeta={...(isObj(x.backupMeta)?x.backupMeta:{}),appVersion:RELEASE,schemaVersion:SCHEMA_VERSION,dataVersion:DATA_VERSION,cacheVersion:'1-5-5-dev-56',normalizedAt:now};
     x.importMeta.uatCompatibilityNormalization={appVersion:RELEASE,schemaVersion:SCHEMA_VERSION,dataVersion:DATA_VERSION,normalizedAt:now,report};
     return {db:x,report};
   }
