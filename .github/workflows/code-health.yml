@@ -1,0 +1,20 @@
+name: Code Health Guard
+
+on:
+  push:
+    branches: [dev, uat, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  code-health:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Scan runtime code for future regressions
+        run: node scripts/code-health-scan.mjs

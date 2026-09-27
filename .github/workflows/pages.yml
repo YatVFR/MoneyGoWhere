@@ -1,8 +1,8 @@
-name: Deploy MoneyGoWhere Production to GitHub Pages
+name: Deploy MoneyGoWhere Dev to GitHub Pages
 
 on:
   push:
-    branches: ["main"]
+    branches: ["dev"]
   workflow_dispatch:
 
 permissions:
@@ -11,28 +11,52 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages-production"
+  group: "pages-shared-preview"
   cancel-in-progress: true
 
 jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}dev/
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Production
+      - name: Checkout Production snapshot
         uses: actions/checkout@v6
         with:
           ref: main
+          path: prod-src
+
+      - name: Checkout UAT snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: preview/uat
+          path: uat-src
+
+      - name: Checkout Dev snapshot
+        uses: actions/checkout@v6
+        with:
+          ref: dev
+          path: dev-src
+
+      - name: Assemble shared Pages site
+        run: |
+          mkdir -p site site/uat site/dev
+          rsync -a --delete --exclude='.git' --exclude='.github' prod-src/ site/
+          mkdir -p site/uat site/dev
+          rsync -a --delete --exclude='.git' --exclude='.github' uat-src/ site/uat/
+          rsync -a --delete --exclude='.git' --exclude='.github' dev-src/ site/dev/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload Production artifact
+
+      - name: Upload shared Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
+          path: site
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-      - name: Deploy Production to GitHub Pages
+
+      - name: Deploy Dev snapshot
         id: deployment
         uses: actions/deploy-pages@v4
         with:
