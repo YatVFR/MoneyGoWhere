@@ -44,6 +44,10 @@
     if(account.dataset.mgwCollapsible==='1')return;
     const head=account.querySelector('.mgw-account-head');
     if(!head)return;
+    if(account.dataset.mgwHasDetail==='0'||![...head.nextSibling?account.children:[]].some(el=>el!==head)){
+      account.dataset.mgwCollapsible='1';
+      return;
+    }
     account.dataset.mgwCollapsible='1';
     const key=ACCOUNT_KEY+accountId(account,index);
     const body=document.createElement('div');
