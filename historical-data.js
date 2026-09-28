@@ -184,7 +184,8 @@ async function mgwLoadImportModules(){
   return mgwImportPromise;
 }
 const MGW_DASHBOARD_MODULES=[
-  './dashboard-breakdown.js'
+  './dashboard-breakdown.js',
+  './transaction-editor.js'
 ];
 let mgwDashboardPromise=null;
 async function mgwLoadDashboardModules(){
@@ -192,9 +193,7 @@ async function mgwLoadDashboardModules(){
   mgwDashboardPromise=(async()=>{for(const src of MGW_DASHBOARD_MODULES)await mgwLoadModule(src);return MGW_RUNTIME_HEALTH})();
   return mgwDashboardPromise;
 }
-const MGW_ADD_MODULES=[
-  './transaction-editor.js'
-];
+const MGW_ADD_MODULES=[];
 let mgwAddPromise=null;
 async function mgwLoadAddModules(){
   if(mgwAddPromise)return mgwAddPromise;
