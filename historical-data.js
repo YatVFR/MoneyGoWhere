@@ -111,7 +111,6 @@ const MGW_CORE_MODULES=[
 const MGW_DEFERRED_MODULES=[
   // Only genuinely optional modules live here. Settings/import/dashboard modules
   // have dedicated loaders and are intentionally not repeated in this list.
-  './credit-collapse.js',
   './ui-navigation-history.js',
   './salary-trends.js',
   './performance-optimizer.js',
@@ -185,6 +184,7 @@ async function mgwLoadImportModules(){
 }
 const MGW_DASHBOARD_MODULES=[
   './dashboard-breakdown.js',
+  './credit-collapse.js',
   './transaction-editor.js'
 ];
 let mgwDashboardPromise=null;
