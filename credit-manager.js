@@ -69,8 +69,9 @@
     const view=document.querySelector('#view-dashboard');if(!view||document.querySelector('#mgwSafeSpendCard'))return;
     const card=document.createElement('article');card.className='card mgw-safe';card.id='mgwSafeSpendCard';
     const metric=view.querySelector('.metric-grid');if(metric)metric.insertAdjacentElement('afterend',card);else view.prepend(card);
-    const accounts=document.createElement('article');accounts.className='card';accounts.id='mgwAccountsDashboard';
-    card.insertAdjacentElement('afterend',accounts);
+    const accountsSection=document.createElement('details');accountsSection.className='mgw-dashboard-section';accountsSection.id='mgwAccountsDashboardSection';accountsSection.open=true;
+    accountsSection.innerHTML='<summary><div><span class="section-icon">💳</span><b>Cards & Pay-Later</b></div><span class="mgw-section-chevron">›</span></summary><div class="mgw-dashboard-section-body"><article class="card" id="mgwAccountsDashboard"></article></div>';
+    card.insertAdjacentElement('afterend',accountsSection);
   }
 
   function renderDashboardCredit(){
@@ -82,7 +83,7 @@
     const host=document.querySelector('#mgwAccountsDashboard');if(host){
       const cards=db.creditAccounts.map(renderCardSummary).join('');
       const later=db.payLaterAccounts.map(renderLaterSummary).join('');
-      host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Cards & Pay-Later</b></div><button class="text-btn" id="mgwManageAccounts">Manage</button></div><div class="mgw-account-grid">${cards||later?cards+later:'<p class="mgw-empty">No cards or pay-later accounts added yet.</p>'}</div>`;
+      host.innerHTML=`<div class="card-head"><div><b>Account summary</b></div><button class="text-btn" id="mgwManageAccounts">Manage</button></div><div class="mgw-account-grid">${cards||later?cards+later:'<p class="mgw-empty">No cards or pay-later accounts added yet.</p>'}</div>`;
       host.querySelector('#mgwManageAccounts')?.addEventListener('click',()=>{nav('settings');document.querySelector('#mgwCreditSettings')?.scrollIntoView({behavior:'smooth'})});
     }
   }
