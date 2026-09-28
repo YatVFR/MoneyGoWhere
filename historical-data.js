@@ -114,7 +114,6 @@ const MGW_DEFERRED_MODULES=[
   './credit-collapse.js',
   './ui-navigation-history.js',
   './salary-trends.js',
-  './transaction-editor.js',
   './performance-optimizer.js',
   './onboarding-dev.js',
   './recurring-onboarding.js',
@@ -193,6 +192,15 @@ async function mgwLoadDashboardModules(){
   mgwDashboardPromise=(async()=>{for(const src of MGW_DASHBOARD_MODULES)await mgwLoadModule(src);return MGW_RUNTIME_HEALTH})();
   return mgwDashboardPromise;
 }
+const MGW_ADD_MODULES=[
+  './transaction-editor.js'
+];
+let mgwAddPromise=null;
+async function mgwLoadAddModules(){
+  if(mgwAddPromise)return mgwAddPromise;
+  mgwAddPromise=(async()=>{for(const src of MGW_ADD_MODULES)await mgwLoadModule(src);return MGW_RUNTIME_HEALTH})();
+  return mgwAddPromise;
+}
 const MGW_SETTINGS_MODULES=[
   './recurring-schedules.js',
   './recurring-bills.js',
@@ -261,6 +269,7 @@ function mgwBootRuntime(){
   window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDashboardFeatures=()=>mgwLoadDashboardModules().catch(err=>{console.error('MoneyGoWhere dashboard feature loading failed',err);return MGW_RUNTIME_HEALTH});
   requestAnimationFrame(()=>window.MGWLoadDashboardFeatures());
+  window.MGWLoadAddFeatures=()=>mgwLoadAddModules().catch(err=>{console.error('MoneyGoWhere Add feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadSettingsFeatures=()=>mgwLoadSettingsModules().catch(err=>{console.error('MoneyGoWhere settings feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadImportFeatures=()=>mgwLoadImportModules().catch(err=>{console.error('MoneyGoWhere import feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
