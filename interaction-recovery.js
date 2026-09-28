@@ -98,7 +98,7 @@ function installDelegatedRecovery(){
       if(name==='dashboard')requestAnimationFrame(()=>window.MGWLoadDashboardFeatures?.());
       if(name==='insights'&&typeof renderInsights==='function')requestAnimationFrame(()=>safeCall('insights render',()=>renderInsights()));
       if(name==='settings')requestAnimationFrame(()=>{window.MGWLoadSettingsFeatures?.();window.MGWLoadImportFeatures?.();});
-      if(name==='add')requestAnimationFrame(()=>{window.MGWLoadAddFeatures?.();window.MGWLoadImportFeatures?.()});
+      if(name==='add')requestAnimationFrame(()=>window.MGWLoadImportFeatures?.());
       return;
     }
     if(target.matches('[data-open]')){
