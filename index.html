@@ -5,17 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=2.0.0-dev.14" />
-    <link rel="icon" href="assets/icons/icon.svg?v=2.0.0-dev.14" type="image/svg+xml" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=2.0.0-dev.14" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=2.0.0-dev.14" />
+  <link rel="manifest" href="manifest.json?v=2.0.0-dev.15" />
+    <link rel="icon" href="assets/icons/icon.svg?v=2.0.0-dev.15" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=2.0.0-dev.15" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.jpg?v=2.0.0-dev.15" />
       <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=2.0.0-dev.14" />
+  <link rel="stylesheet" href="style.css?v=2.0.0-dev.15" />
+  <style id="mgwDashboardSectionStyles">
+    #view-dashboard .mgw-dashboard-section{margin:0 0 14px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+    #view-dashboard .mgw-dashboard-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;cursor:pointer;font-weight:800;-webkit-tap-highlight-color:transparent}
+    #view-dashboard .mgw-dashboard-section>summary::-webkit-details-marker{display:none}
+    #view-dashboard .mgw-dashboard-section>summary>div{display:flex;align-items:center;gap:8px}
+    #view-dashboard .mgw-section-chevron{width:24px;height:24px;display:grid;place-items:center;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:20px;transition:transform .16s ease}
+    #view-dashboard .mgw-dashboard-section[open]>.mgw-section-chevron,#view-dashboard .mgw-dashboard-section[open]>summary .mgw-section-chevron{transform:rotate(90deg)}
+    #view-dashboard .mgw-dashboard-section-body{padding:0 12px 12px}
+    #view-dashboard .mgw-dashboard-section-body>.card{margin:0;box-shadow:none;border-radius:14px}
+    #view-dashboard .mgw-dashboard-section-body>.metric-grid{margin:0}
+    @media(max-width:520px){#view-dashboard .mgw-dashboard-section>summary{padding:14px 15px}#view-dashboard .mgw-dashboard-section-body{padding:0 9px 9px}}
+  </style>
 </head>
 <body>
   <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
     <div class="mgw-loading-card mgw-loader-a">
-      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/emblem.jpg?v=2.0.0-dev.14" alt="" /></div>
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/branding/emblem.jpg?v=2.0.0-dev.15" alt="" /></div>
       <h2>Money<span>Go</span>Where</h2>
       <p class="mgw-loader-tagline">SPEND SMARTER · LIVE BETTER</p>
       <p class="mgw-loader-journey">Preparing your financial journey…</p>
@@ -56,33 +68,51 @@
           <button class="month-chip" id="monthLabel"></button>
           <button class="ghost-btn" id="nextMonth">›</button>
         </div>
-        <div class="metric-grid">
-          <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">Loading…</small></article>
-          <article class="card metric"><span>Spent</span><strong id="spentTotal">$0.00</strong><small id="spentDelta">Loading…</small></article>
-          <article class="card metric"><span>Remaining</span><strong id="remainingTotal">$0.00</strong><small>Income minus tracked spending</small></article>
-          <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">Loading…</small></article>
-        </div>
-        <article class="card budget-card">
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">📊</span><b>Monthly Overview</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><div class="metric-grid">
+            <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">Loading…</small></article>
+            <article class="card metric"><span>Spent</span><strong id="spentTotal">$0.00</strong><small id="spentDelta">Loading…</small></article>
+            <article class="card metric"><span>Remaining</span><strong id="remainingTotal">$0.00</strong><small>Income minus tracked spending</small></article>
+            <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">Loading…</small></article>
+          </div></div>
+        </details>
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><article class="card budget-card">
           <div class="card-head"><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><button class="text-btn" data-open="budget">Edit</button></div>
           <div class="progress"><div id="budgetBar"></div></div>
           <div class="budget-copy"><span id="budgetCopy">Loading budget data…</span><strong id="budgetRemaining"></strong></div>
-        </article>
-        <article class="card" id="budgetAlertCard">
+        </article></div>
+        </details>
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><article class="card" id="budgetAlertCard">
           <div class="card-head"><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div></div>
           <p id="budgetAlertText">Loading your finance data…</p>
-        </article>
-        <article class="card">
+        </article></div>
+        </details>
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div></div>
           <div id="recentTransactions" class="transaction-list empty-state">Loading…</div>
-        </article>
-        <article class="card">
+        </article></div>
+        </details>
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">🏆</span><b>Top Spending</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">🏆</span><b>Top Spending</b></div><button class="text-btn" data-nav="insights">View details</button></div>
           <div id="topCategories" class="category-list empty-state">Loading…</div>
-        </article>
-        <article class="card">
+        </article></div>
+        </details>
+        <details class="mgw-dashboard-section" open>
+          <summary><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div><span class="mgw-section-chevron">›</span></summary>
+          <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div></div>
           <div id="trendBars" class="trend-bars"></div>
-        </article>
+        </article></div>
+        </details>
       </section>
 
       <section class="view" id="view-add">
@@ -172,7 +202,7 @@
         };
       };
       captureLaunch();
-      const BUILD='2.0.0-dev.14';
+      const BUILD='2.0.0-dev.15';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:2,dataVersion:20,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
@@ -190,13 +220,13 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="data-stability.js?v=2.0.0-dev.14"></script>
-  <script src="db-schema-v2.js?v=2.0.0-dev.14"></script>
-  <script src="account-registry.js?v=2.0.0-dev.14"></script>
-  <script src="recurring-engine.js?v=2.0.0-dev.14"></script>
-  <script src="masterdb-v1.js?v=2.0.0-dev.14"></script>
-  <script src="transaction-engine.js?v=2.0.0-dev.14"></script>
-  <script src="boot-phases.js?v=2.0.0-dev.14"></script>
-  <script src="app.js?v=2.0.0-dev.14"></script>
+  <script src="data-stability.js?v=2.0.0-dev.15"></script>
+  <script src="db-schema-v2.js?v=2.0.0-dev.15"></script>
+  <script src="account-registry.js?v=2.0.0-dev.15"></script>
+  <script src="recurring-engine.js?v=2.0.0-dev.15"></script>
+  <script src="masterdb-v1.js?v=2.0.0-dev.15"></script>
+  <script src="transaction-engine.js?v=2.0.0-dev.15"></script>
+  <script src="boot-phases.js?v=2.0.0-dev.15"></script>
+  <script src="app.js?v=2.0.0-dev.15"></script>
 </body>
 </html>
