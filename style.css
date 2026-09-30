@@ -53,3 +53,9 @@ html[data-mgw-boot-phase="ready"] .mgw-loading-track i{width:100%}
 #mgwLoadingScreen.is-ready{pointer-events:none!important}
 .bottom-nav{touch-action:manipulation}
 .bottom-nav button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+
+/* DEV .20 — contextual clipboard transaction action */
+.mgw-paste-transaction-fab{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:1200;display:flex;align-items:center;justify-content:center;gap:8px;width:min(88vw,360px);min-height:50px;padding:12px 18px;border:1px solid rgba(15,118,110,.22);border-radius:999px;background:var(--brand,#0f766e);color:#fff;font:inherit;font-weight:800;box-shadow:0 12px 30px rgba(0,0,0,.22);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.mgw-paste-transaction-fab:active{transform:translateX(-50%) scale(.98)}
+@media(max-height:620px){.mgw-paste-transaction-fab{bottom:calc(76px + env(safe-area-inset-bottom));min-height:46px}}
