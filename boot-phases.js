@@ -89,7 +89,9 @@ async function hydrateData(){
   setPhase('data','Loading your finance data…');
   restoreStorage();
   try{
-    const raw=originalGet.call(localStorage,DB_KEY),parsed=raw?JSON.parse(raw):{};
+    const raw=originalGet.call(localStorage,DB_KEY),parsed={};
+    // DEV/UAT startup is intentionally data-empty. Finance records enter the app only through an explicit restore/import in the current session.
+    state.persistedDatabaseDetected=Boolean(raw);
     const migration=window.MGWDatabaseSchema?.migrate?window.MGWDatabaseSchema.migrate(parsed,{persist:false,createSnapshot:true}):{database:parsed,migrated:false};
     const stable=window.MGWStability?.sanitize?window.MGWStability.sanitize(migration.database):migration.database;
     if(typeof emptyDB==='function')db=Object.assign(emptyDB(),stable||{});else db=stable||{};
