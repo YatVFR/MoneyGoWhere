@@ -36,7 +36,7 @@ async function clipboardButton(){
  let text='';try{text=await navigator.clipboard.readText()}catch{}
  const rows=clipboardRows(text);
  if(!rows.length){b?.remove();return null}
- if(!b){b=document.createElement('button');b.id='mgwPasteApplePay';b.className='secondary-btn';b.style.cssText='width:100%;margin:0 0 12px';const add=document.querySelector('#view-add .action-grid');if(add)add.insertAdjacentElement('afterend',b)}
+ if(!b){b=document.createElement('button');b.id='mgwPasteApplePay';b.className='mgw-paste-transaction-fab';b.type='button';b.setAttribute('aria-label','Paste Apple Pay transaction');document.body.appendChild(b)}
  b.textContent=rows.length>1?`📋 Paste ${rows.length} Transactions`:'📋 Paste Transaction';
  b.onclick=async()=>{try{const latest=await navigator.clipboard.readText(),items=clipboardRows(latest);if(!items.length){b.remove();toast?.('No MoneyGoWhere transaction found in clipboard');return}let added=0,duplicates=0;for(const row of items){const r=enqueue(row,Date.now());if(r.added)added++;else if(r.reason==='duplicate')duplicates++}if(added)persist();surfaceQueue({source:'apple_pay_clipboard',added,duplicates});if(added)toast?.(added===1?'Transaction ready for review':`${added} transactions ready for review`);else if(duplicates)toast?.('Clipboard transaction already imported');b.remove()}catch(err){console.warn('MoneyGoWhere clipboard read failed',err);b.remove()}};
  return b
