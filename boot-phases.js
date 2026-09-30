@@ -124,7 +124,7 @@ async function hydrateData(){
     db.settings=db.settings&&typeof db.settings==='object'?db.settings:{currency:'SGD'};
     window.db=db;state.dataReady=true;perfMark('dataReady');
     document.dispatchEvent(new CustomEvent('mgw:data-ready'));
-    if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
+    if(typeof renderAll==='function')renderAll();
   }catch(err){
     console.error('MoneyGoWhere data hydration failed',err);
     state.dataReady=true;
@@ -174,7 +174,7 @@ async function boot(){
   // Optional modules must never block first use of the app.
   setPhase('features','Finalizing essential features…');
   setPhase('data','Finalizing dashboard…');
-  if(window.MGWStability?.requestRender)window.MGWStability.requestRender();else if(typeof renderAll==='function')renderAll();
+  if(typeof renderAll==='function')renderAll();
   await nextPaint();
   await nextPaint();
   perfMark('finalStableRender');
