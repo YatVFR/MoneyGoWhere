@@ -133,7 +133,7 @@
   }
 
   function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit()}
-  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit()}
+  function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped;window.renderAll=renderAll}renderCredit()}
   window.MGWCreditManager={version:RELEASE,refresh:renderCredit,openCard,openLater,openPayment};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
