@@ -166,7 +166,8 @@ async function boot(){
   const status=document.querySelector('#updateStatus'),sub=document.querySelector('#updateSub');
   if(status)status.textContent='Ready';if(sub)sub.textContent='Loading features…';
   await nextPaint();
-  await loadFeaturesFirst();
+  // First-use gate: finance startup is intentionally empty, so do not block the shell on feature modules.
+  // Load the empty database immediately and make the interface usable; feature groups remain on-demand.
   if(sub)sub.textContent='Loading data…';
   await hydrateData();
   setPhase('data','Rendering your dashboard…');
@@ -185,11 +186,9 @@ async function boot(){
   document.dispatchEvent(new CustomEvent('mgw:app-ready'));
   if(sub)sub.textContent=`v${RELEASE} loaded`;
   console.info('MoneyGoWhere startup timings',JSON.parse(JSON.stringify(state.timings)));
-  // Stability mode: do not auto-load optional feature modules after launch.
-  // They previously rewired render/navigation handlers while the user was
-  // interacting, which caused Safari stalls and unresponsive menus.
-  state.deferredReady=false;
-  state.timings.deferred='on-demand';
+  // Stability mode: feature modules are on-demand and never block first interaction.
+  state.featuresReady=false;state.deferredReady=false;
+  state.timings.features='on-demand';state.timings.deferred='on-demand';
 
 }
 const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStorage();setPhase('error','Please refresh MoneyGoWhere to try again.')};
