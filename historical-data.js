@@ -107,7 +107,7 @@ function mgwCycleCard(){
 function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if(label)label.textContent=mgwCycleLabel(MGW.state.month)}
 if(typeof renderAll==='function'){
   const baseRender=renderAll;
-  renderAll=function(){baseRender();mgwUpdateCycleUI()};
+  renderAll=function(){baseRender();mgwUpdateCycleUI()};window.renderAll=renderAll;
 }
 const MGW_CORE_MODULES=[
   // Only modules required to interpret/render persisted finance data belong
@@ -134,24 +134,27 @@ function mgwModuleUrl(src){return `${src}${src.includes('?')?'&':'?'}v=${encodeU
 function mgwPreloadModules(list){for(const src of list){const href=mgwModuleUrl(src);if(document.querySelector(`link[data-mgw-preload="${href}"]`))continue;const link=document.createElement('link');link.rel='preload';link.as='script';link.href=href;link.dataset.mgwPreload=href;document.head.appendChild(link)}}
 function mgwLoadModule(src){
   return new Promise(resolve=>{
+    let settled=false,timer=null;
+    const finish=(node,ok)=>{
+      if(settled)return;settled=true;if(timer)clearTimeout(timer);
+      if(node)node.dataset.mgwReady='1';
+      const bucket=ok?MGW_RUNTIME_HEALTH.loaded:MGW_RUNTIME_HEALTH.failed;
+      if(!bucket.includes(src))bucket.push(src);
+      resolve();
+    };
     const existing=document.querySelector(`script[data-mgw-module="${src}"]`);
     if(existing){
-      if(existing.dataset.mgwReady==='1')return resolve();
-      const finish=ok=>{
-        existing.dataset.mgwReady='1';
-        (ok?MGW_RUNTIME_HEALTH.loaded:MGW_RUNTIME_HEALTH.failed).push(src);
-        resolve();
-      };
-      existing.addEventListener('load',()=>finish(true),{once:true});
-      existing.addEventListener('error',()=>finish(false),{once:true});
+      if(existing.dataset.mgwReady==='1'||existing.readyState==='complete'||existing.readyState==='loaded')return finish(existing,true);
+      existing.addEventListener('load',()=>finish(existing,true),{once:true});
+      existing.addEventListener('error',()=>finish(existing,false),{once:true});
+      timer=setTimeout(()=>{console.warn('MoneyGoWhere existing module wait timed out; continuing:',src);finish(existing,false)},3500);
       return;
     }
     const s=document.createElement('script');
-    s.src=mgwModuleUrl(src);
-    s.dataset.mgwModule=src;
-    s.async=false;
-    s.onload=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.loaded.push(src);resolve()};
-    s.onerror=()=>{s.dataset.mgwReady='1';MGW_RUNTIME_HEALTH.failed.push(src);console.error('MoneyGoWhere module failed to load:',src);resolve()};
+    s.src=mgwModuleUrl(src);s.dataset.mgwModule=src;s.async=false;
+    s.onload=()=>finish(s,true);
+    s.onerror=()=>{console.error('MoneyGoWhere module failed to load:',src);finish(s,false)};
+    timer=setTimeout(()=>{console.warn('MoneyGoWhere module timed out; continuing:',src);finish(s,false)},4500);
     document.head.appendChild(s);
   });
 }
