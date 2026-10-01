@@ -78,10 +78,11 @@ function loadScript(src){return new Promise(resolve=>{
   const existing=document.querySelector(`script[data-mgw-boot-src="${src}"]`);
   if(existing)return resolve(true);
   const started=performance.now(),s=document.createElement('script');
+  let settled=false;const finish=ok=>{if(settled)return;settled=true;clearTimeout(timer);resolve(ok)};const timer=setTimeout(()=>{state.failed.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:false,timeout:true});console.warn('MoneyGoWhere boot module timed out; continuing:',src);finish(false)},4500);
   s.src=`${src}${src.includes('?')?'&':'?'}v=${encodeURIComponent(RELEASE)}`;
   s.async=false;s.dataset.mgwBootSrc=src;
-  s.onload=()=>{state.loaded.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:true});resolve(true)};
-  s.onerror=()=>{state.failed.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:false});console.error('MoneyGoWhere phased module failed:',src);resolve(false)};
+  s.onload=()=>{state.loaded.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:true});finish(true)};
+  s.onerror=()=>{state.failed.push(src);perf.modules.push({src,ms:Math.round(performance.now()-started),ok:false});console.error('MoneyGoWhere phased module failed:',src);finish(false)};
   document.head.appendChild(s);
 })}
 async function hydrateData(){
