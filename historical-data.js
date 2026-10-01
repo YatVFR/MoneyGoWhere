@@ -278,7 +278,9 @@ function mgwBootRuntime(){
   mgwCycleCard();mgwUpdateCycleUI();mgwInstallRuntimeBadge();
   window.MGWRuntimeFeaturesReady=mgwLoadCoreModules().catch(err=>{console.error('MoneyGoWhere core feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadDashboardFeatures=()=>mgwLoadDashboardModules().catch(err=>{console.error('MoneyGoWhere dashboard feature loading failed',err);return MGW_RUNTIME_HEALTH});
-  requestAnimationFrame(()=>window.MGWLoadDashboardFeatures());
+  // Dashboard enhancements load on first dashboard interaction instead of competing with first paint.
+  const loadDashboardOnce=()=>{window.MGWLoadDashboardFeatures();document.removeEventListener('pointerdown',loadDashboardOnce,true)};
+  document.addEventListener('pointerdown',loadDashboardOnce,{capture:true,once:true});
   window.MGWLoadAddFeatures=()=>mgwLoadAddModules().catch(err=>{console.error('MoneyGoWhere Add feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadSettingsFeatures=()=>mgwLoadSettingsModules().catch(err=>{console.error('MoneyGoWhere settings feature loading failed',err);return MGW_RUNTIME_HEALTH});
   window.MGWLoadImportFeatures=()=>mgwLoadImportModules().catch(err=>{console.error('MoneyGoWhere import feature loading failed',err);return MGW_RUNTIME_HEALTH});
