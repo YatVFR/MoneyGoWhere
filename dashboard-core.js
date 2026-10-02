@@ -37,7 +37,7 @@ function fixedItems(){
     return window.MGWRecurringEngine.commitmentItemsForMonth(cycleKey(),db).filter(x=>num(x.amount)>0).map(x=>({
       kind:x.type==='bill'?'bill':x.metadata?.fixed?'fixed':'schedule',
       source:x.type==='bill'?'Recurring bill':x.type==='savings'?'Savings commitment':x.type==='loan'?'Loan commitment':x.metadata?.fixed?'Fixed monthly':'Recurring schedule',
-      name:x.name||'Recurring commitment',
+      name:window.MGWRecurringEngine.displayName(x),
       merchant:x.merchant||'',
       amount:num(x.amount),
       term:x.metadata?.fixed?'':[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → '),
@@ -46,7 +46,7 @@ function fixedItems(){
   }
   const out=[];
   for(const x of db.monthlyCommitments)if(x.active!==false&&num(x.amount)>0)out.push({kind:'fixed',source:'Fixed monthly',name:x.name||x.type||'Monthly commitment',merchant:x.merchant||'',amount:num(x.amount),term:''});
-  for(const x of db.recurringCommitments)if(activeRule(x)&&num(x.amount)>0)out.push({kind:'schedule',source:'Recurring schedule',name:x.name||'Recurring commitment',merchant:x.merchant||'',amount:num(x.amount),term:[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → ')});
+  for(const x of db.recurringCommitments)if(activeRule(x)&&num(x.amount)>0)out.push({kind:'schedule',source:'Recurring schedule',name:window.MGWRecurringEngine.displayName(x),merchant:x.merchant||'',amount:num(x.amount),term:[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → ')});
   for(const x of db.recurringBills)if(activeRule(x)&&num(x.amount)>0)out.push({kind:'bill',source:'Recurring bill',name:x.name||x.merchant||'Recurring bill',merchant:x.merchant||x.name||'',amount:num(x.amount),term:[x.startMonth,x.endMonth||'ongoing'].filter(Boolean).join(' → ')});
   return out;
 }
@@ -112,7 +112,7 @@ function model(){
 function moneyText(v){return typeof money==='function'?money(v):`SGD ${num(v).toFixed(2)}`}
 function groupLines(items){
   if(!items.length)return'<p class="mgw-muted">None configured for this cycle.</p>';
-  return items.map(x=>`<div class="mgw-obligation-line" ${x.recurringId?`data-recurring-id="${esc(x.recurringId)}"`:''}><span>${esc(x.name)}<small>${esc([x.source,x.term].filter(Boolean).join(' · '))}</small></span><strong>${moneyText(x.amount)}</strong></div>`).join('');
+  return items.map(x=>`<div class="mgw-obligation-line" ${x.recurringId?`data-recurring-id="${esc(x.recurringId)}"`:''}><span>${esc(x.name)}<small>${esc([x.source,x.merchant,x.term].filter(Boolean).join(' · '))}</small></span><strong>${moneyText(x.amount)}</strong></div>`).join('');
 }
 function installStyles(){
   if(document.querySelector('#mgwDashboardCoreCss'))return;

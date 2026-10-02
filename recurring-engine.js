@@ -35,8 +35,12 @@ function active(item,key){
   if(!Number.isFinite(cur)||!Number.isFinite(start)||cur<start||cur>end)return false;
   return (cur-start)%(STEPS[item.frequency]||1)===0;
 }
+function displayName(item){
+  const name=String(item?.name||item?.merchant||'Recurring payment').trim(),merchant=String(item?.merchant||'').trim();
+  return merchant&&norm(merchant)!==norm(name)&&/loan|mortgage/i.test(name)?`${name} · ${merchant}`:name;
+}
 function inferCommitmentType(x){
-  const t=String(x?.type||x?.category||'').toLowerCase();
+  const t=String([x?.type,x?.category,x?.name].filter(Boolean).join(' ')).toLowerCase();
   if(t.includes('saving'))return 'savings';
   if(t.includes('loan')||t.includes('debt'))return 'loan';
   return 'commitment';
@@ -138,5 +142,5 @@ document.addEventListener('mgw:data-ready',onDataReady);
 document.addEventListener('mgw:data-restored',()=>setTimeout(onDataReady,0));
 document.addEventListener('mgw:recurring-changed',()=>{try{sync(window.db||{},{persist:true})}catch(err){console.error('MoneyGoWhere recurring registry refresh failed',err)}});
 document.addEventListener('mgw:accounts-changed',()=>{try{sync(window.db||{},{persist:false})}catch{}});
-window.MGWRecurringEngine=Object.freeze({version:RELEASE,modelVersion:MODEL_VERSION,ensure,sync,active,itemsForMonth,incomeForMonth,commitmentItemsForMonth,installmentItemsForMonth,totalForMonth,addItem,describe,monthKey,historicalRecurring});
+window.MGWRecurringEngine=Object.freeze({version:RELEASE,modelVersion:MODEL_VERSION,ensure,sync,active,itemsForMonth,incomeForMonth,commitmentItemsForMonth,installmentItemsForMonth,totalForMonth,addItem,describe,monthKey,historicalRecurring,displayName});
 })();
