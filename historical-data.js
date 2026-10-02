@@ -108,6 +108,7 @@ function mgwUpdateCycleUI(){const label=document.querySelector('#monthLabel');if
 if(typeof renderAll==='function'){
   const baseRender=renderAll;
   renderAll=function(){baseRender();mgwUpdateCycleUI()};
+  window.renderAll=renderAll;
 }
 const MGW_CORE_MODULES=[
   // Only modules required to interpret/render persisted finance data belong
