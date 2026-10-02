@@ -99,6 +99,7 @@ function snapshot(raw,fromSchema){
 function migrate(input,{persist=false,createSnapshot=true}={}){
   const raw=isObj(input)?clone(input):{};
   const from=sourceSchema(raw);
+  if(from>CURRENT_SCHEMA)throw new Error('Database schema is newer than this app supports');
   let migrated=false,snapshotCreated=false;
   if(from<CURRENT_SCHEMA){
     if(createSnapshot)snapshotCreated=snapshot(raw,from);

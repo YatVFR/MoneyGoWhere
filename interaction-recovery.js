@@ -109,7 +109,7 @@ function installDelegatedRecovery(){
     if(target.id==='closeModal'){if(!target.onclick){e.preventDefault();try{$('#modal')?.close()}catch{}}return}
     if(target.id==='prevMonth'||target.id==='nextMonth'){if(typeof target.onclick!=='function'){e.preventDefault();safeCall('month switch',()=>fallbackMonth(target.id==='prevMonth'?-1:1))}return}
     if(target.matches('#insightRange button')){if(typeof target.onclick!=='function'){e.preventDefault();safeCall('insight range',()=>fallbackRange(target))}return}
-    if(target.id==='exportBtn'&&typeof target.onclick!=='function'&&typeof exportData==='function')return safeCall('export',()=>exportData());
+    if(target.id==='exportBtn'&&!window.MGWMasterDB&&typeof target.onclick!=='function'&&typeof exportData==='function')return safeCall('export',()=>exportData());
     if(target.id==='integrityBtn'&&typeof target.onclick!=='function'&&typeof integrity==='function')return safeCall('integrity',()=>integrity());
     if(target.id==='alertBtn'&&typeof target.onclick!=='function'&&typeof toast==='function')return safeCall('alert',()=>toast($('#budgetAlertText')?.textContent||'No active alert'));
     if(target.id==='refreshBtn')fallbackRefresh(target);
@@ -126,3 +126,4 @@ async function boot(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 window.MGWInteractionRecovery={version:RELEASE,reset:removeBlockingResidue,isolateServiceWorkerScope};
 })();
+

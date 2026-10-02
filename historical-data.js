@@ -59,10 +59,10 @@ function mgwAnalyticsIncome(anchor=MGW.state.month){
 if(typeof renderInsights==='function'){
   renderInsights=function(){
     const source=mgwAnalyticsDB(),n=MGW.state.range,months=rangeMonths(n),list=months.flatMap(d=>mgwAnalyticsExpenses(d)),cats=catTotals(list),total=sum(list),isPay=mgwCycleSettings().mode==='payday';
-    $('#insightSummary').innerHTML=total?`<strong>${money(total)}</strong><p>${n===1?(isPay?'this pay cycle':'this month'):`across the last ${n} ${isPay?'pay cycles':'months'}`}${cats[0]?` · Top: ${MGW.cats[cats[0][0]]||''} ${cats[0][0]}`:''}</p>`:'<p>No expenses in this period yet.</p>';
+    $('#insightSummary').innerHTML=total?`<strong>${money(total)}</strong><p>${n===1?(isPay?'this pay cycle':'this month'):`across the last ${n} ${isPay?'pay cycles':'months'}`}${cats[0]?` · Top: ${MGW.cats[cats[0][0]]||''} ${esc(cats[0][0])}`:''}</p>`:'<p>No expenses in this period yet.</p>';
     renderCats($('#insightCategories'),cats);
     if(window.MGWSalaryTrends?.render)window.MGWSalaryTrends.render(source);else renderTrend($('#salaryTrend'),12,'salary');
-    const byYear={};(Array.isArray(source.income)?source.income:[]).forEach(x=>{const y=String(x.date||'').slice(0,4),b=Number(x.bonus)||0;if(/^\\d{4}$/.test(y)&&b)byYear[y]=(byYear[y]||0)+b});
+    const byYear={};(Array.isArray(source.income)?source.income:[]).forEach(x=>{const y=String(x.date||'').slice(0,4),b=Number(x.bonus)||0;if(/^\d{4}$/.test(y)&&b)byYear[y]=(byYear[y]||0)+b});
     $('#bonusHistory').innerHTML=Object.entries(byYear).sort().map(([y,v])=>`<div class="bonus-row"><span>${y} Bonus</span><strong>${money(v)}</strong></div>`).join('')||'<p class="empty-state">No bonus history yet.</p>';
   };
 }
@@ -72,9 +72,10 @@ function mgwDashboardInsightDetail(){
   const details=[...root.querySelectorAll('details.mgw-dashboard-section')].find(d=>/MoneyGoWhere Insight/i.test(d.querySelector('summary')?.textContent||''));
   if(!details)return;
   const body=details.querySelector('.mgw-dashboard-section-body');if(!body)return;
-  const rows=mgwAnalyticsExpenses(MGW.state.month),cats=catTotals(rows),total=sum(rows),top=cats[0],rec=window.MGWRecurringEngine?.itemsForMonth?.(String(MGW.state.month).slice(0,7),mgwAnalyticsDB(),{excludeTypes:['income']})||[];
-  body.innerHTML=`<article class="card"><div class="card-head"><div><b>Current tracking-period insight</b></div><button class="text-btn" data-nav="insights">Full Insights</button></div><div class="mgw-mini"><div><small>Total spending</small><strong>${money(total)}</strong></div><div><small>Top category</small><strong>${top?esc(MGW.cats[top[0]]||top[0]):'—'}</strong></div><div><small>Recurring commitments</small><strong>${rec.length}</strong></div><div><small>Transactions analysed</small><strong>${rows.length}</strong></div></div><p class="mgw-muted">Expand this section for a live summary, or open Full Insights for category, salary and bonus trends.</p></article>`;
-  body.querySelector('[data-nav="insights"]')?.addEventListener('click',()=>nav('insights'));
+  const rows=mgwAnalyticsExpenses(MGW.state.month),cats=catTotals(rows),total=sum(rows),top=cats[0],rec=window.MGWRecurringEngine?.itemsForMonth?.(mgwDateKey(MGW.state.month).slice(0,7),mgwAnalyticsDB(),{excludeTypes:['income']})||[];
+  let detail=body.querySelector('#mgwInsightDetail');if(!detail){detail=document.createElement('div');detail.id='mgwInsightDetail';body.appendChild(detail)}
+  detail.innerHTML=`<article class="card"><div class="card-head"><div><b>Current tracking-period insight</b></div><button class="text-btn" data-nav="insights">Full Insights</button></div><div class="mgw-mini"><div><small>Total spending</small><strong>${money(total)}</strong></div><div><small>Top category</small><strong>${top?esc(MGW.cats[top[0]]||top[0]):'—'}</strong></div><div><small>Recurring commitments</small><strong>${rec.length}</strong></div><div><small>Transactions analysed</small><strong>${rows.length}</strong></div></div><p class="mgw-muted">Expand this section for a live summary, or open Full Insights for category, salary and bonus trends.</p></article>`;
+  detail.querySelector('[data-nav="insights"]')?.addEventListener('click',()=>nav('insights'));
 }
 document.addEventListener('toggle',e=>{if(e.target?.matches?.('details.mgw-dashboard-section')&&e.target.open&&/MoneyGoWhere Insight/i.test(e.target.querySelector('summary')?.textContent||''))mgwDashboardInsightDetail()},true);
 function mgwCycleCard(){
@@ -115,13 +116,14 @@ const MGW_CORE_MODULES=[
   // on the blocking startup path. Everything else is staged after app-ready.
   './currency-normalization.js',
   './dashboard-core.js',
-  './credit-manager.js'
+  './credit-manager.js',
+  './recurring-swipe.js',
+  './salary-trends.js'
 ];
 const MGW_DEFERRED_MODULES=[
   // Only genuinely optional modules live here. Settings/import/dashboard modules
   // have dedicated loaders and are intentionally not repeated in this list.
   './ui-navigation-history.js',
-  './salary-trends.js',
   './performance-optimizer.js',
   './onboarding-dev.js',
   './recurring-onboarding.js',
@@ -171,6 +173,8 @@ async function mgwWaitForInteractionIdle(){
   }
 }
 const MGW_IMPORT_MODULES=[
+  './wallet-import-queue.js',
+  './apple-pay-inbox.js',
   './ocr-enhance.js',
   './ocr-runtime.js',
   './icloud-folder-scanner.js',
@@ -283,3 +287,4 @@ function mgwBootRuntime(){
   window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
+

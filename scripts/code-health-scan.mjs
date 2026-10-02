@@ -86,10 +86,7 @@ if(renderWrappers>8)warn('renderAll wrapper depth',`${renderWrappers} runtime wr
 if(bodyObservers>4)warn('document.body MutationObservers',`${bodyObservers} observers; watch Safari redraw cost`);
 if(storageWrites>20)warn('direct localStorage writes',`${storageWrites} writes across runtime modules; central persistence remains a future refactor target`);
 
-console.log(`MoneyGoWhere code health: ${passes.length} passed, ${failures.length} failed, ${warnings.length} warning(s)`);
-for(const x of warnings)console.warn('WARN',x.name,x.detail?'- '+x.detail:'');
-for(const x of failures)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
-if(failures.length)process.exit(1);
+
 
 check('Food & Beverages category available',appJs.includes("'Food & Beverages':'🍴'"),'expense and budget forms expose the new category');
 const indexHtml=read('index.html');
@@ -100,3 +97,8 @@ check('insights render after view activation',appJs.includes("if(name==='insight
 check('salary trends read active restored DB',salaryTrends.includes('function activeDB()')&&salaryTrends.includes('activeDB().income'), 'salary visualization follows restored database');
 check('date validator is timezone-safe',read('data-stability.js').includes('Date.UTC(y,m-1,d)'), 'valid YYYY-MM-DD dates must not shift a day in positive UTC offsets');
 check('timezone quarantine recovery exists',read('data-stability.js').includes("recover('income','income')")&&read('data-stability.js').includes("recover('expenses','expenses')"), 'valid records previously quarantined by the timezone bug are restored');
+
+console.log(`MoneyGoWhere code health: ${passes.length} passed, ${failures.length} failed, ${warnings.length} warning(s)`);
+for(const x of warnings)console.warn('WARN',x.name,x.detail?'- '+x.detail:'');
+for(const x of failures)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
+if(failures.length)process.exit(1);

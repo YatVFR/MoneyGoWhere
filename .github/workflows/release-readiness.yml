@@ -18,3 +18,6 @@ jobs:
           node-version: '24'
       - name: MoneyGoWhere release smoke tests
         run: node scripts/release-smoke.mjs
+
+      - name: Data integrity regression tests
+        run: node scripts/integrity-regression.mjs

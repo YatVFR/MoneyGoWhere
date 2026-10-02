@@ -112,7 +112,7 @@ function model(){
 function moneyText(v){return typeof money==='function'?money(v):`SGD ${num(v).toFixed(2)}`}
 function groupLines(items){
   if(!items.length)return'<p class="mgw-muted">None configured for this cycle.</p>';
-  return items.map(x=>`<div class="mgw-obligation-line"><span>${esc(x.name)}<small>${esc([x.source,x.term].filter(Boolean).join(' · '))}</small></span><strong>${moneyText(x.amount)}</strong></div>`).join('');
+  return items.map(x=>`<div class="mgw-obligation-line" ${x.recurringId?`data-recurring-id="${esc(x.recurringId)}"`:''}><span>${esc(x.name)}<small>${esc([x.source,x.term].filter(Boolean).join(' · '))}</small></span><strong>${moneyText(x.amount)}</strong></div>`).join('');
 }
 function installStyles(){
   if(document.querySelector('#mgwDashboardCoreCss'))return;
@@ -165,7 +165,7 @@ function renderMetrics(p){
 }
 function renderPlanned(p){
   const card=document.querySelector('#mgwBudgetAfterCommitments');if(!card)return;
-  card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available before day-to-day spending</small><strong>${moneyText(p.plannedBalance)}</strong></div><div class="mgw-budget-grid"><span>Net income</span><strong>${moneyText(p.income)}</strong><span>Fixed & recurring commitments</span><strong>−${moneyText(p.fixedTotal)}</strong><span>Debt repayments</span><strong>−${moneyText(p.debtTotal)}</strong><span>Pay-Later commitments</span><strong>−${moneyText(p.laterTotal)}</strong><span>Reserved money</span><strong>−${moneyText(p.reserve)}</strong><span><b>Total commitments</b></span><strong><b>−${moneyText(p.commitmentsTotal)}</b></strong></div><details class="mgw-obligation-details"><summary>See what is included <i>›</i></summary><div class="mgw-obligation-body"><h4>Fixed & recurring</h4>${groupLines(p.fixed)}<h4>Debt repayments</h4>${groupLines(p.debt)}<h4>Pay-Later</h4>${groupLines(p.later)}</div></details><p class="mgw-muted">Net income minus active commitments for this cycle. Recurring items stay reserved until their configured term ends.</p>`;
+  card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧮</span><b>Budget After Commitments</b></div></div><div class="mgw-budget-hero"><small>Available before day-to-day spending</small><strong>${moneyText(p.plannedBalance)}</strong></div><div class="mgw-budget-grid"><span>Net income</span><strong>${moneyText(p.income)}</strong><span>Fixed & recurring commitments</span><strong>−${moneyText(p.fixedTotal)}</strong><span>Debt repayments</span><strong>−${moneyText(p.debtTotal)}</strong><span>Pay-Later commitments</span><strong>−${moneyText(p.laterTotal)}</strong><span>Reserved money</span><strong>−${moneyText(p.reserve)}</strong><span><b>Total commitments</b></span><strong><b>−${moneyText(p.commitmentsTotal)}</b></strong></div><details class="mgw-obligation-details"><summary>See what is included <i>›</i></summary><div class="mgw-obligation-body"><h4>Fixed & recurring</h4><p class="mgw-muted">Swipe left on a payment to edit, or tap ⋯.</p>${groupLines(p.fixed)}<h4>Debt repayments</h4>${groupLines(p.debt)}<h4>Pay-Later</h4>${groupLines(p.later)}</div></details><p class="mgw-muted">Net income minus active commitments for this cycle. Recurring items stay reserved until their configured term ends.</p>`;
 }
 function renderSafe(p){
   const card=document.querySelector('#mgwSafeSpendCard');if(!card)return;
@@ -246,7 +246,7 @@ function apply(){
   if(applying)return;applying=true;
   try{
     ensure();installStyles();ensureUi();const p=model();
-    renderCycleFocus();renderMetrics(p);renderPlanned(p);renderActivity(p);renderSafe(p);renderBudget(p);renderAdvisor(p);renderCommitmentSettings();bind();
+    renderCycleFocus();renderMetrics(p);renderPlanned(p);renderActivity(p);renderSafe(p);renderBudget(p);renderAdvisor(p);renderCommitmentSettings();bind();window.MGWRecurringSwipe?.enhance?.(document.querySelector('#mgwCommitmentSettings'));window.MGWRecurringSwipe?.enhance?.(document.querySelector('#mgwBudgetAfterCommitments'));
     window.MGWDashboardCore.last=p;
   }finally{applying=false}
 }
@@ -262,3 +262,4 @@ function boot(){
 window.MGWDashboardCore={version:RELEASE,model,refresh:apply,last:null};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+

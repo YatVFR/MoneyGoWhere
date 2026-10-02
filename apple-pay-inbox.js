@@ -10,7 +10,7 @@ function ensure(){db.importQueue=Array.isArray(db.importQueue)?db.importQueue:[]
 function exists(x){ensure();const pending=db.importQueue.filter(y=>y?.status==='pending');return [...pending,...db.importHistory].some(y=>{if(y.sourceId&&x.sourceId&&y.sourceId===x.sourceId)return true;return norm(y.merchant)===norm(x.merchant)&&Math.abs(number(y.amount)-number(x.amount))<.005&&String(y.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&String(y.time||'').slice(0,5)===String(x.time||'').slice(0,5)&&norm(y.card||y.paymentSource)===norm(x.card)})}
 function dateParts(rawDate,rawTime,fallbackStamp=Date.now()){
   const raw=String(rawDate||'').trim(),fallback=new Date(Number(fallbackStamp)||Date.now());
-  const iso=raw.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})$/);
+  const iso=raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   let d=null,repaired=false;
   if(iso){
     const y=Number(iso[1]),m=Number(iso[2]),day=Number(iso[3]);

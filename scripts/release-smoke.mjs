@@ -65,12 +65,14 @@ check('historical recurring inference supported',recurring.includes('historicalR
 const app=read('app.js');
 for(const category of ['Healthcare','Installments','Subscription','Insurance','Telecom'])check('category UI: '+category,app.includes(category),'extended category display');
 
-console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} failed`);
-for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
-for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
-if(fail.length)process.exit(1);
+
 
 const salary=read('salary-trends.js');
 check('salary module uses runtime release',salary.includes("window.MGW_RELEASE?.appVersion||'dev'"),'salary module release identity');
 check('Insights preserves salary module',hist.includes('MGWSalaryTrends?.render'),'enhanced salary view survives Insights render');
 check('cycle income includes extras',dashboard.includes('num(x.bonus)+num(x.oneOff)'),'bonus and one-off included in actual cycle income');
+
+console.log(`MoneyGoWhere release smoke: ${pass.length} passed, ${fail.length} failed`);
+for(const x of pass)console.log('PASS',x.name,x.detail?'- '+x.detail:'');
+for(const x of fail)console.error('FAIL',x.name,x.detail?'- '+x.detail:'');
+if(fail.length)process.exit(1);

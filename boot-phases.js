@@ -89,9 +89,10 @@ async function hydrateData(){
   setPhase('data','Loading your finance data…');
   restoreStorage();
   try{
-    const raw=originalGet.call(localStorage,DB_KEY),parsed={};
-    // DEV/UAT startup is intentionally data-empty. Finance records enter the app only through an explicit restore/import in the current session.
+    const raw=originalGet.call(localStorage,DB_KEY),parsed=raw?JSON.parse(raw):{};
+    if(raw&&(!parsed||typeof parsed!=='object'||Array.isArray(parsed)))throw new Error('Saved database is malformed; stored data was preserved');
     state.persistedDatabaseDetected=Boolean(raw);
+    if(raw&&(!Array.isArray(parsed.expenses)||!Array.isArray(parsed.income)))throw new Error('Saved transaction collections are malformed; stored data was preserved');
     const migration=window.MGWDatabaseSchema?.migrate?window.MGWDatabaseSchema.migrate(parsed,{persist:false,createSnapshot:true}):{database:parsed,migrated:false};
     const stable=window.MGWStability?.sanitize?window.MGWStability.sanitize(migration.database):migration.database;
     if(typeof emptyDB==='function')db=Object.assign(emptyDB(),stable||{});else db=stable||{};
@@ -129,8 +130,8 @@ async function hydrateData(){
     if(typeof renderAll==='function')renderAll();
   }catch(err){
     console.error('MoneyGoWhere data hydration failed',err);
-    state.dataReady=true;
-    document.dispatchEvent(new CustomEvent('mgw:data-ready',{detail:{error:String(err)}}));
+    state.dataReady=false;
+    throw err;
   }
 }
 async function loadFeaturesFirst(){
@@ -168,6 +169,8 @@ async function boot(){
   await loadFeaturesFirst();
   if(sub)sub.textContent='Loading data…';
   await hydrateData();
+  const launch=window.MGWLaunchCapture?.params?.();
+  if(launch&&['applepay','applewallet','walletqueue'].includes(String(launch.get('mgw')||launch.get('mode')||'').toLowerCase()))await window.MGWLoadImportFeatures?.();
   setPhase('data','Rendering your dashboard…');
   await nextPaint();
   await nextPaint();
@@ -195,3 +198,4 @@ const bootFailed=err=>{console.error('MoneyGoWhere boot failed',err);restoreStor
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot().catch(bootFailed),{once:true});else boot().catch(bootFailed);
 window.addEventListener('pagehide',restoreStorage,{once:true});
 })();
+

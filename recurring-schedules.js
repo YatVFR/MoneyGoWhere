@@ -182,9 +182,9 @@ function renderSummary(){
   for(const x of db.recurringIncome)rows.push({name:x.name||'Salary',amount:num(x.netSalary),kind:'income',label:'Salary',x});
   for(const x of db.recurringCommitments)rows.push({name:x.name||'Commitment',amount:num(x.amount),kind:'commitment',label:'Commitment',x});
   const content=rows.length?rows.map(r=>`<div class="mgw-rec-row"><div><b>${esc(r.name)}</b><small>${r.label} · ${esc(frequencyLabel(r.x.frequency))}${r.x.payDay?` · pay day ${r.x.payDay}`:r.x.dueDay?` · around day ${r.x.dueDay}`:''}</small><small>${esc(r.x.startMonth||'now')} → ${esc(r.x.endMonth||'ongoing')}${r.x.active===false?' · Paused':''}</small></div><div><strong>${money(r.amount)}</strong><span class="mgw-recurring-badge">🔁 Recurring</span><div class="mgw-rec-actions"><button data-rec-edit="${r.x.id}" data-rec-kind="${r.kind}">Edit</button><button data-rec-toggle="${r.x.id}" data-rec-kind="${r.kind}">${r.x.active===false?'Resume':'Pause'}</button></div></div></div>`).join(''):'<p class="mgw-muted">No recurring salary or general commitment schedules configured yet.</p>';
-  card.innerHTML=`<div class="card-head"><div><span class="section-icon">🔁</span><b>Recurring Schedules</b></div></div><p class="mgw-muted">Set salary and commitments once instead of re-entering them every month. Every schedule can have an optional end month.</p><div class="mgw-rec-toolbar"><button class="primary-btn" data-rec-add="income">＋ Recurring Salary</button><button data-rec-add="commitment">＋ Commitment</button><button data-rec-add="bill">＋ Bill / Subscription</button></div><div class="mgw-rec-grid" id="mgwRecurringSummary">${content}</div>`;
+  card.innerHTML=`<div class="card-head"><div><span class="section-icon">🔁</span><b>Recurring Schedules</b></div></div><p class="mgw-muted">Swipe left on a schedule to edit or pause it, or tap ⋯. Set salary and commitments once instead of re-entering them every month. Every schedule can have an optional end month.</p><div class="mgw-rec-toolbar"><button class="primary-btn" data-rec-add="income">＋ Recurring Salary</button><button data-rec-add="commitment">＋ Commitment</button><button data-rec-add="bill">＋ Bill / Subscription</button></div><div class="mgw-rec-grid" id="mgwRecurringSummary">${content}</div>`;
 }
-function render(){if(!ensure())return;installRecurringSettings();renderSummary();installAddActions();installCollapse()}
+function render(){if(!ensure())return;installRecurringSettings();renderSummary();installAddActions();installCollapse();window.MGWRecurringSwipe?.enhance?.(document.querySelector('#mgwRecurringSettings'))}
 function boot(){
   if(!ensure())return;installStyles();render();
   // Avoid a subtree observer on the dashboard: renderAll already gives this
@@ -195,3 +195,4 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+

@@ -122,7 +122,14 @@ function classify(raw){
   throw new Error('Unsupported MoneyGoWhere backup');
 }
 function validate(raw){
-  const parsed=classify(raw),prepared=shaped(parsed.database),s=summary(prepared.database);
+  const parsed=classify(raw),source=parsed.database;
+  if(!Array.isArray(source.expenses)||!Array.isArray(source.income))throw new Error('Required transaction collections are missing or malformed');
+  if(Number(source.schemaVersion)>2||Number(raw.formatVersion)>FORMAT_VERSION)throw new Error('Backup version is newer than this app supports');
+  const collections=['expenses','income','creditAccounts','creditPayments','payLaterAccounts','payLaterPayments','monthlyCommitments','recurringIncome','recurringCommitments','recurringBills','walletAccounts','bankAccounts','accounts','recurringItems','importQueue','importHistory','receiptImportQueue','receiptImportHistory'];
+  for(const key of collections){if(source[key]!==undefined&&(!Array.isArray(source[key])||source[key].some(x=>!isObj(x))))throw new Error(`Malformed collection: ${key}`)}
+  for(const x of source.expenses)if(x.amount!==undefined&&!Number.isFinite(Number(x.amount)))throw new Error('Invalid expense amount');
+  for(const x of source.income)for(const key of ['netSalary','baseSalary','bonus','oneOff','amount'])if(x[key]!==undefined&&!Number.isFinite(Number(x[key])))throw new Error('Invalid income amount');
+  const prepared=shaped(source),s=summary(prepared.database);
   if(!Array.isArray(prepared.database.expenses)||!Array.isArray(prepared.database.income))throw new Error('Required transaction collections are missing');
   return {...parsed,prepared:prepared.database,migration:prepared.migration,summary:s};
 }
@@ -137,21 +144,21 @@ function createRestoreSnapshot(){
 }
 function restoreValidated(preview){
   if(!preview?.prepared)throw new Error('Restore preview is missing');
-  const snapshotCreated=createRestoreSnapshot(),restored=clone(preview.prepared);
+  const hadDatabase=localStorage.getItem(DB_KEY)!==null,snapshotCreated=createRestoreSnapshot();
+  if(hadDatabase&&!snapshotCreated)throw new Error('Could not preserve current database before restore');
+  const restored=clone(preview.prepared);
   restored.updatedAt=now();
   restored.backupMeta={...(restored.backupMeta||{}),lastRestoredAt:restored.updatedAt,lastRestoreKind:preview.kind,restoredByVersion:RELEASE};
   sync(restored);
-  localStorage.setItem(DB_KEY,JSON.stringify(restored));
-  if(preview.kind==='full-backup')applyUiPreferences(preview.preferences);
-  window.db=restored;
-  if(typeof db!=='undefined')db=restored;
+
   // Canonical engines may enrich the restored object. Complete that work
   // before notifying UI modules so history/insights read the final database.
   try{window.MGWAccountRegistry?.sync?.(restored,{persist:false});window.MGWRecurringEngine?.sync?.(restored,{persist:false});window.MGWTransactionEngine?.sync?.(restored,{persist:false})}catch(err){console.warn('MoneyGoWhere post-restore sync failed',err)}
   localStorage.setItem(DB_KEY,JSON.stringify(restored));
+  if(preview.kind==='full-backup')applyUiPreferences(preview.preferences);
   window.db=restored;
   window.MGWAdoptDatabase?.(restored);
-  if(typeof renderAll==='function')renderAll();
+  try{if(typeof renderAll==='function')renderAll()}catch(err){console.error('MoneyGoWhere restored data saved; UI refresh failed',err)}
   document.dispatchEvent(new CustomEvent('mgw:data-restored',{detail:{kind:preview.kind,fromSchema:preview.migration?.fromSchema,toSchema:preview.migration?.toSchema,migrated:Boolean(preview.migration?.migrated),snapshotCreated,backupMeta:preview.meta,database:restored,expenses:Array.isArray(restored.expenses)?restored.expenses.length:0,income:Array.isArray(restored.income)?restored.income.length:0}}));
   return {snapshotCreated,database:restored};
 }

@@ -5,7 +5,7 @@ const RELEASE=window.MGW_RELEASE?.appVersion||'dev';
 const arrays=['expenses','income','creditAccounts','creditPayments','payLaterAccounts','payLaterPayments','monthlyCommitments','recurringIncome','recurringCommitments','recurringBills','walletAccounts','importQueue','importHistory','receiptImportQueue','receiptImportHistory','bankAccounts','accounts','recurringItems'];
 const isObj=x=>x&&typeof x==='object'&&!Array.isArray(x);
 const ymd=s=>{if(typeof s!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(s.slice(0,10)))return false;const [y,m,d]=s.slice(0,10).split('-').map(Number),dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d};
-const uniqueById=rows=>{const seen=new Set();return rows.filter(x=>{if(!isObj(x))return false;const id=String(x.id||'');if(!id)return true;if(seen.has(id))return false;seen.add(id);return true})};
+const uniqueById=rows=>{const used=new Set(rows.filter(isObj).map(x=>String(x.id||'')).filter(Boolean)),seen=new Set();return rows.filter(isObj).map(x=>{const id=String(x.id||'');if(!id)return x;if(seen.has(id)){let n=2,next;do{next=`${id}-recovered-${n++}`}while(used.has(next));used.add(next);return {...x,id:next,originalId:x.originalId||id,integrityWarning:'duplicate-id-preserved'}}seen.add(id);return x})};
 function sanitize(input){
   const db=isObj(input)?input:{};
   arrays.forEach(k=>db[k]=Array.isArray(db[k])?uniqueById(db[k]):[]);
@@ -30,3 +30,4 @@ let renderPending=false;
 function requestRender(){if(renderPending)return;renderPending=true;requestAnimationFrame(()=>{renderPending=false;try{window.renderAll?.()}catch(err){console.error('MoneyGoWhere scheduled render failed',err)}})}
 window.MGWStability=Object.freeze({version:RELEASE,sanitize,requestRender});
 })();
+
