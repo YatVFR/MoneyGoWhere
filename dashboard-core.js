@@ -256,6 +256,7 @@ function boot(){
     const base=renderAll;
     renderAll=function(){base();queueMicrotask(apply)};
     renderAll.__mgwDashboardCore=true;
+    window.renderAll=renderAll;
   }
 }
 window.MGWDashboardCore={version:RELEASE,model,refresh:apply,last:null};
