@@ -54,7 +54,7 @@ function frequencyLabel(v){return {monthly:'Monthly',bimonthly:'Every 2 months',
 function categoryLabel(v){return v||'Other'}
 function renderBill(x){return `<div class="mgw-bill-row"><div><b>${esc(x.name||x.merchant||'Recurring bill')}</b>${x.confidence==='review'?'<span class="mgw-review-pill">Review</span>':''}<small>${esc(categoryLabel(x.category))} · ${esc(frequencyLabel(x.frequency))}${x.dueDay?` · around day ${x.dueDay}`:''}${x.endMonth?` · until ${esc(x.endMonth)}`:' · ongoing'}${x.active===false?' · Paused':''}</small><small>${x.merchant?`Match: ${esc(x.merchant)}`:''}</small></div><div><strong>${money(num(x.amount))}</strong><div class="mgw-bill-actions"><button data-bill-edit="${x.id}">Edit</button><button data-bill-toggle="${x.id}">${x.active===false?'Active':'Pause'}</button></div></div></div>`}
 function currentKey(){return window.MGWRecurring?.monthKey?.(MGW.state.month)||monthKey(MGW.state.month)}
-function groupedBills(){const groups=new Map();for(const x of db.recurringBills){const g=x.group||x.category||'Other';if(!groups.has(g))groups.set(g,[]);groups.get(g).push(x)}return [...groups.entries()]}
+function groupedBills(){const groups=new Map();for(const x of db.recurringBills.filter(x=>x.active!==false)){const g=x.group||x.category||'Other';if(!groups.has(g))groups.set(g,[]);groups.get(g).push(x)}return [...groups.entries()]}
 function render(){
   if(!ensure())return;installUI();const host=document.querySelector('#mgwRecurringBillsSettings');if(!host)return;
   const sig=JSON.stringify(db.recurringBills);if(sig===signature&&host.children.length)return;signature=sig;

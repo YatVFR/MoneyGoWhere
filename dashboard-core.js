@@ -216,7 +216,7 @@ function renderAdvisor(p){
 }
 function renderCommitmentSettings(){
   const host=document.querySelector('#mgwCommitmentSettings');if(!host)return;
-  const rows=db.monthlyCommitments||[];
+  const rows=(db.monthlyCommitments||[]).filter(x=>x.active!==false);
   host.innerHTML=`<div class="card-head"><div><span class="section-icon">📌</span><b>Fixed Monthly Commitments</b></div><button class="text-btn" data-core-add-commitment>＋ Add</button></div><p class="mgw-muted">Use this for fixed monthly obligations without a term. Term-based items belong under Recurring Schedules or Recurring Commitments.</p><div class="mgw-commit-list">${rows.length?rows.map(x=>`<div class="mgw-commit"><div><b>${esc(x.name||x.type||'Commitment')}</b><small>${esc(x.type||'Fixed monthly')}${x.dueDay?` · due day ${esc(x.dueDay)}`:''}${x.active===false?' · Paused':''}</small></div><div><strong>${moneyText(x.amount)}</strong><div class="mgw-commit-actions"><button data-core-edit="${esc(x.id)}">Edit</button><button data-core-toggle="${esc(x.id)}">${x.active===false?'Active':'Pause'}</button></div></div></div>`).join(''):'<p class="mgw-muted">No fixed monthly commitments configured.</p>'}</div>`;
 }
 function commitmentModal(x={}){

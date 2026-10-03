@@ -66,11 +66,28 @@ function collapseSettings(){
     details.addEventListener('toggle',()=>{try{const state=JSON.parse(localStorage.getItem('mgw-settings-sections-v1')||'{}');state[key]=details.open;localStorage.setItem('mgw-settings-sections-v1',JSON.stringify(state))}catch{}});
   });
 }
+// Grouping is a view of existing schedules; source collections and IDs never move.
+function groupedRecurring(database){
+  const work=clone(database);window.MGWRecurringEngine.sync(work,{persist:false});
+  const sectionNames={recurringBills:'Recurring Bills & Commitments',recurringIncome:'Recurring Schedules · Salary',recurringCommitments:'Recurring Schedules · Commitments',monthlyCommitments:'Fixed Monthly Commitments',canonical:'Historical & Other Recurring'};
+  const describe=x=>{const raw=Array.isArray(work[x.sourceCollection])?work[x.sourceCollection].find(r=>String(r.id)===String(x.sourceId)):x;return {...x,originalSection:sectionNames[x.sourceCollection]||'Historical & Other Recurring',originalGroup:raw?.group||raw?.category||''}};
+  const rows=work.recurringItems.filter(x=>x.type!=='installment').map(describe);
+  return {paused:rows.filter(x=>x.active===false),canonicalActive:rows.filter(x=>x.active!==false&&x.sourceCollection==='canonical'&&x.metadata?.userEdited)};
+}
+function renderGroupedRecurring(view){
+  const groups=groupedRecurring(window.db);
+  for(const [id,title,rows,paused] of [['mgwPausedRecurring','Paused Recurring',groups.paused,true],['mgwOtherRecurring','Historical & Other Recurring',groups.canonicalActive,false]]){
+    let host=document.querySelector('#'+id);if(!host){host=document.createElement('article');host.id=id;host.className='card';view.appendChild(host)}
+    host.innerHTML=`<div class="card-head"><b>${title}</b></div><p class="mgw-muted">${paused?'Swipe left or tap ⋯ for Edit / Active. Activating returns the entry to its original group.':'Recurring entries managed from imported history or the recurring editor.'}</p><div class="mgw-rec-grid">${rows.map(x=>`<div data-recurring-id="${esc(x.id)}"><div><b>${esc(window.MGWRecurringEngine.displayName(x))}</b><small>${paused?'Paused · Returns to':'Group'}: ${esc(x.originalSection)}${x.originalGroup?' · '+esc(x.originalGroup):''}</small><small>${esc(x.frequency)} · ${esc(x.startMonth||'No start month')} → ${esc(x.endMonth||'ongoing')}</small></div><strong>${esc(window.money?.(x.amount)||x.amount)}</strong></div>`).join('')||`<p class="mgw-muted">${paused?'No paused recurring entries.':'No active entries in this section.'}</p>`}</div>`;
+    window.MGWRecurringSwipe?.enhance(host);
+  }
+}
 function render(){
   const view=document.querySelector('#view-settings');if(!view||!window.db)return;
   let host=document.querySelector('#mgwRecurringReview');if(!host){host=document.createElement('article');host.id='mgwRecurringReview';host.className='card';view.appendChild(host)}
   const pairs=duplicates(window.db);host.innerHTML=`<div class="card-head"><b>Recurring Duplicate Review</b></div><p>${pairs.length?`${pairs.length} possible duplicate pair${pairs.length===1?'':'s'}. Compare before changing either schedule.`:'No likely recurring duplicates found.'}</p>${pairs.map(({a,b})=>`<div class="mgw-account"><b>${esc(a.name)} / ${esc(b.name)}</b><p>${esc(a.merchant||a.name)} · ${esc(a.amount)} · ${esc(a.frequency)} · overlapping dates${a.active===false||b.active===false?' · includes paused schedule':''}</p><small>${esc(a.startMonth||'No start')} → ${esc(a.endMonth||'ongoing')} / ${esc(b.startMonth||'No start')} → ${esc(b.endMonth||'ongoing')}</small><div class="mgw-account-actions"><button data-review-edit="${esc(a.id)}">Edit first</button><button data-review-edit="${esc(b.id)}">Edit second</button></div></div>`).join('')}`;
   document.querySelectorAll('[data-later-edit]').forEach(button=>{const a=(window.db.payLaterAccounts||[]).find(x=>x.id===button.dataset.laterEdit);if(a&&!a.archivedAt&&completion(a,window.db)&&!button.parentElement.querySelector('[data-later-close]')){const close=document.createElement('button');close.dataset.laterClose=a.id;close.textContent='Fully paid · Close';button.parentElement.appendChild(close)}});
+  renderGroupedRecurring(view);
   collapseSettings();
 }
 function schedule(){if(queued)return;queued=true;queueMicrotask(()=>{queued=false;render()})}
@@ -85,6 +102,6 @@ function boot(){
   for(const event of ['mgw:data-ready','mgw:data-restored','mgw:recurring-changed','mgw:app-ready','mgw:settings-features-ready'])document.addEventListener(event,schedule);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-nav="settings"],#mgwManageAccounts'))schedule();if(e.target.closest?.('#mgwManageAccounts'))queueMicrotask(()=>{const section=document.querySelector('#mgwCreditSettings')?.closest('details');if(section)section.open=true})});schedule();
 }
-window.MGWRecurringReview=Object.freeze({duplicates,completion,toggle,archive,reopen});
+window.MGWRecurringReview=Object.freeze({duplicates,completion,toggle,archive,reopen,groupedRecurring});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
