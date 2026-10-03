@@ -99,7 +99,7 @@ function boot(){
   },true);
   if(typeof window.renderAll==='function'){const base=window.renderAll;window.renderAll=function(){const result=base.apply(this,arguments);schedule();return result}}
   document.addEventListener('mgw:data-restored',()=>{undoAction=null;const bar=document.querySelector('#mgwActionUndo');if(bar)bar.hidden=true});
-  for(const event of ['mgw:data-ready','mgw:data-restored','mgw:recurring-changed','mgw:app-ready','mgw:settings-features-ready'])document.addEventListener(event,schedule);
+  for(const event of ['mgw:data-ready','mgw:data-restored','mgw:recurring-changed','mgw:app-ready','mgw:settings-features-ready','mgw:wallet-rendered'])document.addEventListener(event,schedule);
   document.addEventListener('click',e=>{if(e.target.closest?.('[data-nav="settings"],#mgwManageAccounts'))schedule();if(e.target.closest?.('#mgwManageAccounts'))queueMicrotask(()=>{const section=document.querySelector('#mgwCreditSettings')?.closest('details');if(section)section.open=true})});schedule();
 }
 window.MGWRecurringReview=Object.freeze({duplicates,completion,toggle,archive,reopen,groupedRecurring});

@@ -27,3 +27,6 @@ jobs:
 
       - name: Editing position regression tests
         run: node scripts/editing-position-regression.mjs
+
+      - name: Wallet matching and preservation regression tests
+        run: node scripts/wallet-matching-regression.mjs

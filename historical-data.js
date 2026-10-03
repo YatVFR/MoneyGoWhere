@@ -119,6 +119,7 @@ const MGW_CORE_MODULES=[
   './credit-manager.js',
   './recurring-swipe.js',
   './editing-position.js',
+  './unified-wallet.js',
   './recurring-review.js',
   './salary-trends.js'
 ];

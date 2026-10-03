@@ -1,0 +1,74 @@
+// Wallet catalogue and conservative matching for receipt and inbox entry.
+(()=>{'use strict';
+const clone=x=>JSON.parse(JSON.stringify(x)),norm=x=>String(x||'').trim().replace(/\s+/g,' ').toUpperCase();
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const generic=new Set(['','CARD','CREDIT CARD','DEBIT CARD','VISA','MASTERCARD','AMEX','AMERICAN EXPRESS','APPLE PAY','GOOGLE PAY','BANK TRANSFER','NETS','PAYNOW']);
+const methods={cash:'Cash',card:'Card',apple_pay:'Apple Pay',paynow:'PayNow',bank_transfer:'Bank Transfer',nets:'NETS',ewallet:'E-Wallet / App',voucher:'Voucher',other:'Other'};
+function methodCode(x){const t=norm(x);if(/APPLE.?PAY/.test(t))return 'apple_pay';if(/PAYNOW/.test(t))return 'paynow';if(/NETS/.test(t))return 'nets';if(/BANK.*TRANSFER/.test(t))return 'bank_transfer';if(/CASH/.test(t))return 'cash';if(/VISA|MASTER|AMEX|CARD|AMERICAN EXPRESS/.test(t))return 'card';if(/WALLET|REVOLUT|WISE|YOU.?TRIP/.test(t))return 'ewallet';if(/VOUCHER/.test(t))return 'voucher';return 'other'}
+function accounts(database){return [...(database.creditAccounts||[]).map(x=>({...x,type:'credit',collection:'creditAccounts'})),...(database.walletAccounts||[]).map(x=>({...x,type:x.accountType||'wallet',collection:'walletAccounts'})),...(database.bankAccounts||[]).map(x=>({...x,type:'bank',collection:'bankAccounts'}))]}
+function detect(input,database=window.db){
+  const rows=accounts(database),active=rows.filter(x=>x.active!==false&&!x.inferredFromTransactions),explicit=input.paymentSourceId||input.paymentAccountId||'',method=methodCode(input.paymentMethod||input.paymentEvidence||input.card||input.paymentSource||''),identity=norm(input.cardIdentity||input.card||input.paymentSource||input.paymentEvidence||''),evidence=norm(input.paymentEvidence||identity);
+  if(input.paymentSelection==='manual'&&rows.some(x=>x.id===explicit))return {status:'selected',id:explicit,candidates:rows.filter(x=>x.id===explicit),method};
+  if(input.paymentSelection==='unlinked')return {status:'unlinked',id:'',candidates:[],method};
+  const suffixes=new Set();for(const v of [input.cardLast4,input.deviceLast4])if(/^\d{4}$/.test(String(v||'')))suffixes.add(String(v));
+  for(const m of evidence.matchAll(/(?:[*X•]{2,}[- ]*|(?:ENDING(?: IN)?|LAST 4|LAST FOUR|DEVICE ACCOUNT)[ :]*)(\d{4})\b/g))suffixes.add(m[1]);
+  if(/^\d{4}$/.test(identity))suffixes.add(identity);
+  const exact=active.filter(a=>{
+    const aliases=[a.nickname,a.name,a.cardProduct,a.paymentIdentifier,...(Array.isArray(a.paymentAliases)?a.paymentAliases:[])].map(norm).filter(x=>x&&!generic.has(x));
+    return aliases.some(alias=>identity===alias||(!generic.has(identity)&&identity.length>4&&alias.length>=4&&identity.startsWith(alias+' ')))||(a.type==='method'&&a.methodCode===method&&(identity===norm(methods[method])||(!identity&&method==='cash'&&norm(input.paymentMethod)==='CASH')));
+  });
+  const suffix=active.filter(a=>[a.cardLast4,...(Array.isArray(a.applePayLast4)?a.applePayLast4:[a.applePayLast4]),/^\d{4}$/.test(a.paymentIdentifier||'')?a.paymentIdentifier:''].some(x=>suffixes.has(String(x||''))));
+  const network=/VISA/.test(evidence)?'VISA':/MASTER/.test(evidence)?'MASTERCARD':/AMEX|AMERICAN EXPRESS/.test(evidence)?'AMERICAN EXPRESS':'';
+  let candidates=suffixes.size?suffix:exact;
+  if(suffix.length&&exact.length){const both=suffix.filter(a=>exact.some(b=>b.id===a.id));candidates=both.length?both:[...new Map([...suffix,...exact].map(a=>[a.id,a])).values()]}
+  if(network&&candidates.length){const compatible=candidates.filter(a=>!a.cardNetwork||norm(a.cardNetwork)===network);if(!compatible.length)return {status:'ambiguous',id:'',candidates,method};candidates=compatible}
+  if(suffixes.size>1&&candidates.length===1){const a=candidates[0],ids=[a.cardLast4,...(Array.isArray(a.applePayLast4)?a.applePayLast4:[a.applePayLast4])];if(![...suffixes].every(s=>ids.includes(s)))return {status:'ambiguous',id:'',candidates,method}}
+  if(!candidates.length&&identity&&!generic.has(identity)&&!suffixes.size){const mapped=database.paymentSourceMap?.[identity];if(mapped)candidates=active.filter(x=>x.id===mapped)}
+  return {status:candidates.length===1?'matched':candidates.length>1?'ambiguous':'unmatched',id:candidates.length===1?candidates[0].id:'',candidates,method};
+}
+function prepare(input,database=window.db){
+  const out={...input},result=detect(out,database);out.walletMatchStatus=result.status;
+  out.paymentSourceId=result.id;out.paymentAccountId=result.id;
+  if(!out.paymentMethod&&result.method!=='other')out.paymentMethod=methods[result.method];return out;
+}
+function paymentDetails(input,database=window.db){const x=prepare(input,database);return {paymentSourceId:x.paymentSourceId,paymentAccountId:x.paymentAccountId,paymentSelection:x.paymentSelection||'',walletMatchStatus:x.walletMatchStatus,paymentMethod:x.paymentMethod||'',cardIdentity:x.cardIdentity||x.card||'',cardLast4:x.cardLast4||'',paymentEvidence:x.paymentEvidence||''}}
+function saveCard(entry,database=window.db){
+  if(entry.cardLast4&&!/^\d{4}$/.test(entry.cardLast4))throw Error('Physical card identifier must contain four digits');
+  if((entry.applePayLast4||[]).some(x=>!/^\d{4}$/.test(x)))throw Error('Apple Pay identifiers must contain four digits');
+  for(const k of ['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','balance'])if(entry[k]!==undefined&&entry[k]!==''&&(!Number.isFinite(Number(entry[k]))||Number(entry[k])<0))throw Error('Enter valid non-negative account amounts');
+  const next=clone(database);next.creditAccounts=next.creditAccounts||[];next.walletAccounts=next.walletAccounts||[];const old=[...next.creditAccounts,...next.walletAccounts].find(x=>x.id===entry.id)||{};
+  next.creditAccounts=next.creditAccounts.filter(x=>x.id!==entry.id);next.walletAccounts=next.walletAccounts.filter(x=>x.id!==entry.id);next[entry.accountType==='credit'?'creditAccounts':'walletAccounts'].push({...old,...entry});
+  window.MGWAccountRegistry.sync(next,{persist:false});localStorage.setItem('moneygowhere-db-v1',JSON.stringify(next));window.MGWAdoptDatabase(next);document.dispatchEvent(new CustomEvent('mgw:accounts-changed'));return entry;
+}
+function choose(input,id,database=window.db){if(id&&!accounts(database).some(x=>x.id===id))throw Error('Wallet entry no longer exists');input.paymentSourceId=id;input.paymentAccountId=id;input.paymentSelection=id?'manual':'unlinked';input.walletMatchStatus=id?'selected':'unlinked';return input}
+function choiceFields(input){const r=detect(input),selected=r.id;return `<div class="field full"><label>Wallet payment source</label><select data-k="paymentSourceId"><option value="">Keep unlinked / choose source</option>${accounts(window.db).filter(a=>a.active!==false||a.id===selected).map(a=>`<option value="${esc(a.id)}" ${a.id===selected?'selected':''}>${esc(a.nickname||a.name||a.cardProduct)}${r.candidates.some(x=>x.id===a.id)?' · match':''}</option>`).join('')}</select><small>${r.status==='ambiguous'?'Multiple possible matches — choose the correct entry.':selected?'Wallet source detected. Review before saving.':'No unique wallet match. Choose a source or keep unlinked.'}</small></div>`}
+function applyReceipt(form,result){
+  if(!form||form.dataset.mgwPaymentManual==='1')return;window.MGWPaymentFormCore?.refresh();
+  const input={...result.values,paymentEvidence:result.paymentEvidence},r=detect(input),method=form.querySelector('#mgwPaymentMethodSelect'),source=form.querySelector('#mgwPaymentSourceSelect');if(!method||!source)return;
+  form.dataset.mgwDetecting='1';method.value=r.method;method.dispatchEvent(new Event('change',{bubbles:true}));
+  const a=r.candidates.find(x=>x.id===r.id);source.value=a?(a.type==='bank'?'bankacct:':'acct:')+a.id:'';source.dispatchEvent(new Event('change',{bubbles:true}));delete form.dataset.mgwDetecting;
+  let note=form.querySelector('#mgwReceiptWalletMatch');if(!note){note=document.createElement('p');note.id='mgwReceiptWalletMatch';note.className='field full status';note.setAttribute('role','status');form.appendChild(note)}note.textContent=r.id?`Wallet matched: ${a.nickname||a.name||a.cardProduct}. Review before saving.`:r.status==='ambiguous'?`Multiple wallet matches: ${r.candidates.map(x=>x.nickname||x.name).join(', ')}. Choose the payment source.`:'No unique wallet match. Choose a payment source or keep it unlinked.';
+  // Keep the evidence with the form even if the source is corrected manually.
+  for(const [name,value] of Object.entries({cardLast4:input.cardLast4||'',walletMatchStatus:r.status,paymentSelection:r.id?'manual':'unlinked'})){let field=form.elements[name];if(!field){field=document.createElement('input');field.type='hidden';field.name=name;form.appendChild(field)}field.value=value}
+}
+function saveEntry(collection,entry,database=window.db){
+  if(!['bankAccounts','walletAccounts'].includes(collection)||!String(entry.name||'').trim())throw Error('Enter a wallet entry name');
+  const next=clone(database);next[collection]=Array.isArray(next[collection])?next[collection]:[];const index=next[collection].findIndex(a=>a.id===entry.id);if(index<0)next[collection].push(entry);else next[collection][index]={...next[collection][index],...entry};window.MGWAccountRegistry.sync(next,{persist:false});localStorage.setItem('moneygowhere-db-v1',JSON.stringify(next));window.MGWAdoptDatabase(next);document.dispatchEvent(new CustomEvent('mgw:accounts-changed'));window.renderAll?.();return entry;
+}
+function openOther(a={},type='bank'){
+ const modal=document.querySelector('#modal'),body=document.querySelector('#modalBody');document.querySelector('#modalTitle').textContent=a.id?'Edit Wallet Entry':'Add Wallet Entry';
+ body.innerHTML=`<form class="form-grid" id="mgwWalletOtherForm"><div class="field full"><label>Name / nickname</label><input name="name" required value="${esc(a.nickname||a.name)}"></div><div class="field"><label>${type==='bank'?'Bank':'Payment method'}</label>${type==='bank'?`<input name="bank" value="${esc(a.bank||a.issuer)}">`:`<select name="methodCode">${Object.entries(methods).map(([k,v])=>`<option value="${k}" ${a.methodCode===k?'selected':''}>${v}</option>`).join('')}</select>`}</div><div class="field"><label>Currency</label><input name="baseCurrency" pattern="[A-Za-z]{3}" maxlength="3" required value="${esc(a.baseCurrency||'SGD')}"></div><div class="field full"><label>Receipt / inbox aliases (comma separated)</label><input name="aliases" value="${esc((a.paymentAliases||[]).join(', '))}"></div><div class="field"><label>Status</label><select name="active"><option value="true" ${a.active!==false?'selected':''}>Active</option><option value="false" ${a.active===false?'selected':''}>Inactive</option></select></div><div class="field full"><p role="alert" id="mgwWalletSaveError"></p><button class="primary-btn">Save Wallet Entry</button></div></form>`;if(!modal.open)modal.showModal();
+ body.querySelector('form').onsubmit=e=>{e.preventDefault();const fd=new FormData(e.target),name=String(fd.get('name')||'').trim(),entry={...a,id:a.id||`WALLET-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name,nickname:name,accountType:type,bank:type==='bank'?String(fd.get('bank')||'').trim():'',methodCode:type==='method'?String(fd.get('methodCode')):'',baseCurrency:String(fd.get('baseCurrency')).toUpperCase(),paymentAliases:String(fd.get('aliases')||'').split(',').map(x=>x.trim()).filter(Boolean),active:fd.get('active')==='true'};try{saveEntry(type==='bank'?'bankAccounts':'walletAccounts',entry);modal.close();window.toast?.('Wallet entry saved')}catch(err){body.querySelector('#mgwWalletSaveError').textContent=err.message}};
+}
+function render(){
+ const view=document.querySelector('#view-settings');if(!view||!window.db)return;let host=document.querySelector('#mgwUnifiedWallet');if(!host){host=document.createElement('article');host.id='mgwUnifiedWallet';host.className='card';view.appendChild(host)}
+ host.innerHTML=`<div class="card-head"><b>My Wallet</b></div><p class="mgw-muted">Cards, bank accounts and payment methods. Configure identifiers to match receipts and Apple Pay imports.</p><div class="mgw-inline-actions"><button data-wallet-add="card">＋ Card / Wallet</button><button data-wallet-add="bank">＋ Bank Account</button><button data-wallet-add="method">＋ Payment Method</button></div><div class="mgw-wallet-tiles">${accounts(window.db).map(a=>`<div class="mgw-wallet-tile" data-wallet-type="${esc(a.type)}"><small>${esc(a.type.toUpperCase())}${a.active===false?' · INACTIVE':''}</small><b>${esc(a.nickname||a.name||a.cardProduct)}</b><span>${esc(a.issuer||a.bank||a.cardProduct||methods[a.methodCode]||'')}</span><span>${a.cardLast4?'Card •••• '+esc(a.cardLast4):''}${a.applePayLast4?.length?' · Apple Pay •••• '+esc([].concat(a.applePayLast4).join(', ')):''}</span><button data-wallet-manage="${esc(a.id)}">Edit</button></div>`).join('')||'<p>No wallet entries yet.</p>'}</div>`;
+}
+function boot(){
+ const style=document.createElement('style');style.textContent='.mgw-wallet-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}.mgw-wallet-tile{display:grid;gap:10px;padding:18px;border-radius:18px;background:linear-gradient(130deg,#0f766e,#164e63);color:white;min-width:0;overflow-wrap:anywhere}.mgw-wallet-tile small{opacity:.8}.mgw-wallet-tile b{font-size:1.08rem}.mgw-wallet-tile span{font-size:.85rem;opacity:.85}.mgw-wallet-tile button{justify-self:start;padding:8px 14px;border:0;border-radius:9px}';document.head.appendChild(style);
+ document.addEventListener('click',e=>{const b=e.target.closest?.('[data-wallet-add],[data-wallet-manage]');if(!b)return;if(b.dataset.walletAdd==='card')window.MGWCardsWallets.open();else if(b.dataset.walletAdd)openOther({},b.dataset.walletAdd);else{const a=accounts(window.db).find(x=>x.id===b.dataset.walletManage);if(!a)return;if(['bank','method'].includes(a.type))openOther(a,a.type);else window.MGWCardsWallets.open(window.db[a.collection].find(x=>x.id===a.id),a.collection==='creditAccounts'?'credit':'wallet')}});
+ for(const event of ['mgw:data-ready','mgw:accounts-changed','mgw:data-restored','mgw:app-ready'])document.addEventListener(event,()=>{render();document.dispatchEvent(new CustomEvent('mgw:wallet-rendered'))});render();
+}
+window.MGWUnifiedWallet=Object.freeze({accounts,detect,prepare,paymentDetails,saveCard,choose,choiceFields,applyReceipt,saveEntry,methodCode});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();

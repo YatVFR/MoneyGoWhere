@@ -56,13 +56,13 @@ function accountType(source,a){
   if(source==='paylater')return 'paylater';
   if(source==='bank')return 'bank';
   const t=String(a?.accountType||'').toLowerCase();
-  return ['debit','wallet','prepaid','other'].includes(t)?t:'wallet';
+  return ['debit','wallet','prepaid','method','other'].includes(t)?t:'wallet';
 }
 function label(a){
   return a?.nickname||a?.name||a?.cardProduct||a?.issuer||a?.provider||'Account';
 }
 function aliases(a){
-  const xs=[a?.nickname,a?.name,a?.cardProduct,a?.issuer,a?.paymentIdentifier,a?.provider,a?.bankName,a?.accountName];
+  const xs=[a?.nickname,a?.name,a?.cardProduct,a?.issuer,a?.paymentIdentifier,a?.provider,a?.bankName,a?.bank,a?.accountName,...(Array.isArray(a?.paymentAliases)?a.paymentAliases:[])];
   return [...new Set(xs.map(norm).filter(Boolean))];
 }
 function canonical(source,a){
@@ -72,13 +72,14 @@ function canonical(source,a){
     type:accountType(source,a),
     name:label(a),
     nickname:a.nickname||'',
-    issuer:a.issuer||a.provider||a.bankName||'',
+    issuer:a.issuer||a.provider||a.bankName||a.bank||'',
     product:a.cardProduct||a.accountName||'',
     currency:String(a.baseCurrency||a.currency||'SGD').toUpperCase(),
     active:a.active!==false,
     sourceCollection:source,
     legacyId:a.id,
     paymentIdentifier:a.paymentIdentifier||'',
+    cardLast4:a.cardLast4||'',applePayLast4:a.applePayLast4||[],cardNetwork:a.cardNetwork||'',paymentAliases:a.paymentAliases||[],methodCode:a.methodCode||'',
     aliases:aliases(a)
   };
 }
@@ -135,6 +136,7 @@ function linkTransactions(database=window.db||{}){
       if(!x.paymentAccountId)x.paymentAccountId=existing;
       continue;
     }
+    if(['ambiguous','unlinked','unmatched'].includes(x.walletMatchStatus)||x.paymentSelection==='unlinked')continue;
     const token=transactionToken(x),id=matchToken(token,database);
     if(id){
       x.paymentSourceId=id;

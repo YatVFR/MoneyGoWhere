@@ -44,7 +44,7 @@
   const esc=(v='')=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const num=v=>Math.max(0,Number(v)||0);
   const id=p=>`${p}-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
-  const persist=()=>{window.db=db;try{window.MGWAccountRegistry?.sync?.(db,{persist:false})}catch(err){console.error('MoneyGoWhere account registry sync failed',err)}localStorage.setItem(MGW.key,JSON.stringify(db))};
+  const persist=(next=db)=>{window.MGWAccountRegistry?.sync?.(next,{persist:false});localStorage.setItem(MGW.key,JSON.stringify(next));window.MGWAdoptDatabase(next)};
   const persistedAccount=id=>{try{const x=JSON.parse(localStorage.getItem(MGW.key)||'{}');return [...(Array.isArray(x.creditAccounts)?x.creditAccounts:[]),...(Array.isArray(x.walletAccounts)?x.walletAccounts:[])].some(a=>a?.id===id)}catch{return false}};
   const opts=(xs,sel='')=>xs.map(x=>`<option value="${esc(x)}" ${x===sel?'selected':''}>${esc(x)}</option>`).join('');
   const typeOptions=sel=>Object.entries(TYPES).map(([k,label])=>`<option value="${k}" ${k===sel?'selected':''}>${esc(label)}</option>`).join('');
@@ -87,13 +87,14 @@
   function openAccount(a={},source='credit'){
     ensure();const edit=Boolean(a.id);let type=a.accountType||(source==='wallet'?'wallet':'credit');if(!TYPES[type])type='credit';
     const legacy=source==='credit'&&!a.accountType;
-    const knownIssuer=issuerList(type).includes(a.issuer);const issuer=knownIssuer?a.issuer:issuerList(type)[0];
+    const knownIssuer=issuerList(type).includes(a.issuer);const issuer=knownIssuer?a.issuer:(a.issuer?issuerList(type).at(-1):issuerList(type)[0]);
     const knownProduct=products(type,issuer).includes(a.cardProduct);
     const body=showModal(edit?'Edit Card / Wallet':'Add Card / Wallet',`<form id="mgwCardWalletForm" class="form-grid">
       <div class="field"><label>Card type</label><select name="accountType">${typeOptions(type)}</select></div>
       <div class="field"><label>Bank / provider</label><select name="issuer"></select></div>
+      <div class="field full" id="mgwCustomIssuerWrap"><label>Custom bank / provider</label><input name="customIssuer" value="${esc(knownIssuer?'':a.issuer||'')}"></div>
       <div class="field full"><label>Card product</label><select name="cardProduct"></select></div>
-      <div class="field full" id="mgwCustomProductWrap"><label>Custom card / product</label><input name="customProduct" value="${esc(a.customProduct||(!knownProduct&&a.cardProduct?a.cardProduct:''))}" placeholder="Card or wallet product"></div>
+      <div class="field full" id="mgwCustomProductWrap"><label>Custom card / product</label><input name="customProduct" value="${esc(a.customProduct||(!knownProduct?(a.cardProduct||(legacy?a.name:'')):''))}" placeholder="Card or wallet product"></div>
       <div class="field full"><label>Nickname</label><input name="nickname" value="${esc(a.nickname||a.name||'')}" placeholder="e.g. Daily card, Travel wallet"></div>
       <div id="mgwCreditOnly" class="field full"><div class="form-grid">
         <div class="field"><label>Card role</label><select name="role"><option value="spending">Main spending</option><option value="debt">Debt payoff</option><option value="emergency">Emergency</option><option value="emergency-debt">Debt payoff + Emergency</option></select></div>
@@ -107,37 +108,41 @@
         <div class="field"><label>Payment due day</label><input name="dueDay" type="number" min="1" max="31" value="${a.dueDay??''}"></div>
       </div></div>
       <div id="mgwWalletOnly" class="field full"><div class="form-grid"><div class="field"><label>Current balance (optional)</label><input name="walletBalance" type="number" min="0" step="0.01" value="${a.balance??''}"></div><div class="field"><label>Base currency</label><input name="baseCurrency" maxlength="3" value="${esc(a.baseCurrency||'SGD')}"></div></div><div class="mgw-form-note">Wallet/debit balances are not treated as available credit or debt. Top-ups should be recorded as transfers to avoid double-counting spending.</div></div>
+      <div class="field"><label>Physical card last 4 (optional)</label><input name="cardLast4" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" value="${esc(a.cardLast4||'')}"></div>
+      <div class="field"><label>Apple Pay device last 4 (optional, comma separated)</label><input name="applePayLast4" pattern="[0-9]{4}( *, *[0-9]{4})*" value="${esc([].concat(a.applePayLast4||[]).join(', '))}"></div>
+      <div class="field"><label>Network</label><select name="cardNetwork"><option value="">Not specified</option>${['Visa','Mastercard','American Express','Other'].map(x=>`<option ${a.cardNetwork===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Status</label><select name="active"><option value="true" ${a.active!==false?'selected':''}>Active</option><option value="false" ${a.active===false?'selected':''}>Inactive</option></select></div>
+      <div class="field full"><label>Receipt / inbox aliases (comma separated)</label><input name="paymentAliases" value="${esc((a.paymentAliases||[]).join(', '))}"></div>
+      <div class="field full"><label>Existing payment identifier (optional)</label><input name="paymentIdentifier" value="${esc(a.paymentIdentifier||'')}"><small>Use last-four digits and aliases for matching. Full card numbers are not needed.</small></div>
       <div class="field full"><button type="submit" class="primary-btn">${edit?'Save Changes':'Add Card / Wallet'}</button></div>
-      ${edit?'<div class="field full"><button type="button" class="danger" id="mgwDeleteCardWallet">Delete Card / Wallet</button></div>':''}
+      ${edit?'<div class="field full"><button type="button" class="danger" id="mgwDeleteCardWallet">Deactivate Card / Wallet</button></div>':''}
     </form>`);if(!body)return;
     const f=body.querySelector('form'),typeEl=f.elements.accountType,issuerEl=f.elements.issuer,productEl=f.elements.cardProduct,creditOnly=body.querySelector('#mgwCreditOnly'),walletOnly=body.querySelector('#mgwWalletOnly'),customWrap=body.querySelector('#mgwCustomProductWrap');
     const closeBtn=document.querySelector('#closeModal');if(closeBtn){closeBtn.disabled=false;closeBtn.style.pointerEvents='auto'}
     f.elements.role.value=a.role||'spending';
     const setCreditVisibility=()=>{const isCredit=typeEl.value==='credit';creditOnly.style.display=isCredit?'':'none';walletOnly.style.display=isCredit?'none':''};
-    const refreshProducts=(preferredProduct='')=>{const ps=products(typeEl.value,issuerEl.value),selected=ps.includes(preferredProduct)?preferredProduct:ps[0];productEl.innerHTML=opts(ps,selected);customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none';setCreditVisibility()};
+    const refreshProducts=(preferredProduct='')=>{const ps=products(typeEl.value,issuerEl.value),selected=ps.includes(preferredProduct)?preferredProduct:ps[0];productEl.innerHTML=opts(ps,selected);customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none';body.querySelector('#mgwCustomIssuerWrap').style.display=issuerEl.value.startsWith('Other / Custom')?'':'none';setCreditVisibility()};
     const refreshIssuers=(preferredIssuer='',preferredProduct='')=>{const issuers=issuerList(typeEl.value),selected=issuers.includes(preferredIssuer)?preferredIssuer:issuers[0];issuerEl.innerHTML=opts(issuers,selected);refreshProducts(preferredProduct)};
     typeEl.addEventListener('change',()=>refreshIssuers());
     issuerEl.addEventListener('change',()=>refreshProducts());
     productEl.addEventListener('change',()=>{customWrap.style.display=productEl.value==='Other / Custom Card'?'':'none'});
-    refreshIssuers(issuer,a.cardProduct||'');
+    refreshIssuers(issuer,knownProduct?a.cardProduct:(edit?'Other / Custom Card':''));
     f.addEventListener('submit',e=>{
       e.preventDefault();if(window.MGWBootState&&!window.MGWBootState.dataReady){toast?.('Finance data is still loading. Try again in a moment.');return}if(f.dataset.mgwSaving==='1')return;
-      const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();
+      const fd=new FormData(f),accountType=fd.get('accountType'),issuer=String(fd.get('issuer')||'').startsWith('Other / Custom')?String(fd.get('customIssuer')||fd.get('issuer')).trim():String(fd.get('issuer')||''),selected=String(fd.get('cardProduct')||''),custom=String(fd.get('customProduct')||'').trim(),cardProduct=selected==='Other / Custom Card'?(custom||selected):selected,nickname=String(fd.get('nickname')||'').trim();
       let savedAccount=null;
       if(selected==='Other / Custom Card'&&!custom){toast?.('Enter the custom card or wallet product');return}
       f.dataset.mgwSaving='1';const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
       try{
-        if(accountType==='credit'){
-          const o={id:a.id||id('CARD'),accountType:'credit',issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,paymentIdentifier:String(fd.get('paymentIdentifier')||a.paymentIdentifier||'').trim(),role:String(fd.get('role')||'spending')};savedAccount=o;['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)));if(legacy&&a.startingBalance!==undefined)o.startingBalance=a.startingBalance;
-          if(source==='wallet'&&edit)db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);if(!edit||source==='wallet')db.creditAccounts.push(o);else Object.assign(a,o);
-        }else{
-          const o={id:a.id||id('WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,paymentIdentifier:String(fd.get('paymentIdentifier')||a.paymentIdentifier||'').trim(),balance:fd.get('walletBalance')===''?'':num(fd.get('walletBalance')),baseCurrency:String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)};savedAccount=o;
-          if(source==='credit'&&edit){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}if(!edit||source==='credit')db.walletAccounts.push(o);else Object.assign(a,o);
-        }
-        persist();if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');try{document.querySelector('#modal')?.close()}catch{document.querySelector('#modal')?.removeAttribute('open')}toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');setTimeout(()=>{refreshAccountsUI();enhance();window.MGWWalletVisibility?.refresh?.()},0);
+        const next=JSON.parse(JSON.stringify(db));
+        const o={...a,id:a.id||id(accountType==='credit'?'CARD':'WALLET'),accountType,issuer,cardProduct,customProduct:custom,nickname,name:nickname||cardProduct,paymentIdentifier:String(fd.get('paymentIdentifier')||'').trim(),cardLast4:String(fd.get('cardLast4')||'').trim(),applePayLast4:String(fd.get('applePayLast4')||'').split(',').map(x=>x.trim()).filter(Boolean),cardNetwork:String(fd.get('cardNetwork')||''),paymentAliases:String(fd.get('paymentAliases')||'').split(',').map(x=>x.trim()).filter(Boolean),active:fd.get('active')==='true',inferredFromTransactions:false};
+        if(accountType==='credit'){o.role=String(fd.get('role')||'spending');['limit','outstanding','statementBalance','minimumPayment','plannedPayment','spendingBudget','statementDay','dueDay'].forEach(k=>o[k]=fd.get(k)===''?'':Number(fd.get(k)))}
+        else{o.balance=fd.get('walletBalance')===''?'':num(fd.get('walletBalance'));o.baseCurrency=String(fd.get('baseCurrency')||'SGD').trim().toUpperCase().slice(0,3)}
+        next.creditAccounts=next.creditAccounts.filter(x=>x.id!==o.id);next.walletAccounts=next.walletAccounts.filter(x=>x.id!==o.id);next[accountType==='credit'?'creditAccounts':'walletAccounts'].push(o);savedAccount=o;
+        if(window.MGWUnifiedWallet)window.MGWUnifiedWallet.saveCard(o);else persist(next);if(!savedAccount||!persistedAccount(savedAccount.id))throw new Error('Saved account was not found in local database');try{document.querySelector('#modal')?.close()}catch{document.querySelector('#modal')?.removeAttribute('open')}toast?.(edit?'Card / wallet updated':'Card / wallet added · saved locally');setTimeout(()=>{refreshAccountsUI();enhance();window.MGWWalletVisibility?.refresh?.()},0);
       }catch(err){console.error('MoneyGoWhere card save failed',err);f.dataset.mgwSaving='0';if(submit)submit.disabled=false;toast?.('Could not save card / wallet')}
     });
-    body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Delete this card / wallet tracker? Existing expense transactions will not be deleted.'))return;try{if(source==='credit'){db.creditAccounts=db.creditAccounts.filter(x=>x.id!==a.id);db.creditPayments=(db.creditPayments||[]).filter(x=>x.accountId!==a.id)}else db.walletAccounts=db.walletAccounts.filter(x=>x.id!==a.id);persist();document.querySelector('#modal').close();toast?.('Card / wallet tracker deleted');refreshAccountsUI()}catch(err){console.error('MoneyGoWhere card delete failed',err);toast?.('Could not delete card / wallet')}});
+    body.querySelector('#mgwDeleteCardWallet')?.addEventListener('click',()=>{if(!confirm('Deactivate this wallet entry? Existing payments and transactions will be preserved.'))return;try{const next=JSON.parse(JSON.stringify(db)),row=next[source==='credit'?'creditAccounts':'walletAccounts'].find(x=>x.id===a.id);if(!row)throw Error('Wallet entry no longer exists');row.active=false;persist(next);document.querySelector('#modal').close();toast?.('Wallet entry deactivated');refreshAccountsUI()}catch(err){console.error('MoneyGoWhere wallet deactivation failed',err);toast?.('Could not deactivate wallet entry')}});
   }
 
   function walletCard(a){const meta=a.inferredFromTransactions?'Detected from transaction payment source':[a.issuer,a.cardProduct].filter(Boolean).join(' · ');return `<div class="mgw-account"><div class="mgw-account-head"><div><b>💼 ${esc(displayName(a))}</b><small>${esc(meta||a.cardProduct||'Wallet')}</small></div><strong>${a.balance===''||a.balance==null?'—':money(num(a.balance))}</strong></div><div class="mgw-mini"><div><small>Type</small><strong>${esc(TYPES[a.accountType]||'Wallet')}</strong></div><div><small>Base currency</small><strong>${esc(a.baseCurrency||'SGD')}</strong></div></div><div class="mgw-account-actions"><button data-wallet-edit="${a.id}">Edit</button></div></div>`}

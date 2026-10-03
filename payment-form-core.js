@@ -33,8 +33,8 @@ function ensure(){
   db.bankAccounts=Array.isArray(db.bankAccounts)?db.bankAccounts:[];
 }
 function allAccounts(){ensure();return [
-  ...db.creditAccounts.map(a=>({...a,_kind:'credit'})),
-  ...db.walletAccounts.map(a=>({...a,_kind:'wallet'}))
+  ...db.creditAccounts.filter(a=>a.active!==false).map(a=>({...a,_kind:'credit'})),
+  ...db.walletAccounts.filter(a=>a.active!==false).map(a=>({...a,_kind:'wallet'}))
 ]}
 function accountLabel(a){return [a.nickname||a.name||a.cardProduct,a.issuer].filter(Boolean).join(' · ')||'Card / Wallet'}
 function bankLabel(a){return [a.nickname||a.name,a.bank].filter(Boolean).join(' · ')||a.bank||'Bank account'}
@@ -47,7 +47,7 @@ function orderedMethods(){
   return [...METHODS.filter(x=>enabled.includes(x.code)),...METHODS.filter(x=>!enabled.includes(x.code))];
 }
 function methodOptions(selected){return orderedMethods().map(x=>option(x.code,x.label,x.code===selected)).join('')}
-function configuredCardOptions(){return allAccounts().map(a=>option(`acct:${a.id}`,accountLabel(a))).join('')}
+function configuredCardOptions(){return allAccounts().filter(a=>a.accountType!=='method').map(a=>option(`acct:${a.id}`,accountLabel(a))).join('')}
 function configuredWalletOptions(){return allAccounts().filter(a=>a._kind==='wallet'||['wallet','prepaid','debit','other'].includes(a.accountType)).map(a=>option(`acct:${a.id}`,accountLabel(a))).join('')}
 function configuredBankOptions(){return db.bankAccounts.map(a=>option(`bankacct:${a.id}`,bankLabel(a))).join('')}
 function sourceOptions(method){
@@ -84,7 +84,7 @@ function injectFields(html,d={}){
 function patchExpenseForm(){
   if(typeof expenseForm!=='function'||expenseForm.__mgwPaymentCore)return;
   const base=expenseForm;
-  const patched=function(type,d={}){const html=base(type,d);return type==='expense'?injectFields(html,d):html};
+  const patched=function(type,d={}){const html=base(type,d);return ['expense','receipt'].includes(type)?injectFields(html,d):html};
   patched.__mgwPaymentCore=true;patched.__mgwBase=base;expenseForm=patched;window.expenseForm=patched;
 }
 function removeLegacyDomFields(form){
@@ -94,7 +94,7 @@ function removeLegacyDomFields(form){
   });
 }
 function ensureDomFields(form){
-  if(!form||document.querySelector('#receiptFile'))return;
+  if(!form)return;
   removeLegacyDomFields(form);
   if(form.querySelector('#mgwPaymentMethodSelect'))return;
   const spending=[...form.querySelectorAll('.field')].find(x=>x.querySelector('select[name="category"]'));
@@ -123,7 +123,7 @@ function bindPaymentForm(form){
     const code=method.value,label=methodByCode(code).label,choice=source.value||'';
     let {label:sourceLabel,accountId,bankAccountId,sourceType}=decodeSource(choice);
     if(choice.startsWith('custom:')){sourceLabel=(custom?.value||'').trim();sourceType=choice.slice(7)||'other'}
-    if(code==='cash'){sourceLabel='Cash';sourceType='cash';accountId='';bankAccountId=''}
+    if(code==='cash'&&!accountId){sourceLabel='Cash';sourceType='cash';bankAccountId=''}
     if(hidden('paymentMethod'))hidden('paymentMethod').value=label;
     if(hidden('paymentSource'))hidden('paymentSource').value=sourceLabel;
     if(hidden('card'))hidden('card').value=sourceLabel;
@@ -132,6 +132,7 @@ function bindPaymentForm(form){
     if(hidden('paymentAccountId'))hidden('paymentAccountId').value=accountId||stableId;
     if(hidden('paymentBankAccountId'))hidden('paymentBankAccountId').value=bankAccountId;
     if(hidden('paymentSourceType'))hidden('paymentSourceType').value=sourceType||code;
+    if(form.dataset.mgwPaymentManual==='1'){if(hidden('paymentSelection'))hidden('paymentSelection').value=stableId?'manual':'unlinked';if(hidden('walletMatchStatus'))hidden('walletMatchStatus').value=stableId?'selected':'unlinked'}
   };
   const tryPrefillSource=()=>{
     if(!oldSource)return;
@@ -139,13 +140,13 @@ function bindPaymentForm(form){
     if(opt)source.value=opt.value;
   };
   const refresh=()=>{
-    const code=method.value;source.innerHTML=sourceOptions(code);sourceField.hidden=code==='cash';customField.hidden=true;tryPrefillSource();
-    const update=()=>{customField.hidden=!source.value.startsWith('custom:');sync()};
+    const code=method.value;const storedMethods=allAccounts().filter(a=>a.accountType==='method'&&a.methodCode===code&&a.active!==false).map(a=>option('acct:'+a.id,accountLabel(a))).join('');source.innerHTML=sourceOptions(code)+(storedMethods?group('Stored payment methods',option('','Choose source')+storedMethods):'');sourceField.hidden=code==='cash'&&!storedMethods;customField.hidden=true;tryPrefillSource();
+    const update=e=>{if(e&&!form.dataset.mgwDetecting)form.dataset.mgwPaymentManual='1';customField.hidden=!source.value.startsWith('custom:');sync()};
     source.onchange=update;update();
   };
   if(form.dataset.mgwPaymentCoreBound!=='1'){
     form.dataset.mgwPaymentCoreBound='1';
-    method.addEventListener('change',refresh);
+    method.addEventListener('change',e=>{if(!form.dataset.mgwDetecting)form.dataset.mgwPaymentManual='1';refresh()});
     custom?.addEventListener('input',sync);
     form.addEventListener('submit',sync,true);
   }
@@ -153,19 +154,19 @@ function bindPaymentForm(form){
 }
 function normalizeOpenManualForm(){
   const form=document.querySelector('#expenseForm');
-  if(!form||document.querySelector('#receiptFile'))return false;
+  if(!form)return false;
   ensureDomFields(form);return bindPaymentForm(form);
 }
 function patchOpenModal(){
   if(typeof openModal!=='function'||openModal.__mgwPaymentCore)return;
   const base=openModal;
-  const patched=function(type,data={}){const r=base(type,data);if(type==='expense')queueMicrotask(normalizeOpenManualForm);return r};
+  const patched=function(type,data={}){const r=base(type,data);if(['expense','receipt'].includes(type))queueMicrotask(normalizeOpenManualForm);return r};
   patched.__mgwPaymentCore=true;patched.__mgwBase=base;openModal=patched;window.openModal=patched;
 }
 function patchBindModal(){
   if(typeof bindModal!=='function'||bindModal.__mgwPaymentCore)return;
   const base=bindModal;
-  const patched=function(type){const r=base(type);if(type==='expense')queueMicrotask(normalizeOpenManualForm);return r};
+  const patched=function(type){const r=base(type);if(['expense','receipt'].includes(type))queueMicrotask(normalizeOpenManualForm);return r};
   patched.__mgwPaymentCore=true;patched.__mgwBase=base;bindModal=patched;window.bindModal=patched;
 }
 function install(){ensure();patchExpenseForm();patchOpenModal();patchBindModal();normalizeOpenManualForm()}
@@ -176,3 +177,4 @@ const selfTest=()=>{try{const html=expenseForm('expense',{});return html.include
 window.MGWPaymentFormCore={version:RELEASE,install,refresh:normalizeOpenManualForm,selfTest};
 window.MGWManualPaymentMethods={version:RELEASE,coreIntegrated:true,refresh:normalizeOpenManualForm};
 })();
+
