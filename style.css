@@ -56,3 +56,15 @@ html[data-mgw-boot-phase="ready"] .mgw-loading-track i{width:100%}
 
 
 .mgw-settings-group{margin:12px 0;border:1px solid var(--line);border-radius:18px;background:var(--card)}.mgw-settings-group>summary{padding:17px;font-weight:800;cursor:pointer}.mgw-settings-group-body{padding:0 10px 10px}.mgw-settings-group-body>.card{margin:8px 0;box-shadow:none}.mgw-settings-actions{padding:4px 18px}.mgw-settings-group-body .mgw-settings-section{margin:8px 0}#mgwCreditSettings #mgwWalletAccountsBlock{display:none}
+
+
+/* Environment identity and explicit wallet contrast; no balance/data changes. */
+:root{--brand:#6d28d9;--brand-soft:#ede9fe;--mgw-wallet-end:#312e81;--mgw-wallet-detail:#ede9fe}
+.topbar h1,.topbar .eyebrow{color:var(--brand)}
+.app-version-badge{background:var(--brand-soft);color:var(--brand);border-color:var(--brand)}
+#mgwUnifiedWallet .mgw-wallet-tile{background:linear-gradient(130deg,var(--brand),var(--mgw-wallet-end));color:#fff}
+#mgwUnifiedWallet .mgw-wallet-tile b{color:#fff;opacity:1}
+#mgwUnifiedWallet .mgw-wallet-tile small,#mgwUnifiedWallet .mgw-wallet-tile span{color:var(--mgw-wallet-detail);opacity:1}
+#mgwUnifiedWallet .mgw-wallet-tile button{background:#fff;color:var(--brand);font-weight:800;opacity:1}
+.mgw-loader-a h2 span,.mgw-loading-stage{color:var(--brand)}
+.mgw-loader-a h2 span{color:#ede9fe}

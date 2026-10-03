@@ -16,7 +16,7 @@ const SHELL=[
   './credit-collapse.js','./ui-navigation-history.js','./salary-trends.js','./transaction-editor.js','./performance-optimizer.js','./onboarding-dev.js','./recurring-onboarding.js','./history-collapse.js','./salary-collapse.js','./guided-walkthrough.js',
   './ocr-enhance.js','./ocr-runtime.js','./icloud-folder-scanner.js','./startup-import-assistant.js','./receipt-match-hint.js','./dashboard-breakdown.js',
   './recurring-schedules.js','./recurring-bills.js','./paylater-recurrence.js','./paylater-rule-hotfix.js','./currency-ui.js','./payment-source-linker.js',
-  './manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.jpg','./assets/icons/apple-touch-icon.jpg','./assets/branding/loading-logo.svg'
+  './manifest.json','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/icon-512.png','./assets/icons/apple-touch-icon.png','./assets/branding/loading-logo.svg'
 ];
 
 self.addEventListener('install',event=>{
@@ -95,5 +95,6 @@ self.addEventListener('fetch',event=>{
   if(url.searchParams.get('v')===APP_VERSION){event.respondWith(versionedCacheFirst(event.request));return}
   event.respondWith(assetNetworkFirst(event.request));
 });
+
 
 

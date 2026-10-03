@@ -9,8 +9,9 @@
     let badge=document.querySelector('#mgwRuntimeVersionBadge');
     if(!badge){badge=document.createElement('span');badge.id='mgwRuntimeVersionBadge';badge.className='app-version-badge';header.appendChild(badge)}
     badge.textContent=text;
-    badge.title=`Development · App ${release}`;
+    badge.title=`DEV · App ${release}`;
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
   window.MGWVisibleRelease=release;
 })();
+
