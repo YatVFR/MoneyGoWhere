@@ -24,3 +24,6 @@ jobs:
 
       - name: Recurring review and archive regression tests
         run: node scripts/recurring-review-regression.mjs
+
+      - name: Editing position regression tests
+        run: node scripts/editing-position-regression.mjs

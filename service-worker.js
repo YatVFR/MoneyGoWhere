@@ -9,7 +9,7 @@ const CACHE=`${CACHE_PREFIX}${safeVersion}`;
 const SHELL_URL=new URL('index.html',self.registration.scope).href;
 
 const SHELL=[
-  './','./index.html','./style.css','./data-stability.js','./db-schema-v2.js','./account-registry.js','./recurring-engine.js','./recurring-swipe.js','./recurring-review.js','./masterdb-v1.js','./transaction-engine.js','./boot-phases.js','./app.js',
+  './','./index.html','./style.css','./data-stability.js','./db-schema-v2.js','./account-registry.js','./recurring-engine.js','./recurring-swipe.js','./recurring-review.js','./editing-position.js','./masterdb-v1.js','./transaction-engine.js','./boot-phases.js','./app.js',
   './import-normalizer.js','./interaction-recovery.js','./version-badge-authority.js','./finance-fix.js',
   './payment-form-core.js','./historical-data.js','./db-health.js','./release-readiness.js','./cards-wallets.js','./wallet-visibility-fix.js','./apple-pay-queue-bridge.js',
   './currency-normalization.js','./dashboard-core.js','./credit-manager.js','./wallet-import-queue.js','./apple-pay-inbox.js',

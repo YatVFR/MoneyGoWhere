@@ -62,8 +62,8 @@ function stableKey(el,head,index){
   const key=`dashboard-${slug(explicit||title||index)}`;el.dataset.mgwCollapseKey=key;return key;
 }
 function makeCollapsible(el,index){
-  if(!el||el.dataset.mgwCollapse==='1')return;
-  const head=directHeader(el);if(!head)return;
+  if(!el)return;
+  const head=directHeader(el);if(!head||head.querySelector('.mgw-collapse-btn'))return;
   const key=stableKey(el,head,index);el.dataset.mgwCollapse='1';head.classList.add('mgw-collapse-head');
   const b=document.createElement('button');b.type='button';b.className='mgw-collapse-btn';b.setAttribute('aria-label','Collapse section');
   const content=Array.from(el.children).filter(child=>child!==head);
