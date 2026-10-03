@@ -1,23 +1,29 @@
 {
-  "name": "MoneyGoWhere",
-  "short_name": "MGW",
+  "name": "MoneyGoWhere UAT",
+  "short_name": "MGW UAT",
   "description": "Your money. Your spending. Now you know where.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f8f7",
-  "theme_color": "#0f766e",
+  "theme_color": "#92400e",
   "icons": [
     {
-      "src": "assets/icons/icon.svg?v=2.0.0-dev.13",
+      "src": "assets/icons/icon.svg?v=2.0.0-dev.18-theme.1",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "assets/icons/icon-192.jpg?v=2.0.0-dev.13",
+      "src": "assets/icons/icon-192.png?v=2.0.0-dev.18-theme.1",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icons/icon-512.png?v=2.0.0-dev.18-theme.1",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
