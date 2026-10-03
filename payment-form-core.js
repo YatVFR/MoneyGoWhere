@@ -7,6 +7,7 @@ const METHODS=[
   {code:'card',label:'Card'},
   {code:'apple_pay',label:'Apple Pay'},
   {code:'paynow',label:'PayNow'},
+  {code:'paylah',label:'PayLah!'},
   {code:'ewallet',label:'E-Wallet / App'},
   {code:'bank_transfer',label:'Bank Transfer'},
   {code:'nets',label:'NETS'},
@@ -37,7 +38,7 @@ function allAccounts(){ensure();return [
   ...db.walletAccounts.filter(a=>a.active!==false).map(a=>({...a,_kind:'wallet'}))
 ]}
 function accountLabel(a){return [a.nickname||a.name||a.cardProduct,a.issuer].filter(Boolean).join(' · ')||'Card / Wallet'}
-function bankLabel(a){return [a.nickname||a.name,a.bank].filter(Boolean).join(' · ')||a.bank||'Bank account'}
+function bankLabel(a){return [a.nickname||a.name,a.bank,a.accountLast4?'•••• '+a.accountLast4:''].filter(Boolean).join(' · ')||a.bank||'Bank account'}
 function option(value,label,selected=false){return `<option value="${esc(value)}"${selected?' selected':''}>${esc(label)}</option>`}
 function group(label,items){return items?`<optgroup label="${esc(label)}">${items}</optgroup>`:''}
 function orderedMethods(){
@@ -55,6 +56,7 @@ function sourceOptions(method){
   if(method==='card')return option('','Select card')+group('My Cards & Wallets',configuredCardOptions())+group('Card issuer',CARD_PROVIDERS.map(x=>option(`cardprovider:${x}`,`${x} Card`)).join(''))+group('Other',option('custom:card','Other / Custom Card'));
   if(method==='apple_pay')return option('','Select Apple Pay source')+group('My Cards & Wallets',configuredCardOptions())+group('Card issuer',CARD_PROVIDERS.map(x=>option(`applecard:${x}`,`${x} via Apple Pay`)).join(''))+group('Wallet / App',APPS.map(x=>option(`appleapp:${x}`,`${x} via Apple Pay`)).join(''))+group('Other',option('custom:card','Other / Custom Apple Pay source'));
   if(method==='paynow'||method==='bank_transfer'||method==='nets')return option('',method==='paynow'?'Select PayNow bank':'Select bank')+group('My Bank Accounts',configuredBankOptions())+group('Bank',BANKS.map(x=>option(`bank:${x}`,x)).join(''))+group('Other',option('custom:bank','Other / Custom Bank'));
+  if(method==='paylah')return option('','Select PayLah! source')+group('My Bank Accounts',configuredBankOptions());
   if(method==='ewallet')return option('','Select app / wallet')+group('My Wallets',configuredWalletOptions())+group('Wallet / App',APPS.map(x=>option(`app:${x}`,x)).join(''))+group('Other',option('custom:wallet','Other / Custom App or Wallet'));
   if(method==='voucher')return option('','Select voucher source')+option('custom:voucher','Other / Custom Voucher');
   if(method==='other')return option('custom:other','Other / Custom Payment Source');
@@ -177,4 +179,5 @@ const selfTest=()=>{try{const html=expenseForm('expense',{});return html.include
 window.MGWPaymentFormCore={version:RELEASE,install,refresh:normalizeOpenManualForm,selfTest};
 window.MGWManualPaymentMethods={version:RELEASE,coreIntegrated:true,refresh:normalizeOpenManualForm};
 })();
+
 

@@ -31,5 +31,11 @@ jobs:
       - name: Wallet matching and preservation regression tests
         run: node scripts/wallet-matching-regression.mjs
 
+      - name: Shared wallet balance regression tests
+        run: node scripts/wallet-balances-regression.mjs
+
+      - name: Wallet balance save-form regression tests
+        run: node scripts/wallet-balance-forms-regression.mjs
+
       - name: Settings grouping and import preference regression tests
         run: node scripts/settings-layout-regression.mjs

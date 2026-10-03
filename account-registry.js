@@ -79,7 +79,7 @@ function canonical(source,a){
     sourceCollection:source,
     legacyId:a.id,
     paymentIdentifier:a.paymentIdentifier||'',
-    cardLast4:a.cardLast4||'',applePayLast4:a.applePayLast4||[],cardNetwork:a.cardNetwork||'',paymentAliases:a.paymentAliases||[],methodCode:a.methodCode||'',
+    accountLast4:a.accountLast4||'',linkedBankAccountId:a.linkedBankAccountId||'',balanceTracking:Boolean(a.balanceTracking),openingBalance:a.openingBalance??'',trackingStartDate:a.trackingStartDate||'',cardLast4:a.cardLast4||'',applePayLast4:a.applePayLast4||[],cardNetwork:a.cardNetwork||'',paymentAliases:a.paymentAliases||[],methodCode:a.methodCode||'',
     aliases:aliases(a)
   };
 }
@@ -174,3 +174,4 @@ document.addEventListener('mgw:accounts-changed',()=>{try{sync(window.db||{},{pe
 document.addEventListener('mgw:data-restored',()=>setTimeout(onDataReady,0));
 window.MGWAccountRegistry=Object.freeze({version:RELEASE,modelVersion:MODEL_VERSION,ensure,sync,byId,matchToken,linkTransactions,resolveTransactionAccount,orphanCount,describe,discoverObservedWallets});
 })();
+
