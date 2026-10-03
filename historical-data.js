@@ -84,7 +84,7 @@ function mgwCycleCard(){
   const cfg=mgwCycleSettings(),card=document.createElement('article');
   card.className='card';card.id='mgwPayCycleCard';
   card.innerHTML=`<div class="card-head"><div><span class="section-icon">📅</span><b>Tracking Period</b></div></div><form id="mgwPayCycleForm" class="form-grid"><div class="field full"><label>Tabulation mode</label><select name="mode"><option value="calendar" ${cfg.mode==='calendar'?'selected':''}>Calendar month</option><option value="payday" ${cfg.mode==='payday'?'selected':''}>Pay cycle</option></select><small>Pay cycle groups income, expenses, budgets and insights from one payday to the day before the next.</small></div><div class="field full"><label>Payday / cycle start day</label><input name="day" type="number" min="1" max="31" value="${cfg.day}"></div><div class="field full"><div class="status" id="mgwCyclePreview"></div></div><div class="field full"><button class="primary-btn">Save Tracking Period</button></div></form>`;
-  settings.insertBefore(card,settings.querySelector('.privacy-note')||null);
+  settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null);
   const f=card.querySelector('form'),mode=f.elements.mode,day=f.elements.day;
   const preview=()=>{
     day.disabled=mode.value!=='payday';
@@ -120,6 +120,7 @@ const MGW_CORE_MODULES=[
   './recurring-swipe.js',
   './editing-position.js',
   './unified-wallet.js',
+  './settings-layout.js',
   './recurring-review.js',
   './salary-trends.js'
 ];

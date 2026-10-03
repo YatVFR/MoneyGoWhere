@@ -66,7 +66,7 @@ function installStyles(){
 function render(){
   const settings=document.querySelector('#view-settings');if(!settings)return;
   installStyles();
-  let card=document.getElementById('mgwReleaseReadiness');if(!card){card=document.createElement('article');card.className='card';card.id='mgwReleaseReadiness';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
+  let card=document.getElementById('mgwReleaseReadiness');if(!card){card=document.createElement('article');card.className='card';card.id='mgwReleaseReadiness';settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null)}
   const r=run();
   card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧪</span><b>Release Readiness</b></div><span class="mgw-release-ready ${r.ready?'good':'warn'}">${r.passed}/${r.total} PASS</span></div><p class="mgw-muted">Synthetic local self-tests only. Your finance records are not copied into these tests.</p><div class="mgw-release-tests">${r.tests.map(t=>`<div class="mgw-release-test"><i>${t.ok?'✅':'⚠️'}</i><div><b>${esc(t.name)}</b><small>${esc(t.detail)}</small></div></div>`).join('')}</div><div class="mgw-db-health-actions" style="margin-top:10px"><button type="button" class="secondary-btn" id="mgwRunReleaseTests">RUN TESTS AGAIN</button></div>`;
   card.querySelector('#mgwRunReleaseTests')?.addEventListener('click',()=>{render();window.toast?.(run().ready?'Release readiness checks passed':'Release readiness needs review')});

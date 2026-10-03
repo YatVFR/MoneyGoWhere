@@ -42,7 +42,7 @@ function ensureCard(){
   const settings=document.querySelector('#view-settings');if(!settings)return null;
   let card=document.getElementById('mgwDbHealthCard');if(card)return card;
   card=document.createElement('article');card.className='card mgw-db-health';card.id='mgwDbHealthCard';
-  settings.insertBefore(card,settings.querySelector('.privacy-note')||null);
+  settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null);
   return card;
 }
 function render(){

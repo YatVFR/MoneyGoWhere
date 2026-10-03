@@ -58,6 +58,7 @@ function recurringId(button){
   window.MGWRecurringEngine.sync(window.db,{persist:false});return window.db.recurringItems.find(x=>x.sourceCollection===source&&String(x.sourceId)===String(id))?.id;
 }
 function collapseSettings(){
+  if(window.MGWSettingsLayout){window.MGWSettingsLayout.refresh();return}
   const view=document.querySelector('#view-settings');if(!view)return;let prefs={};try{prefs=JSON.parse(localStorage.getItem('mgw-settings-sections-v1')||'{}')}catch{}
   [...view.children].filter(x=>x.matches('article.card')).forEach(card=>{
     if(card.parentElement.matches('details'))return;

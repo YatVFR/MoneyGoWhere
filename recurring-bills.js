@@ -48,7 +48,7 @@ function installUI(){
   const settings=document.querySelector('#view-settings');if(!settings||document.querySelector('#mgwRecurringBillsSettings'))return;
   const card=document.createElement('article');card.className='card';card.id='mgwRecurringBillsSettings';
   const recurring=document.querySelector('#mgwRecurringSettings');
-  if(recurring)recurring.insertAdjacentElement('afterend',card);else settings.insertBefore(card,settings.querySelector('.privacy-note')||null);
+  if(recurring)recurring.insertAdjacentElement('afterend',card);else settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null);
 }
 function frequencyLabel(v){return {monthly:'Monthly',bimonthly:'Every 2 months',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'}[v]||'Monthly'}
 function categoryLabel(v){return v||'Other'}

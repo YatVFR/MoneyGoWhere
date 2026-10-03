@@ -99,7 +99,7 @@
   function installSettings(){
     const view=document.querySelector('#view-settings');if(!view||document.querySelector('#mgwCreditSettings'))return;
     const card=document.createElement('article');card.className='card';card.id='mgwCreditSettings';
-    const privacy=view.querySelector('.privacy-note');view.insertBefore(card,privacy||null);
+    const privacy=view.querySelector(':scope > .privacy-note');view.insertBefore(card,privacy||null);
   }
   function renderSettingsCredit(){
     const host=document.querySelector('#mgwCreditSettings');if(!host)return;

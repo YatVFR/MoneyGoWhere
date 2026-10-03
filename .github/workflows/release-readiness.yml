@@ -30,3 +30,6 @@ jobs:
 
       - name: Wallet matching and preservation regression tests
         run: node scripts/wallet-matching-regression.mjs
+
+      - name: Settings grouping and import preference regression tests
+        run: node scripts/settings-layout-regression.mjs

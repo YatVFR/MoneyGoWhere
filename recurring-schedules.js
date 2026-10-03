@@ -163,7 +163,7 @@ function installAddActions(){
 function installRecurringSettings(){
   const settings=document.querySelector('#view-settings');if(!settings)return;
   let card=document.querySelector('#mgwRecurringSettings');
-  if(!card){card=document.createElement('article');card.className='card';card.id='mgwRecurringSettings';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
+  if(!card){card=document.createElement('article');card.className='card';card.id='mgwRecurringSettings';settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null)}
   if(card.dataset.mgwBound!=='1'){
     card.dataset.mgwBound='1';card.addEventListener('click',e=>{
       const b=e.target.closest('button');if(!b)return;

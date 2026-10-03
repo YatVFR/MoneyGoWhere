@@ -149,7 +149,7 @@ function ensureUi(){
   const planned=document.querySelector('#mgwBudgetAfterCommitments');
   if(dashboard&&planned&&!document.querySelector('#mgwCycleActivity')){const card=document.createElement('article');card.className='card';card.id='mgwCycleActivity';planned.insertAdjacentElement('afterend',card)}
   const settings=document.querySelector('#view-settings');
-  if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector('.privacy-note')||null)}
+  if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null)}
 }
 function renderCycleFocus(){
   const el=document.querySelector('#mgwCycleFocus');if(!el)return;

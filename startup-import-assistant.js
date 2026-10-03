@@ -12,7 +12,7 @@ function markStartupImportDone(){if(window.MGWStartupImportDone)return;window.MG
 function ensure(){
   db.settings=db.settings||{};
   db.settings.startupImport=db.settings.startupImport&&typeof db.settings.startupImport==='object'?db.settings.startupImport:{};
-  if(typeof db.settings.startupImport.enabled!=='boolean')db.settings.startupImport.enabled=true;
+  if(db.settings.startupImport.preferenceVersion!==1){db.settings.startupImport.enabled=false;db.settings.startupImport.preferenceVersion=1}
   db.receiptImportQueue=Array.isArray(db.receiptImportQueue)?db.receiptImportQueue:[];
   db.receiptImportHistory=Array.isArray(db.receiptImportHistory)?db.receiptImportHistory:[];
 }
@@ -122,6 +122,7 @@ function showPrompt({manual=false}={}){
   try{d.showModal()}catch{if(!manual)markStartupImportDone()}
 }
 function installSettings(){
+  if(window.MGWSettingsLayout){window.MGWSettingsLayout.refresh();return}
   ensure();const list=document.querySelector('#view-settings .settings-list');if(!list||document.querySelector('#mgwStartupImportToggle'))return;
   const toggle=document.createElement('button');toggle.type='button';toggle.id='mgwStartupImportToggle';toggle.innerHTML=`<span>📥</span><span><b>Startup Import Check</b><small>Ask for batch receipts and Apple Pay when the app opens</small></span><span class="mgw-startup-toggle ${db.settings.startupImport.enabled?'on':''}" aria-hidden="true"></span>`;
   toggle.addEventListener('click',()=>{db.settings.startupImport.enabled=!db.settings.startupImport.enabled;persist();toggle.querySelector('.mgw-startup-toggle')?.classList.toggle('on',db.settings.startupImport.enabled);if(typeof toast==='function')toast(db.settings.startupImport.enabled?'Startup import check enabled':'Startup import check disabled')});
@@ -129,8 +130,9 @@ function installSettings(){
   const integrity=[...list.querySelectorAll('button')].find(b=>/Data Integrity Check/i.test(b.textContent||''));list.insertBefore(toggle,integrity||null);list.insertBefore(run,integrity||null);
 }
 function startup(){
-  ensure();if(!db.settings.startupImport.enabled){markStartupImportDone();return}
+  ensure();if(!db.settings.startupImport.enabled||document.querySelector('#view-settings.active')){markStartupImportDone();return}
   const wait=()=>{
+    if(!db.settings.startupImport.enabled||document.querySelector('#view-settings.active')){markStartupImportDone();return}
     const syncPending=window.MGWStartupSyncDone!==true;
     const onboarding=document.querySelector('#mgwOnboarding');
     const tour=document.querySelector('.mgw-walk-bubble,.mgw-walk-mask');
@@ -140,7 +142,7 @@ function startup(){
   };
   setTimeout(wait,300);
 }
-function boot(){ensure();style();makeReceiptInput();renderQueue();installSettings();startup();}
+function boot(){ensure();style();makeReceiptInput();renderQueue();installSettings();if(!window.MGWSettingsLayout)startup();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.MGWStartupImport={version:RELEASE,show:()=>showPrompt({manual:true}),processReceipts,renderQueue,startupDone:()=>window.MGWStartupImportDone};
+window.MGWStartupImport={version:RELEASE,show:()=>showPrompt({manual:true}),selectReceipts:()=>makeReceiptInput().click(),processReceipts,renderQueue,startup,startupDone:()=>window.MGWStartupImportDone};
 })();
