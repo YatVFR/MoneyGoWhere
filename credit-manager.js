@@ -44,7 +44,7 @@
     return cycleExpenses().filter(x=>{const linked=x.paymentSourceId||x.paymentAccountId||'';if(linked)return !deferredIds.has(linked);return !deferred.some(n=>{const c=norm(x.card||x.cardIdentity||x.paymentSource||x.paymentMethod);return c&&(c===n||c.includes(n)||n.includes(c))})}).reduce((t,x)=>t+num(x.amount),0);
   }
   function debtCommitments(){return db.creditAccounts.filter(a=>a.role==='debt'||a.role==='emergency-debt').reduce((t,a)=>t+num(a.plannedPayment),0)}
-  function payLaterDue(){return db.payLaterAccounts.reduce((t,a)=>t+num(a.cycleDue),0)}
+  function payLaterDue(){return db.payLaterAccounts.reduce((t,a)=>t+(a.archivedAt?0:num(a.cycleDue)),0)}
   function safePosition(){
     const income=cycleNetIncome(),spent=immediateSpend(),debt=debtCommitments(),later=payLaterDue(),reserve=num(db.settings.safeSpend?.reserve);
     const cash=Math.max(0,income-spent-debt-later-reserve);
@@ -82,7 +82,7 @@
     }
     const host=document.querySelector('#mgwAccountsDashboard');if(host){
       const cards=db.creditAccounts.map(renderCardSummary).join('');
-      const later=db.payLaterAccounts.map(renderLaterSummary).join('');
+      const later=db.payLaterAccounts.filter(a=>!a.archivedAt).map(renderLaterSummary).join('');
       host.innerHTML=`<div class="card-head"><div><b>Account summary</b></div><button class="text-btn" id="mgwManageAccounts">Manage</button></div><div class="mgw-account-grid">${cards||later?cards+later:'<p class="mgw-empty">No cards or pay-later accounts added yet.</p>'}</div>`;
       host.querySelector('#mgwManageAccounts')?.addEventListener('click',()=>{nav('settings');document.querySelector('#mgwCreditSettings')?.scrollIntoView({behavior:'smooth'})});
     }
@@ -103,7 +103,7 @@
   }
   function renderSettingsCredit(){
     const host=document.querySelector('#mgwCreditSettings');if(!host)return;
-    host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Credit, Debt & Pay-Later</b></div></div><p class="mgw-muted">Track bank credit separately from what you can safely afford to spend. Card repayments are not counted as a second expense.</p><div class="mgw-inline-actions"><button class="primary-btn" id="mgwAddCard">＋ Credit Card</button><button class="primary-btn" id="mgwAddLater">＋ Pay-Later</button></div><div class="mgw-section-gap mgw-account-grid">${db.creditAccounts.map(renderCardManage).join('')}${db.payLaterAccounts.map(renderLaterManage).join('')||(!db.creditAccounts.length?'<p class="mgw-empty">Add your cards and installment accounts to begin.</p>':'')}</div>`;
+    host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Credit, Debt & Pay-Later</b></div></div><p class="mgw-muted">Track bank credit separately from what you can safely afford to spend. Card repayments are not counted as a second expense.</p><div class="mgw-inline-actions"><button class="primary-btn" id="mgwAddCard">＋ Credit Card</button><button class="primary-btn" id="mgwAddLater">＋ Pay-Later</button></div><div class="mgw-section-gap mgw-account-grid">${db.creditAccounts.map(renderCardManage).join('')}${db.payLaterAccounts.filter(a=>!a.archivedAt).map(renderLaterManage).join('')||(!db.creditAccounts.length?'<p class="mgw-empty">Add your cards and installment accounts to begin.</p>':'')}</div><details class="mgw-section-gap"><summary>Completed Payment · Pay-Later (${db.payLaterAccounts.filter(a=>a.archivedAt).length})</summary><div class="mgw-account-grid">${db.payLaterAccounts.filter(a=>a.archivedAt).map(a=>`<div class="mgw-account"><b>${esc(a.name)}</b><p>Closed ${esc(a.archivedAt.slice(0,10))} · Payment history retained</p><button data-later-reopen="${esc(a.id)}">Reopen</button></div>`).join('')||'<p>No completed payments archived yet.</p>'}</div></details>`;
     host.querySelector('#mgwAddCard')?.addEventListener('click',()=>window.MGWCardsWallets?.open?window.MGWCardsWallets.open():openCard());host.querySelector('#mgwAddLater')?.addEventListener('click',()=>openLater());
     host.querySelectorAll('[data-card-edit]').forEach(b=>b.addEventListener('click',()=>{const a=db.creditAccounts.find(a=>a.id===b.dataset.cardEdit);if(a)(window.MGWCardsWallets?.open?window.MGWCardsWallets.open(a,'credit'):openCard(a))}));
     host.querySelectorAll('[data-card-pay]').forEach(b=>b.addEventListener('click',()=>openPayment('card',db.creditAccounts.find(a=>a.id===b.dataset.cardPay))));

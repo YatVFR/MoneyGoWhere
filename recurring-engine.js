@@ -100,7 +100,7 @@ function historicalRecurring(database,existing=[]){
   return out;
 }
 function fromInstallment(x){
-  return {id:canonicalId('installment',x.id),sourceId:x.id,sourceCollection:'payLaterAccounts',type:'installment',name:x.name||x.provider||'Pay-Later',amount:num(x.cycleDue||x.monthlyPayment||x.installmentAmount),frequency:'monthly',startMonth:String(x.firstDueDate||x.purchaseDate||'').slice(0,7),endMonth:'',day:x.dueDay||String(x.nextDueDate||'').slice(8,10)||'',active:x.status!=='completed'&&x.active!==false,accountId:x.id||'',merchant:x.provider||'',metadata:{legacy:true,recurrenceEnabled:Boolean(x.recurrenceEnabled),durationMonths:Number(x.durationMonths)||null}};
+  return {id:canonicalId('installment',x.id),sourceId:x.id,sourceCollection:'payLaterAccounts',type:'installment',name:x.name||x.provider||'Pay-Later',amount:num(x.cycleDue||x.monthlyPayment||x.installmentAmount),frequency:'monthly',startMonth:String(x.firstDueDate||x.purchaseDate||'').slice(0,7),endMonth:'',day:x.dueDay||String(x.nextDueDate||'').slice(8,10)||'',active:!x.archivedAt&&x.status!=='completed'&&x.active!==false,accountId:x.id||'',merchant:x.provider||'',metadata:{legacy:true,recurrenceEnabled:Boolean(x.recurrenceEnabled),durationMonths:Number(x.durationMonths)||null}};
 }
 function sync(database=window.db||{},options={}){
   ensure(database);

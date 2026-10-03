@@ -11,8 +11,8 @@ function update(id,patch){
   const legacy=Array.isArray(next[item.sourceCollection])?next[item.sourceCollection].find(x=>String(x.id)===String(item.sourceId)):null;
   if(legacy){
     const fields={...patch};delete fields.day;
-    if(item.type==='income'){fields.netSalary=fields.amount;delete fields.amount;fields.payDay=patch.day}
-    else fields.dueDay=patch.day;
+    if(item.type==='income'){fields.netSalary=fields.amount;delete fields.amount;if('day' in patch)fields.payDay=patch.day}
+    else if('day' in patch)fields.dueDay=patch.day;
     if(item.sourceCollection==='monthlyCommitments'){delete fields.frequency;delete fields.startMonth;delete fields.endMonth}
     Object.assign(legacy,fields);
   }else{
@@ -42,7 +42,7 @@ function enhance(root){
     while(row.firstChild)content.appendChild(row.firstChild);
     const tray=document.createElement('div');tray.className='mgw-rec-swipe-actions';
     const existing=content.querySelector('.mgw-bill-actions,.mgw-rec-actions,.mgw-commit-actions');
-    if(existing)tray.appendChild(existing);else if(row.dataset.recurringId){const edit=document.createElement('button');edit.type='button';edit.textContent='Edit';edit.addEventListener('click',()=>open(row.dataset.recurringId));tray.appendChild(edit)}
+    if(existing)tray.appendChild(existing);else if(row.dataset.recurringId){const edit=document.createElement('button');edit.type='button';edit.textContent='Edit';edit.addEventListener('click',()=>open(row.dataset.recurringId));tray.appendChild(edit);const status=document.createElement('button');status.type='button';const item=window.db?.recurringItems?.find(x=>x.id===row.dataset.recurringId);status.textContent=item?.active===false?'Active':'Pause';status.addEventListener('click',()=>{try{window.MGWRecurringReview?.toggle(row.dataset.recurringId)}catch(err){window.toast?.(err.message)}});tray.appendChild(status)}
     if(!tray.children.length)return;
     const toggle=document.createElement('button');toggle.type='button';toggle.className='mgw-rec-action-toggle';toggle.textContent='⋯';toggle.setAttribute('aria-label','Show recurring payment actions');toggle.setAttribute('aria-expanded','false');content.appendChild(toggle);
     row.append(tray,content);

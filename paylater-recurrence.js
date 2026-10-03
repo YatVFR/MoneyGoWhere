@@ -58,7 +58,7 @@
 
   function syncAccounts(){
     db.payLaterAccounts=Array.isArray(db.payLaterAccounts)?db.payLaterAccounts:[];let changed=false;
-    db.payLaterAccounts.forEach(a=>{if(!a.recurrenceEnabled)return;const total=totalRepayable(a),out=money2(Math.max(0,total-allPaid(a))),due=currentDue(a),next=nextDue(a),status=out<=0?'completed':'active';
+    db.payLaterAccounts.forEach(a=>{if(!a.recurrenceEnabled||a.archivedAt)return;const total=totalRepayable(a),out=money2(Math.max(0,total-allPaid(a))),due=currentDue(a),next=nextDue(a),status=window.MGWRecurringReview?.completion(a,db)?'completed':'active';
       for(const [k,v] of Object.entries({totalRepayable:total,outstanding:out,cycleDue:due,nextDueDate:next,status})){if(a[k]!==v){a[k]=v;changed=true}}
     });if(changed)persist();
   }

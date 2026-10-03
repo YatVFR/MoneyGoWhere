@@ -21,3 +21,6 @@ jobs:
 
       - name: Data integrity regression tests
         run: node scripts/integrity-regression.mjs
+
+      - name: Recurring review and archive regression tests
+        run: node scripts/recurring-review-regression.mjs

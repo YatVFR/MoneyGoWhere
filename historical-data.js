@@ -118,6 +118,7 @@ const MGW_CORE_MODULES=[
   './dashboard-core.js',
   './credit-manager.js',
   './recurring-swipe.js',
+  './recurring-review.js',
   './salary-trends.js'
 ];
 const MGW_DEFERRED_MODULES=[
