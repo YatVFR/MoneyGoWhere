@@ -74,15 +74,25 @@ function historicalRecurring(database,existing=[]){
     if(months.length<6)continue;
     let consecutive=0;for(let i=1;i<months.length;i++)if(months[i]-months[i-1]===1)consecutive++;
     if(months.length>1&&consecutive/(months.length-1)<.7)continue;
-    if(existing.some(x=>x.sourceId===key||similarName(x.merchant||x.name,g.vendor)))continue;
-    const sorted=[...g.rows].sort((a,b)=>String(a.date).localeCompare(String(b.date))),latest=sorted[sorted.length-1];
-    const lastMonth=monthIndex(latest.date),ended=Number.isFinite(latestMonth)&&Number.isFinite(lastMonth)&&latestMonth-lastMonth>2;
+    // A newer configured schedule replaces the inferred schedule only from its
+    // start month onward. Preserve prior history even when lender names match.
+    if(existing.some(x=>x.sourceId===key))continue;
+    const sorted=[...g.rows].sort((a,b)=>String(a.date).localeCompare(String(b.date))),firstMonth=months[0];
+    const matching=existing.filter(x=>similarName(x.merchant||x.name,g.vendor));
+    const coverage=matching.map(x=>({start:x.startMonth?monthIndex(x.startMonth):-Infinity,end:x.endMonth?monthIndex(x.endMonth):Infinity})).filter(x=>!Number.isNaN(x.start)&&!Number.isNaN(x.end)&&x.end>=firstMonth);
+    if(coverage.some(x=>x.start<=firstMonth))continue;
+    const replacementMonth=coverage.reduce((n,x)=>Math.min(n,x.start),Infinity);
+    const observed=sorted[sorted.length-1],lastMonth=monthIndex(observed.date),ended=Number.isFinite(latestMonth)&&Number.isFinite(lastMonth)&&latestMonth-lastMonth>2;
+    const endIndex=Math.min(ended?lastMonth:Infinity,replacementMonth-1);
+    const indexKey=n=>`${Math.floor(n/12)}-${String(n%12+1).padStart(2,'0')}`;
+    const historicalRows=sorted.filter(x=>monthIndex(x.date)<=endIndex),latest=historicalRows[historicalRows.length-1];
+    if(!latest||endIndex<firstMonth)continue;
     const t=String(g.category||'').toLowerCase();
     const type=t.includes('saving')?'savings':(t.includes('loan')||t.includes('debt')?'loan':'commitment');
     out.push({
       id:`REC-historical-${hash(key)}`,sourceId:key,sourceCollection:'canonical',type,
       name:g.vendor,amount:num(latest.amount),frequency:'monthly',
-      startMonth:String(sorted[0].date).slice(0,7),endMonth:ended?String(latest.date).slice(0,7):'',
+      startMonth:String(sorted[0].date).slice(0,7),endMonth:Number.isFinite(endIndex)?indexKey(endIndex):'',
       day:String(latest.date).slice(8,10),active:true,accountId:'',merchant:g.vendor,category:g.category,
       metadata:{inferredHistory:true,sampleCount:months.length,confidence:'history-high',amountBasis:'latest-observed'}
     });
