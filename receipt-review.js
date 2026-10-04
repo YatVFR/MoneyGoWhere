@@ -23,7 +23,7 @@ function validate(input,reviewed){
 function adopt(next){if(window.MGWDatabaseSchema?.touch)next=window.MGWDatabaseSchema.touch(next);localStorage.setItem(window.MGW?.key||'moneygowhere-db-v1',JSON.stringify(next));if(window.MGWAdoptDatabase)window.MGWAdoptDatabase(next);else window.db=next;return next}
 function save(input,{reviewed=false,queueId=''}={}){
  validate(input,reviewed);const next=JSON.parse(JSON.stringify(window.db));
- const tx={...input,id:'EXP-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),vendor:String(input.vendor||input.merchant).trim(),amount:Number(input.amount),source:queueId?'receipt_batch':'receipt_scan',receiptReviewedAt:new Date().toISOString(),rawText:String(input.rawText||'').slice(0,100000)};
+ const tx={...input,id:'EXP-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),vendor:String(input.vendor||input.merchant).trim(),amount:Number(input.amount),source:queueId?'receipt_batch':'receipt_scan',receiptReviewedAt:new Date().toISOString(),rawText:String(input.rawText||'')};
  delete tx.receiptReviewed;delete tx.status;delete tx.merchant;
  Object.assign(tx,window.MGWUnifiedWallet?.paymentDetails(tx)||{});
  const prepared=window.MGWTransactionEngine?.prepareExpense?window.MGWTransactionEngine.prepareExpense(tx,next.expenses.length):tx;

@@ -42,3 +42,6 @@ jobs:
 
       - name: Receipt review, crop, PDF text and OCR queue regressions
         run: node scripts/receipt-review-regression.mjs
+
+      - name: Full PDF and dated wallet availability regressions
+        run: node scripts/full-pdf-wallet-regression.mjs

@@ -38,6 +38,7 @@ function allAccounts(){ensure();return [
   ...db.walletAccounts.filter(a=>a.active!==false).map(a=>({...a,_kind:'wallet'}))
 ]}
 function accountLabel(a){return [a.nickname||a.name||a.cardProduct,a.issuer].filter(Boolean).join(' · ')||'Card / Wallet'}
+function receiptSourceOptions(){return option('','Keep unlinked / choose wallet')+group('My Cards & Wallets',allAccounts().map(a=>option('acct:'+a.id,accountLabel(a)+(window.MGWWalletBalances?' · '+window.MGWWalletBalances.availableLabel(a.id):''))).join(''))+group('My Bank Accounts',db.bankAccounts.filter(a=>a.active!==false).map(a=>option('bankacct:'+a.id,bankLabel(a)+(window.MGWWalletBalances?' · '+window.MGWWalletBalances.availableLabel(a.id):''))).join(''))}
 function bankLabel(a){return [a.nickname||a.name,a.bank,a.accountLast4?'•••• '+a.accountLast4:''].filter(Boolean).join(' · ')||a.bank||'Bank account'}
 function option(value,label,selected=false){return `<option value="${esc(value)}"${selected?' selected':''}>${esc(label)}</option>`}
 function group(label,items){return items?`<optgroup label="${esc(label)}">${items}</optgroup>`:''}
@@ -69,7 +70,7 @@ function paymentFields(d={}){
   return `<div class="field" data-mgw-payment-core-field><label for="mgwPaymentMethodSelect">Payment Method</label><select id="mgwPaymentMethodSelect" name="paymentMethodPicker">${methodOptions(selected)}</select></div>
   <div class="field" id="mgwPaymentSourceField" data-mgw-payment-core-field><label for="mgwPaymentSourceSelect">Payment Source</label><select id="mgwPaymentSourceSelect" name="paymentSourcePicker"></select></div>
   <div class="field full" id="mgwPaymentCustomField" data-mgw-payment-core-field hidden><label for="mgwPaymentCustomInput">Payment Source Details</label><input id="mgwPaymentCustomInput" name="paymentSourceCustom" placeholder="Enter the card, bank, wallet or payment source"></div>
-  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentSourceId"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType">
+  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentSourceId"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType"><input type="hidden" name="paymentSelection"><input type="hidden" name="walletMatchStatus">
   <div class="field full" data-mgw-payment-core-field><small class="mgw-form-note">Choose a payment method, then select your configured account or a known bank/card/wallet. Manual typing is only needed for Other / Custom.</small></div>`;
 }
 function stripLegacyPaymentFields(html){
@@ -117,6 +118,7 @@ function decodeSource(choice){
 }
 function bindPaymentForm(form){
   if(!form)return false;ensureDomFields(form);
+  const receipt=form.dataset.mgwReceiptForm==='1'||Boolean(document.querySelector('#receiptFile'));
   const method=form.querySelector('#mgwPaymentMethodSelect'),source=form.querySelector('#mgwPaymentSourceSelect'),sourceField=form.querySelector('#mgwPaymentSourceField'),customField=form.querySelector('#mgwPaymentCustomField'),custom=form.querySelector('#mgwPaymentCustomInput');
   if(!method||!source)return false;
   const hidden=name=>form.querySelector(`input[type="hidden"][name="${name}"]`);
@@ -134,7 +136,7 @@ function bindPaymentForm(form){
     if(hidden('paymentAccountId'))hidden('paymentAccountId').value=accountId||stableId;
     if(hidden('paymentBankAccountId'))hidden('paymentBankAccountId').value=bankAccountId;
     if(hidden('paymentSourceType'))hidden('paymentSourceType').value=sourceType||code;
-    if(form.dataset.mgwPaymentManual==='1'){if(hidden('paymentSelection'))hidden('paymentSelection').value=stableId?'manual':'unlinked';if(hidden('walletMatchStatus'))hidden('walletMatchStatus').value=stableId?'selected':'unlinked'}
+    if(receipt||form.dataset.mgwPaymentManual==='1'){if(hidden('paymentSelection'))hidden('paymentSelection').value=stableId?'manual':'unlinked';if(hidden('walletMatchStatus'))hidden('walletMatchStatus').value=stableId?'selected':'unlinked'}
   };
   const tryPrefillSource=()=>{
     if(!oldSource)return;
@@ -142,8 +144,8 @@ function bindPaymentForm(form){
     if(opt)source.value=opt.value;
   };
   const refresh=()=>{
-    const code=method.value;const storedMethods=allAccounts().filter(a=>a.accountType==='method'&&a.methodCode===code&&a.active!==false).map(a=>option('acct:'+a.id,accountLabel(a))).join('');source.innerHTML=sourceOptions(code)+(storedMethods?group('Stored payment methods',option('','Choose source')+storedMethods):'');sourceField.hidden=code==='cash'&&!storedMethods;customField.hidden=true;tryPrefillSource();
-    const update=e=>{if(e&&!form.dataset.mgwDetecting)form.dataset.mgwPaymentManual='1';customField.hidden=!source.value.startsWith('custom:');sync()};
+    const previous=source.value,code=method.value;const storedMethods=allAccounts().filter(a=>a.accountType==='method'&&a.methodCode===code&&a.active!==false).map(a=>option('acct:'+a.id,accountLabel(a))).join('');source.innerHTML=receipt?receiptSourceOptions():sourceOptions(code)+(storedMethods?group('Stored payment methods',option('','Choose source')+storedMethods):'');sourceField.hidden=!receipt&&code==='cash'&&!storedMethods;customField.hidden=true;tryPrefillSource();if(receipt&&[...source.options].some(o=>o.value===previous))source.value=previous;
+    const update=e=>{if(e&&!form.dataset.mgwDetecting){form.dataset.mgwPaymentManual='1';if(receipt){const a=source.value.startsWith('acct:')?allAccounts().find(a=>'acct:'+a.id===source.value):null;if(a){const next=a.accountType==='method'?a.methodCode:a._kind==='credit'||a.accountType==='debit'?'card':'ewallet';if(!(method.value==='apple_pay'&&['card','ewallet'].includes(next)))method.value=next||'other'}else if(source.value.startsWith('bankacct:')&&!['paynow','paylah','bank_transfer','nets'].includes(method.value))method.value='bank_transfer';}if(form.elements.receiptReviewed)form.elements.receiptReviewed.checked=false;}customField.hidden=!source.value.startsWith('custom:');sync()};
     source.onchange=update;update();
   };
   if(form.dataset.mgwPaymentCoreBound!=='1'){
@@ -168,7 +170,7 @@ function patchOpenModal(){
 function patchBindModal(){
   if(typeof bindModal!=='function'||bindModal.__mgwPaymentCore)return;
   const base=bindModal;
-  const patched=function(type){const r=base(type);if(['expense','receipt'].includes(type))queueMicrotask(normalizeOpenManualForm);return r};
+  const patched=function(type){const r=base(type);const f=document.querySelector('#expenseForm');if(f&&type==='receipt')f.dataset.mgwReceiptForm='1';if(['expense','receipt'].includes(type))queueMicrotask(normalizeOpenManualForm);return r};
   patched.__mgwPaymentCore=true;patched.__mgwBase=base;bindModal=patched;window.bindModal=patched;
 }
 function install(){ensure();patchExpenseForm();patchOpenModal();patchBindModal();normalizeOpenManualForm()}
@@ -179,5 +181,4 @@ const selfTest=()=>{try{const html=expenseForm('expense',{});return html.include
 window.MGWPaymentFormCore={version:RELEASE,install,refresh:normalizeOpenManualForm,selfTest};
 window.MGWManualPaymentMethods={version:RELEASE,coreIntegrated:true,refresh:normalizeOpenManualForm};
 })();
-
 

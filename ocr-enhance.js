@@ -146,6 +146,11 @@ async function mgwTesseractPass(source,label,status){
 async function mgwReadReceiptFile(file,{status,prepared}={}){
  prepared=prepared||await window.MGWReceiptWorkbench.prepare(file);if(!prepared)return null;
  const say=t=>status?.(t);
+ if(prepared.fullPDF){const pages=[],texts=[];let ocrUsed=false;try{
+  for await(const page of prepared.readAll()){say('Reading PDF page '+page.pageNumber+' of '+prepared.pageCount+'…');let text=page.embeddedText;if(!text){ocrUsed=true;const r=await window.MGWOCRRuntime.recognize(page.source,{status:t=>say('PDF page '+page.pageNumber+'/'+prepared.pageCount+' · '+t)});text=r.data.text||'';}texts.push(text);pages.push({pageNumber:page.pageNumber,text});}
+  const result=mgwParseReceiptSmart(texts.join('\n'),ocrUsed?0:100);result.rawText=pages.map(p=>'--- PDF PAGE '+p.pageNumber+' OF '+prepared.pageCount+' ---\n'+p.text).join('\n\n');result.fullPDF=true;result.pageCount=prepared.pageCount;result.pageNumber=0;result.inputMethod=ocrUsed?'pdf_full_mixed':'pdf_full_text';
+  if(prepared.pageCount>1)for(const key of ['vendor','date','amount','payment'])result.confidence[key]=Math.min(result.confidence[key]||0,70);return result;
+ }finally{await prepared.dispose?.();}}
  if(prepared.embeddedText){say('Reading embedded PDF text…');const result=mgwParseReceiptSmart(prepared.embeddedText,100);result.inputMethod='pdf_text';result.pageNumber=prepared.pageNumber;return result}
  const source=prepared.source,passes=[];say('Preparing receipt…');
  const enhanced=mgwAutoContrast(mgwCanvasFromImage(source,0,2200));passes.push(await mgwTesseractPass(enhanced,'Scanning…',say));
@@ -156,5 +161,4 @@ async function mgwReadReceiptFile(file,{status,prepared}={}){
 async function scanReceipt(e){return window.MGWReceiptWorkbench.scanIntoForm(e)}
 
 window.MGWReceiptOCR={version:MGW_OCR_RELEASE.appVersion,preprocess:mgwPreprocessReceipt,parse:mgwParseReceiptSmart,readFile:mgwReadReceiptFile,merge:mgwMergeReceiptResults,score:mgwReceiptScore};
-
 

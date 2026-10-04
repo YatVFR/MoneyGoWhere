@@ -10,6 +10,11 @@ function validDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||'')))return false
 function ownBalance(a){return /YOU\s*TRIP/i.test([a.issuer,a.cardProduct,a.name].join(' '))}
 function resolve(id,d=window.db){const all=rows(d),a=all.find(x=>x.id===id);if(!a)return null;if((a.type==='debit'||a.type==='method')&&!ownBalance(a)){return a.linkedBankAccountId?all.find(x=>x.type==='bank'&&x.id===a.linkedBankAccountId)||null:null}return a}
 function validate(entry,d=window.db){
+ if(entry.availableToSpend!==undefined&&entry.availableToSpend!==''&&entry.availableToSpend!==null){
+  if(!finite(entry.availableToSpend)||Number(entry.availableToSpend)<0)throw Error('Enter a valid non-negative available spending amount');
+  if(!validDate(entry.availableAsOf))throw Error('Choose a valid amount-as-of date');
+  if(entry.linkedBankAccountId)throw Error('Set the available spending amount on the linked bank account');
+ }
  if(entry.baseCurrency&&!/^[A-Z]{3}$/.test(entry.baseCurrency))throw Error('Enter a three-letter currency code');
  if(entry.accountLast4&&!/^\d{4}$/.test(String(entry.accountLast4)))throw Error('Bank account identifier must contain exactly four digits');
  if(entry.linkedBankAccountId&&!(d.bankAccounts||[]).some(a=>a.id===entry.linkedBankAccountId))throw Error('Choose an existing bank account');
@@ -44,6 +49,31 @@ function summary(id,d=window.db,asOf=day()){
 }
 function fields(a={},linked=false){const esc=window.MGWBalanceEsc||((v='')=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));return `<div class="field full" id="mgwBalanceConfig" ${linked?'hidden':''}><label><input type="checkbox" name="balanceTracking" ${a.balanceTracking?'checked':''}> Track ${a.accountType==='credit'?'credit outstanding':'balance'}</label><div class="form-grid"><div class="field"><label>Opening ${a.accountType==='credit'?'outstanding':'balance'}</label><input name="openingBalance" type="number" min="0" step="0.01" value="${esc(a.openingBalance??'')}"></div><div class="field"><label>Tracking start date</label><input name="trackingStartDate" type="date" value="${esc(a.trackingStartDate||day())}"></div></div><small>Enter the balance at the beginning of this date. Saved transactions on or after this date are included once; earlier history is excluded. Linked methods share the bank's balance. Foreign spending waits for a recorded conversion.</small></div>`}
 function config(fd){return {balanceTracking:fd.has('balanceTracking'),openingBalance:fd.get('openingBalance')===''?'':Number(fd.get('openingBalance')),trackingStartDate:String(fd.get('trackingStartDate')||'')}}
+// A snapshot is the amount available at END of its date. Only later dated,
+// saved transactions adjust it; rendering never changes the stored snapshot.
+function available(id,d=window.db,asOf=day()){
+ const all=rows(d),byId=new Map(all.map(a=>[a.id,a]));
+ const owner=id=>{const a=byId.get(id);return a?.linkedBankAccountId&&['debit','method'].includes(a.type)&&!ownBalance(a)?(byId.get(a.linkedBankAccountId)?.type==='bank'?byId.get(a.linkedBankAccountId):null):a};
+ const a=owner(id);if(!a)return {amount:null,currency:'SGD',status:'unlinked',pending:0};
+ const base=currency(a),credit=a.type==='credit';
+ if(!finite(a.availableToSpend)||!validDate(a.availableAsOf)){
+  const s=summary(id,d,asOf),n=credit?(s.availableCredit??(finite(a.limit)&&finite(s.balance)?Math.max(0,Number(a.limit)-s.balance):null)):s.balance;
+  return {amount:n,currency:base,status:n===null?'unset':s.status,pending:s.pending||0,accountId:a.id,source:'balance'};
+ }
+ if(a.availableAsOf>asOf)return {amount:null,currency:base,status:'scheduled',pending:0,accountId:a.id,asOf:a.availableAsOf,source:'snapshot'};
+ let cents=Math.round(Number(a.availableToSpend)*100),pending=0,count=0;
+ const apply=(x,sign)=>{const date=String(x.date||'').slice(0,10);if(x.voided||x.status==='pending'||x.status==='deleted'||!validDate(date)||date<=a.availableAsOf||date>asOf)return;const n=amount(x,base,d);if(n===null){pending++;return}cents+=sign*n;count++};
+ for(const x of d.expenses||[])if(owner(sourceId(x))?.id===a.id)apply(x,x.transactionType==='refund'||x.kind==='refund'?1:-1);
+ if(credit){for(const p of d.creditPayments||[])if(p.accountId===a.id)apply(p,1)}
+ else{
+  for(const x of d.income||[])if(owner(x.depositAccountId)?.id===a.id)apply({...x,amount:Number(x.netSalary||0)+Number(x.bonus||0)+Number(x.oneOff||0)},1);
+  for(const p of [...(d.creditPayments||[]),...(d.payLaterPayments||[])])if(owner(p.fundingAccountId)?.id===a.id)apply(p,-1);
+ }
+ return {amount:cents/100,currency:base,status:pending?'partial':'tracked',pending,count,accountId:a.id,asOf:a.availableAsOf,source:'snapshot'};
+}
+function availableFields(a={}){const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));return `<div class="field full" id="mgwAvailableConfig"><div class="form-grid"><div class="field"><label>Available to spend (optional)</label><input name="availableToSpend" type="number" min="0" step="0.01" value="${esc(a.availableToSpend??'')}"></div><div class="field"><label>Amount as of (end of day)</label><input name="availableAsOf" type="date" value="${esc(a.availableAsOf||day())}"></div></div><small>Enter funds available at the END of this date. Only saved transactions dated later adjust this estimate. Leave blank to use the tracked balance or available credit. Linked cards and methods share the bank's amount; it is not a separate pool of money.</small></div>`}
+function availableConfig(fd){const raw=fd.get('availableToSpend');return {availableToSpend:raw==null||raw===''?'':Number(raw),availableAsOf:String(fd.get('availableAsOf')||'')}}
+function availableLabel(id,d=window.db){const s=available(id,d);return s.amount===null?'Available: not set':`Available: ${s.currency} ${s.amount.toFixed(2)}${s.pending?' (conversion pending)':''}`}
 function bankOptions(selected='',d=window.db){const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));return '<option value="">Select bank account</option>'+(d.bankAccounts||[]).filter(a=>a.active!==false||a.id===selected).map(a=>`<option value="${esc(a.id)}" ${a.id===selected?'selected':''}>${esc(a.nickname||a.name)}${a.accountLast4?' · •••• '+esc(a.accountLast4):''}</option>`).join('')}
-window.MGWWalletBalances=Object.freeze({rows,sourceId,resolve,validate,amount,summary,fields,config,bankOptions,day,validDate,ownBalance});
+window.MGWWalletBalances=Object.freeze({rows,sourceId,resolve,validate,amount,summary,fields,config,bankOptions,day,validDate,ownBalance,available,availableFields,availableConfig,availableLabel});
 })();

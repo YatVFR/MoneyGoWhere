@@ -20,12 +20,13 @@ function rotate(source,angle){const swap=angle%180!==0,c=canvas(swap?source.heig
 function selection(source,crop){const r=cropRegion(source.width,source.height,crop),c=canvas(r.width,r.height);c.getContext('2d').drawImage(source,r.x,r.y,r.width,r.height,0,0,r.width,r.height);return c}
 async function prepare(file){
  validFile(file);if(preparing)throw Error('Finish the current receipt preparation first.');preparing=true;
- let task=null,pdf=null,url='',closed=false,seq=0;
+ let task=null,pdf=null,url='',closed=false,seq=0,transferred=false;
  try{
   if(isPDF(file)){const lib=await window.MGWOCRRuntime.ensurePDF(),base=window.MGWOCRRuntime.pdfAssetBase;task=lib.getDocument({data:new Uint8Array(await file.arrayBuffer()),isEvalSupported:false,cMapUrl:base+'cmaps/',cMapPacked:true,standardFontDataUrl:base+'standard_fonts/',wasmUrl:base+'wasm/'});pdf=await task.promise}
   const dialog=document.createElement('dialog');dialog.className='mgw-receipt-prep';dialog.setAttribute('aria-label','Prepare receipt');
   dialog.innerHTML='<div class="modal-shell"><div class="modal-head"><h2>Prepare Receipt</h2><button type="button" class="icon-btn" data-cancel aria-label="Cancel receipt preparation">×</button></div><p data-file></p><div class="mgw-receipt-tools"><label data-page-label>PDF page <input data-page type="number" min="1" value="1"></label><span data-page-count></span><button type="button" class="secondary-btn" data-rotate>Rotate 90°</button><button type="button" class="secondary-btn" data-crop>Drag to crop</button><button type="button" class="secondary-btn" data-reset>Reset original</button></div><canvas data-preview aria-label="Receipt preview; use the crop percentage fields to crop without dragging"></canvas><fieldset class="mgw-crop-fields"><legend>Crop edges (%)</legend><label>Left<input data-edge="left" type="number" min="0" max="99" value="0"></label><label>Top<input data-edge="top" type="number" min="0" max="99" value="0"></label><label>Right<input data-edge="right" type="number" min="1" max="100" value="100"></label><label>Bottom<input data-edge="bottom" type="number" min="1" max="100" value="100"></label></fieldset><p data-status role="status">Preparing preview…</p><button type="button" class="primary-btn" data-use disabled>Read this receipt</button></div>';
   document.body.appendChild(dialog);dialog.querySelector('[data-file]').textContent=file.name||'Receipt';
+  let allPages=null;if(pdf){const label=document.createElement('label');label.className='mgw-pdf-all-pages';label.innerHTML='<input type="checkbox" data-all-pages checked> Read the full PDF (all pages, without cropping)';dialog.querySelector('.mgw-receipt-tools').after(label);allPages=label.querySelector('input');}
   const preview=dialog.querySelector('[data-preview]'),status=dialog.querySelector('[data-status]'),use=dialog.querySelector('[data-use]'),pageInput=dialog.querySelector('[data-page]');
   dialog.querySelector('[data-page-label]').hidden=!pdf;dialog.querySelector('[data-page-count]').textContent=pdf?'of '+pdf.numPages:'';pageInput.max=pdf?pdf.numPages:1;
   let original=null,oriented=null,angle=0,pageNumber=1,embedded='',crop={left:0,top:0,right:100,bottom:100},cropMode=false,drag=null,resolve;
@@ -41,6 +42,7 @@ async function prepare(file){
   const finish=value=>{if(closed)return;closed=true;seq++;try{dialog.close()}catch{}dialog.remove();resolve(value)};
   dialog.querySelector('[data-cancel]').onclick=()=>finish(null);dialog.addEventListener('cancel',e=>{e.preventDefault();finish(null)});dialog.addEventListener('close',()=>finish(null));
   pageInput.onchange=()=>loadPage();dialog.querySelector('[data-rotate]').onclick=()=>{if(original){angle=(angle+90)%360;resetCrop();draw()}};
+  const updateMode=()=>{const full=Boolean(allPages?.checked);dialog.querySelector('.mgw-crop-fields').hidden=full;dialog.querySelector('[data-crop]').disabled=full;if(full){cropMode=false;drag=null;preview.style.touchAction='auto';resetCrop();}use.textContent=full?'Read all '+pdf.numPages+' pages':'Read this receipt';draw();};if(allPages){allPages.onchange=updateMode;updateMode();}
   dialog.querySelector('[data-reset]').onclick=()=>{angle=0;resetCrop();draw()};
   dialog.querySelector('[data-crop]').onclick=()=>{cropMode=!cropMode;preview.style.touchAction=cropMode?'none':'auto';dialog.querySelector('[data-crop]').setAttribute('aria-pressed',String(cropMode));status.textContent=cropMode?'Drag a rectangle, or enter crop percentages below.':'Crop drag disabled. You can scroll the preview.'};
   for(const input of dialog.querySelectorAll('[data-edge]'))input.oninput=()=>{crop[input.dataset.edge]=Number(input.value);draw()};
@@ -48,14 +50,18 @@ async function prepare(file){
   preview.onpointerdown=e=>{if(!cropMode||!original)return;e.preventDefault();drag=point(e);preview.setPointerCapture?.(e.pointerId)};
   preview.onpointermove=e=>{if(!drag)return;const end=point(e);crop={left:Math.min(drag.x,end.x),top:Math.min(drag.y,end.y),right:Math.max(drag.x,end.x),bottom:Math.max(drag.y,end.y)};for(const el of dialog.querySelectorAll('[data-edge]'))el.value=Number(crop[el.dataset.edge].toFixed(1));draw()};
   preview.onpointerup=()=>{drag=null};preview.onpointercancel=()=>{drag=null};
-  use.onclick=()=>{try{const modified=angle!==0||crop.left!==0||crop.top!==0||crop.right!==100||crop.bottom!==100,source=selection(oriented,crop);finish({source,embeddedText:!modified&&embedded.trim().length>=20?embedded:'',pageNumber:pdf?pageNumber:0,rotation:angle,crop:{...crop},modified,originalFile:file})}catch(err){status.textContent=err.message}};
+  use.onclick=()=>{try{const modified=angle!==0||crop.left!==0||crop.top!==0||crop.right!==100||crop.bottom!==100,source=selection(oriented,crop),prepared={source,embeddedText:!modified&&embedded.trim().length>=20?embedded:'',pageNumber:pdf?pageNumber:0,rotation:angle,crop:{...crop},modified,originalFile:file};
+   if(pdf&&allPages.checked){transferred=true;let disposed=false;prepared.fullPDF=true;prepared.pageCount=pdf.numPages;prepared.pageNumber=0;prepared.dispose=async()=>{if(disposed)return;disposed=true;await task.destroy()};
+    prepared.readAll=async function*(){try{for(let n=1;n<=pdf.numPages;n++){const page=await pdf.getPage(n);try{const text=pdfText((await page.getTextContent()).items);let image=null;if(text.trim().length<20){const v=page.getViewport({scale:1}),vp=page.getViewport({scale:Math.min(2,MAX_SIDE/Math.max(v.width,v.height))});image=canvas(vp.width,vp.height);await page.render({canvasContext:image.getContext('2d'),viewport:vp}).promise;if(angle)image=rotate(image,angle);}yield{pageNumber:n,embeddedText:text.trim().length>=20?text:'',source:image}}finally{page.cleanup()}}}finally{await prepared.dispose()}};
+   }finish(prepared);
+  }catch(err){status.textContent=err.message}};
   try{dialog.showModal()}catch(err){dialog.remove();throw err}loadPage();return await completed;
- }finally{preparing=false;if(url)URL.revokeObjectURL(url);if(task)try{await task.destroy()}catch{}}
+ }finally{preparing=false;if(url)URL.revokeObjectURL(url);if(task&&!transferred)try{await task.destroy()}catch{}}
 }
 function textPanel(container,result){
  const review=window.MGWReceiptReview;let panel=container.querySelector('.mgw-ocr-text');if(!panel){panel=document.createElement('div');panel.className='mgw-ocr-text';container.appendChild(panel)}
  panel.innerHTML='<p class="mgw-ocr-warning" role="status"></p><label>Scanned text<textarea readonly rows="7"></textarea></label><button type="button" class="secondary-btn">Copy scanned text</button>';
- const textarea=panel.querySelector('textarea');textarea.value=String(result?.rawText||'');panel.querySelector('p').textContent=review.issues(result).join(' · ')||'Review all details before saving.';
+ const textarea=panel.querySelector('textarea');textarea.value=String(result?.rawText||'');panel.querySelector('p').textContent=(result?.fullPDF?'All '+result.pageCount+' PDF pages read. Verify this is one receipt; multiple transactions must not be saved as one total. ':'')+(review.issues(result).join(' · ')||'Review all details before saving.');
  panel.querySelector('button').onclick=async()=>{const ok=await review.copy(textarea.value,textarea);window.toast?.(ok?'Scanned text copied':'Select the scanned text and copy it manually.')};
 }
 async function scanIntoForm(e){const file=e.target.files?.[0],form=document.querySelector('#expenseForm'),status=document.querySelector('#ocrStatus');if(!file||!form)return;if(preparing||form.dataset.receiptBusy==='1'){if(status)status.textContent='Finish the current receipt scan first.';return}
