@@ -1,0 +1,65 @@
+/* All environments share component styling; their palette lives in style.css.
+   Attribute scoping overrides late-loaded component styles without changing data. */
+html[data-mgw-environment] { --accent:var(--brand); }
+html[data-mgw-environment] :is(.mgw-settings-group,.mgw-settings-section,.mgw-dashboard-section,.mgw-history-month,.mgw-history-merchant,.mgw-month-details,.mgw-detail-group,.mgw-income-collapse,.mgw-spend-detail,.mgw-recurring-detail,.mgw-recurring-group,.mgw-merchant-group,.mgw-duplicate-card-group)>summary {
+  background:color-mix(in srgb,var(--brand-soft) 65%,var(--card));
+  color:var(--text);
+  border-radius:12px;
+}
+html[data-mgw-environment] :is(.mgw-settings-group,.mgw-settings-section,.mgw-dashboard-section,.mgw-history-month,.mgw-history-merchant,.mgw-month-details,.mgw-detail-group,.mgw-income-collapse,.mgw-spend-detail,.mgw-recurring-detail,.mgw-recurring-group,.mgw-merchant-group,.mgw-duplicate-card-group)[open]>summary {
+  background:var(--brand-soft);
+  color:var(--brand);
+}
+html[data-mgw-environment] #mgwAccountsDashboard .mgw-account-summary,
+html[data-mgw-environment] #mgwAccountsDashboard .mgw-collapse-toggle {
+  background:var(--brand-soft);
+  color:var(--brand);
+  border-radius:12px;
+}
+html[data-mgw-environment] #mgwAccountsDashboard .mgw-account-summary[aria-expanded="true"],
+html[data-mgw-environment] #mgwAccountsDashboard .mgw-collapse-toggle[aria-expanded="true"] {
+  box-shadow:inset 3px 0 var(--brand);
+}
+html[data-mgw-environment] .mgw-rec-swipe-actions { background:var(--brand); }
+/* Existing gesture module marks button fills important; match only this rule. */
+html[data-mgw-environment] .mgw-rec-swipe-actions button:first-child { background:var(--brand)!important; }
+html[data-mgw-environment] .mgw-rec-action-toggle,
+html[data-mgw-environment] .mgw-collapse-btn {
+  background:var(--brand-soft);
+  color:var(--brand);
+}
+html[data-mgw-environment] #mgwActionUndo { background:var(--brand);color:#fff; }
+html[data-mgw-environment] .mgw-installment-progress { background:var(--brand-soft); }
+/* Warning variants retain their semantic amber styling. */
+html[data-mgw-environment] .mgw-import-pill:not(.mgw-import-warn) { background:var(--brand-soft);color:var(--brand); }
+html[data-mgw-environment] .mgw-ob-progress i { background:var(--brand); }
+html[data-mgw-environment] .mgw-wallet-tile { background:linear-gradient(130deg,var(--brand),var(--mgw-wallet-end)); }
+html[data-mgw-environment] .refresh-btn.is-checking { border-color:var(--brand); }
+html[data-mgw-environment] .mgw-walk-highlight { box-shadow:0 0 0 8px color-mix(in srgb,var(--brand) 28%,transparent)!important; }
+
+/* Loading screen uses light palette text against its dark environment surface. */
+html[data-mgw-environment] .mgw-loader-a {
+  background:linear-gradient(165deg,var(--mgw-wallet-end),color-mix(in srgb,var(--mgw-wallet-end) 60%,#000));
+  border-color:var(--mgw-wallet-detail);
+  box-shadow:0 22px 70px rgba(0,0,0,.42);
+}
+html[data-mgw-environment] .mgw-loading-mark { box-shadow:0 14px 34px color-mix(in srgb,var(--brand) 13%,transparent); }
+html[data-mgw-environment] .mgw-loader-a .mgw-loading-mark { box-shadow:none; }
+html[data-mgw-environment] .mgw-loader-a h2 span,
+html[data-mgw-environment] .mgw-loader-step b,
+html[data-mgw-environment] .mgw-loader-step small,
+html[data-mgw-environment] .mgw-loader-tagline,
+html[data-mgw-environment] .mgw-loader-live,
+html[data-mgw-environment] .mgw-loader-progress-row,
+html[data-mgw-environment] .mgw-loader-trust,
+html[data-mgw-environment] .mgw-loader-step.is-done>i:after { color:var(--mgw-wallet-detail); }
+html[data-mgw-environment] .mgw-loader-step>i { color:var(--mgw-wallet-detail);border-color:var(--mgw-wallet-detail); }
+html[data-mgw-environment] .mgw-loader-step.is-active,
+html[data-mgw-environment] .mgw-loader-step.is-done>i { background:color-mix(in srgb,var(--mgw-wallet-detail) 12%,transparent); }
+html[data-mgw-environment] .mgw-loader-step.is-active>i {
+  border-color:var(--mgw-wallet-detail);
+  box-shadow:0 0 14px color-mix(in srgb,var(--mgw-wallet-detail) 45%,transparent);
+}
+html[data-mgw-environment] .mgw-loader-a .mgw-loading-track { background:color-mix(in srgb,var(--mgw-wallet-detail) 16%,transparent); }
+html[data-mgw-environment] .mgw-loader-a .mgw-loading-track i { background:var(--mgw-wallet-detail);box-shadow:none; }
+html[data-mgw-environment] .mgw-loader-a .mgw-loading-mark img { filter:drop-shadow(0 0 8px color-mix(in srgb,var(--mgw-wallet-detail) 55%,transparent)); }
