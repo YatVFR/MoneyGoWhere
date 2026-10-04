@@ -39,3 +39,6 @@ jobs:
 
       - name: Settings grouping and import preference regression tests
         run: node scripts/settings-layout-regression.mjs
+
+      - name: Receipt review, crop, PDF text and OCR queue regressions
+        run: node scripts/receipt-review-regression.mjs

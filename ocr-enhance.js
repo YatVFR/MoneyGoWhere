@@ -113,15 +113,7 @@ function mgwExtractLocation(lines,vendor){
   const chosen=[];let last=-9;for(const h of hits){if(chosen.length>=4)break;if(chosen.length&&h.i-last>3)break;chosen.push(h.line);last=h.i}
   const unique=[...new Set(chosen.map(x=>x.trim().replace(/,+$/,'')))];return{value:unique.join(', '),confidence:Math.min(96,72+unique.length*7)};
 }
-function mgwExtractCurrency(text,location=''){
-  const t=`${text||''}\n${location||''}`.toUpperCase();
-  if(/\bMYR\b|(?:^|\s)RM\s*\d|\bJOHOR\b|\bBERHAD\b|\bSDN\.?\s*BHD\b|\bSST\b/.test(t))return{value:'MYR',confidence:/\bMYR\b|(?:^|\s)RM\s*\d/.test(t)?98:84};
-  if(/\bUSD\b|US\$/.test(t))return{value:'USD',confidence:98};
-  if(/\bEUR\b|€/.test(t))return{value:'EUR',confidence:98};
-  if(/\bGBP\b|£/.test(t))return{value:'GBP',confidence:98};
-  if(/\bSGD\b|S\$|\bSINGAPORE\b|\bGST\b/.test(t))return{value:'SGD',confidence:/\bSGD\b|S\$/.test(t)?98:84};
-  return{value:'SGD',confidence:60};
-}
+function mgwExtractCurrency(text){return window.MGWReceiptReview.currency(text)}
 function mgwExtractPayment(lines){
   const rules=[[/apple\s*pay/i,'Apple Pay'],[/singtel\s+voucher/i,'Singtel Voucher'],[/dbs[_\s-]*cc/i,'DBS Card'],[/mastercard|\bmaster\b/i,'Mastercard'],[/\bvisa\b/i,'Visa'],[/amex|american express/i,'American Express'],[/\bpaynow\b/i,'PayNow'],[/\bnets\b/i,'NETS'],[/\bcash\b/i,'Cash'],[/\bcard\b/i,'Card']];
   for(let i=0;i<lines.length;i++){const line=lines[i];if(/item|description/i.test(line))continue;for(const [re,name] of rules){if(!re.test(line))continue;const evidence=[line,lines[i+1]||''].join(' '),last=evidence.match(/(?:[*x•]{2,}[- ]*|(?:ending(?: in)?|last 4)[ :]*)(\d{4})\b/i),method=lines.some(x=>/apple\s*pay/i.test(x))?'Apple Pay':name;return{method,last4:last?last[1]:'',confidence:name==='Card'?76:90,evidence}}}
@@ -149,22 +141,20 @@ function mgwOCRSummary(result){
 }
 
 async function mgwTesseractPass(source,label,status){
-  const r=await Tesseract.recognize(source,'eng',{logger:m=>{if(m.status==='recognizing text'&&typeof status==='function')status(`${label} ${Math.round((m.progress||0)*100)}%`)}});return mgwParseReceiptSmart(r.data.text,r.data.confidence);
+ const r=await window.MGWOCRRuntime.recognize(source,{status:t=>status?.(label+' '+t)});return mgwParseReceiptSmart(r.data.text,r.data.confidence);
 }
-async function mgwReadReceiptFile(file,{status}={}){
-  if(!window.Tesseract)throw new Error('OCR library unavailable');const say=t=>{if(typeof status==='function')status(t)},passes=[];
-  say('Preparing receipt…');const enhanced=await mgwPreprocessReceipt(file,{rotation:0});passes.push(await mgwTesseractPass(enhanced,'Reading receipt…',say));
-  let merged=mgwMergeReceiptResults(passes),strong=merged&&merged.confidence.amount>=92&&merged.confidence.vendor>=78&&merged.confidence.date>=88&&mgwReceiptScore(merged)>=430;
-  if(!strong){passes.push(await mgwTesseractPass(file,'Cross-checking original…',say));merged=mgwMergeReceiptResults(passes);strong=merged&&merged.confidence.amount>=92&&merged.confidence.vendor>=78&&merged.confidence.date>=88&&mgwReceiptScore(merged)>=430}
-  if(!strong){for(const rotation of [90,270]){say(`Checking ${rotation===90?'clockwise':'counter-clockwise'} orientation…`);const rotated=await mgwPreprocessReceipt(file,{rotation});passes.push(await mgwTesseractPass(rotated,'Reading rotated receipt…',say));merged=mgwMergeReceiptResults(passes);if(merged&&merged.confidence.amount>=92&&merged.confidence.vendor>=78&&merged.confidence.date>=88&&mgwReceiptScore(merged)>=430)break}}
-  say('Validating receipt fields…');return mgwMergeReceiptResults(passes);
+async function mgwReadReceiptFile(file,{status,prepared}={}){
+ prepared=prepared||await window.MGWReceiptWorkbench.prepare(file);if(!prepared)return null;
+ const say=t=>status?.(t);
+ if(prepared.embeddedText){say('Reading embedded PDF text…');const result=mgwParseReceiptSmart(prepared.embeddedText,100);result.inputMethod='pdf_text';result.pageNumber=prepared.pageNumber;return result}
+ const source=prepared.source,passes=[];say('Preparing receipt…');
+ const enhanced=mgwAutoContrast(mgwCanvasFromImage(source,0,2200));passes.push(await mgwTesseractPass(enhanced,'Scanning…',say));
+ let merged=mgwMergeReceiptResults(passes),strong=merged&&merged.confidence.amount>=92&&merged.confidence.vendor>=78&&merged.confidence.date>=88;
+ if(!strong){passes.push(await mgwTesseractPass(source,'Cross-checking…',say));merged=mgwMergeReceiptResults(passes)}
+ merged.inputMethod=prepared.pageNumber?'pdf_ocr':'image_ocr';merged.pageNumber=prepared.pageNumber;return merged;
 }
-
-async function scanReceipt(e){
-  const file=e.target.files[0];if(!file)return;const img=document.querySelector('#receiptPreview'),st=document.querySelector('#ocrStatus');img.src=URL.createObjectURL(file);img.classList.remove('hidden');
-  if(!window.Tesseract){st.textContent='OCR library unavailable. You can still enter the receipt details manually.';return}
-  try{const result=await mgwReadReceiptFile(file,{status:t=>{st.textContent=t}}),f=document.querySelector('#expenseForm');for(const [k,v] of Object.entries(result.values)){if(v!==''&&f.elements[k])f.elements[k].value=v}if(f.elements.category&&!f.elements.category.value&&result.suggestion?.category&&result.suggestion.confidence>=80){const o=[...f.elements.category.options].find(x=>x.value===result.suggestion.category);if(o)f.elements.category.value=result.suggestion.category}window.MGWUnifiedWallet?.applyReceipt(f,result);if(f.elements.notes){const bits=[];if(result.amountEvidence)bits.push(`OCR amount source: ${result.amountEvidence}`);if(result.values.paymentMethod)bits.push(`Payment: ${result.values.paymentMethod}${result.values.cardLast4?` ••••${result.values.cardLast4}`:''}`);f.elements.notes.value=[f.elements.notes.value,...bits].filter(Boolean).join('\n')}st.innerHTML=`<b>Receipt read — review before saving.</b><br><small>${mgwOCRSummary(result)}</small>`}catch(err){st.textContent='Could not read this receipt automatically. Try a flatter, brighter photo or enter the details manually.'}
-}
+async function scanReceipt(e){return window.MGWReceiptWorkbench.scanIntoForm(e)}
 
 window.MGWReceiptOCR={version:MGW_OCR_RELEASE.appVersion,preprocess:mgwPreprocessReceipt,parse:mgwParseReceiptSmart,readFile:mgwReadReceiptFile,merge:mgwMergeReceiptResults,score:mgwReceiptScore};
+
 

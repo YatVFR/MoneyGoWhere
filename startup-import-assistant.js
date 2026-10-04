@@ -16,17 +16,10 @@ function ensure(){
   db.receiptImportQueue=Array.isArray(db.receiptImportQueue)?db.receiptImportQueue:[];
   db.receiptImportHistory=Array.isArray(db.receiptImportHistory)?db.receiptImportHistory:[];
 }
-function currencyFromText(text=''){
-  const t=String(text).toUpperCase();
-  if(/\bMYR\b|(?:^|\s)RM\s*\d|\bJOHOR\b|\bBERHAD\b|\bSDN\.?\s*BHD\b|\bSST\b/.test(t))return'MYR';
-  if(/\bUSD\b|US\$/.test(t))return'USD';
-  if(/\bEUR\b|€/.test(t))return'EUR';
-  if(/\bGBP\b|£/.test(t))return'GBP';
-  return'SGD';
-}
+function currencyFromText(text=''){return window.MGWReceiptReview.currency(text).value}
 function duplicate(x){
   const rows=[...(db.expenses||[]),...db.receiptImportQueue,...db.receiptImportHistory];
-  return rows.some(y=>y.sourceId===x.sourceId||(x.amount>0&&String(y.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&Math.abs(num(y.amount)-num(x.amount))<.005&&norm(y.vendor||y.merchant)===norm(x.merchant)));
+  return rows.some(y=>y.sourceId===x.sourceId||(x.amount>0&&String(y.date||'').slice(0,10)===String(x.date||'').slice(0,10)&&Math.abs(num(y.amount)-num(x.amount))<.005&&String(y.currency||'SGD')===String(x.currency||'SGD')&&norm(y.vendor||y.merchant)===norm(x.merchant)));
 }
 function closePrompt(){
   const d=document.querySelector('#mgwStartupImportDialog');
@@ -39,7 +32,7 @@ function closeOnCommittedSelection(input){
 function makeReceiptInput(){
   let input=document.querySelector('#mgwBatchReceiptInput');
   if(input)return input;
-  input=document.createElement('input');input.id='mgwBatchReceiptInput';input.type='file';input.accept='image/*';input.multiple=true;input.hidden=true;
+  input=document.createElement('input');input.id='mgwBatchReceiptInput';input.type='file';input.accept='image/*,application/pdf,.pdf';input.multiple=true;input.hidden=true;
   input.addEventListener('change',async()=>{if(input.files?.length){closePrompt();await processReceipts(input.files)}input.value=''});
   document.body.appendChild(input);return input;
 }
@@ -70,14 +63,27 @@ function categoryOptions(selected=''){
   return '<option value="">Choose category</option>'+Object.keys(MGW.cats).map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('');
 }
 function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-function receiptFields(x){return `<div class="mgw-receipt-batch-grid full"><div class="field full"><label>Merchant</label><input data-k="merchant" value="${esc(x.merchant)}"></div><div class="field"><label>Date</label><input data-k="date" type="date" value="${esc(x.date)}"></div><div class="field"><label>Time</label><input data-k="time" type="time" value="${esc(x.time)}"></div><div class="field"><label>Amount</label><input data-k="amount" type="number" min="0" step="0.01" value="${Number.isFinite(Number(x.amount))?Number(x.amount):''}"></div><div class="field"><label>Currency</label><select data-k="currency">${currencyOptions(x.currency||'SGD')}</select></div><div class="field full"><label>Location</label><input data-k="location" value="${esc(x.location)}"></div><div class="field full"><label>Payment</label><input data-k="paymentMethod" value="${esc(x.paymentMethod||'')}" placeholder="Optional"></div><div class="field full"><label>Category</label><select data-k="category">${categoryOptions(x.category||'')}</select></div>${window.MGWUnifiedWallet?.choiceFields(x)||''}</div>`}
-function acceptReceipt(item){if(!item.merchant||!item.date||num(item.amount)<=0||!item.category)return toast?.('Edit the receipt and review merchant, date, amount and category first.');const tx={id:uid('EXP'),date:item.date,time:item.time,vendor:item.merchant,location:item.location,amount:num(item.amount),currency:item.currency||'SGD',category:item.category,source:'receipt_batch',sourceId:item.sourceId,notes:item.notes||'',paymentMethod:item.paymentMethod||''};Object.assign(tx,window.MGWUnifiedWallet?.paymentDetails({...item,...tx})||{});db.expenses.push(tx);db.receiptImportHistory.push({...item,status:'accepted',acceptedExpenseId:tx.id});db.receiptImportQueue=db.receiptImportQueue.filter(x=>x.id!==item.id);persist();renderQueue();renderAll?.();toast?.('Receipt saved')}
+function receiptFields(x){return `<div class="mgw-receipt-batch-grid full"><div class="field full"><label>Merchant</label><input data-k="merchant" value="${esc(x.merchant)}"></div><div class="field"><label>Date</label><input data-k="date" type="date" value="${esc(x.date)}"></div><div class="field"><label>Time</label><input data-k="time" type="time" value="${esc(x.time)}"></div><div class="field"><label>Amount</label><input data-k="amount" type="number" min="0" step="0.01" value="${x.amount!==''&&x.amount!=null&&Number.isFinite(Number(x.amount))?Number(x.amount):''}"></div><div class="field"><label>Currency</label><select data-k="currency">${currencyOptions(x.currency||'SGD')}</select></div><div class="field full"><label>Location</label><input data-k="location" value="${esc(x.location)}"></div><div class="field full"><label>Payment</label><input data-k="paymentMethod" value="${esc(x.paymentMethod||'')}" placeholder="Optional"></div><div class="field full"><label>Category</label><select data-k="category">${categoryOptions(x.category||'')}</select></div>${window.MGWUnifiedWallet?.choiceFields(x)||''}</div>`}
+function acceptReceipt(item){return editReceipt(item,{accept:true})}
 function deleteReceipt(item){if(!confirm(`Delete pending receipt from ${item.merchant||'this scan'}?`))return;db.receiptImportHistory.push({...item,status:'deleted'});db.receiptImportQueue=db.receiptImportQueue.filter(x=>x.id!==item.id);persist();renderQueue();toast?.('Pending receipt deleted')}
-function editReceipt(item){const m=document.querySelector('#modal'),body=document.querySelector('#modalBody'),title=document.querySelector('#modalTitle');if(!m||!body||!title)return;title.textContent='Edit Receipt Scan';body.innerHTML=`<form id="mgwEditReceiptImport" class="mgw-receipt-modal-form">${receiptFields(item)}<div class="field full"><button class="primary-btn">Save Changes</button></div></form>`;try{m.showModal()}catch{m.setAttribute('open','')}body.querySelector('#mgwEditReceiptImport').onsubmit=e=>{e.preventDefault();const get=k=>body.querySelector(`[data-k="${k}"]`)?.value||'',merchant=get('merchant').trim(),date=get('date'),amount=num(get('amount'));if(!merchant||!date||amount<=0)return toast?.('Review merchant, date and amount first');Object.assign(item,{merchant,date,time:get('time'),amount,currency:get('currency')||'SGD',location:get('location').trim(),paymentMethod:get('paymentMethod').trim(),category:get('category'),zeroValue:false});if(window.MGWUnifiedWallet)window.MGWUnifiedWallet.choose(item,get('paymentSourceId'));persist();try{m.close()}catch{m.removeAttribute('open')}renderQueue();toast?.('Receipt review updated')}}
+function editReceipt(item,{accept=false}={}){
+ const m=document.querySelector('#modal'),body=document.querySelector('#modalBody'),title=document.querySelector('#modalTitle');if(!m||!body||!title)return;
+ title.textContent=accept?'Review and Save Receipt':'Edit Receipt Scan';body.innerHTML=`<form id="mgwEditReceiptImport" class="mgw-receipt-modal-form">${receiptFields(item)}${window.MGWReceiptReview.fields()}<div class="field full"><button class="primary-btn">${accept?'Save Receipt':'Save Review Changes'}</button></div></form>`;
+ window.MGWReceiptWorkbench.textPanel(body,{rawText:item.rawText||'',values:{vendor:item.merchant,date:item.date,amount:item.amount,category:item.category},confidence:item.fieldConfidence||{}});
+ try{m.showModal()}catch{return}
+ const form=body.querySelector('#mgwEditReceiptImport');
+ form.addEventListener('input',e=>{if(e.target.name!=='receiptReviewed')form.elements.receiptReviewed.checked=false});
+ form.onsubmit=e=>{e.preventDefault();const get=k=>body.querySelector(`[data-k="${k}"]`)?.value||'',copy={...item,merchant:get('merchant').trim(),date:get('date'),time:get('time'),amount:get('amount'),currency:get('currency')||'SGD',location:get('location').trim(),paymentMethod:get('paymentMethod').trim(),category:get('category'),zeroValue:Number(get('amount'))===0};
+  try{window.MGWReceiptReview.validate(copy,Boolean(form.elements.receiptReviewed.checked));window.MGWUnifiedWallet?.choose(copy,get('paymentSourceId'));
+   if(accept)window.MGWReceiptReview.save(copy,{queueId:item.id,reviewed:true});else{const next=JSON.parse(JSON.stringify(window.db)),index=next.receiptImportQueue.findIndex(x=>x.id===item.id);if(index<0)throw Error('This receipt is no longer pending.');next.receiptImportQueue[index]={...copy,amount:Number(copy.amount),reviewed:true};window.MGWReceiptReview.adopt(next)}
+   m.close();try{renderQueue();renderAll?.()}catch(err){console.warn('Receipt saved; display refresh failed',err)}toast?.(accept?'Receipt saved':'Receipt review updated');
+  }catch(err){toast?.(err.message||'Could not save the receipt.')}return false;
+ };
+}
 function bindReceiptSwipe(row){let start=null;row.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,select'))return;start={x:e.clientX,y:e.clientY}},{passive:true});row.addEventListener('pointerup',e=>{if(!start)return;const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;if(Math.abs(dx)<36||Math.abs(dx)<Math.abs(dy))return;if(dx<0){document.querySelectorAll('#mgwReceiptBatchQueue .mgw-receipt-batch-row.is-open').forEach(r=>{if(r!==row)r.classList.remove('is-open')});row.classList.add('is-open')}else row.classList.remove('is-open')},{passive:true})}
 function renderQueue(){
  ensure();const card=queueCard();if(!card)return;const rows=db.receiptImportQueue.filter(x=>x.status==='pending');if(!rows.length){card.remove();return}
- card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧾</span><b>Receipt Batch Review</b></div><strong>${rows.length}</strong></div><p class="mgw-muted">New scans default to SGD. Swipe left to Accept, Edit or Delete.</p>${rows.map(x=>`<div class="mgw-receipt-batch-row" data-receipt-id="${x.id}"><div class="mgw-receipt-swipe-actions"><button class="mgw-receipt-accept" data-accept>✓<br>Accept</button><button class="mgw-receipt-edit" data-edit>✏️<br>Edit</button><button class="mgw-receipt-delete" data-delete>🗑️<br>Delete</button></div><div class="mgw-receipt-content"><span class="mgw-receipt-pill">Receipt · ${Math.round(x.ocrConfidence||0)}% OCR</span>${x.zeroValue?'<span class="mgw-receipt-pill warn">Zero-value receipt</span>':''}<div><b>${esc(x.merchant||'Receipt scan')}</b></div><div class="mgw-receipt-confidence">${esc([x.date,x.time].filter(Boolean).join(' · '))} · ${esc(x.currency||'SGD')} · ${money(num(x.amount))}</div>${window.MGWUnifiedWallet?.choiceFields(x)||''}<div class="mgw-receipt-confidence">Swipe left for actions</div></div></div>`).join('')}`;
+ card.innerHTML=`<div class="card-head"><div><span class="section-icon">🧾</span><b>Receipt Batch Review</b></div><strong>${rows.length}</strong></div><p class="mgw-muted">SGD is the default unless a currency is printed. Swipe left to review and save, edit or delete.</p>${rows.map(x=>`<div class="mgw-receipt-batch-row" data-receipt-id="${x.id}"><div class="mgw-receipt-swipe-actions"><button class="mgw-receipt-accept" data-accept>✓<br>Review / Save</button><button class="mgw-receipt-edit" data-edit>✏️<br>Edit</button><button class="mgw-receipt-delete" data-delete>🗑️<br>Delete</button></div><div class="mgw-receipt-content"><span class="mgw-receipt-pill">Receipt · ${Math.round(x.ocrConfidence||0)}% OCR</span>${x.zeroValue?'<span class="mgw-receipt-pill warn">Zero-value receipt</span>':''}<div class="mgw-ocr-warning">${esc(x.reviewWarnings||'Review all details before saving.')}</div><div><b>${esc(x.merchant||'Receipt scan')}</b></div><div class="mgw-receipt-confidence">${esc([x.date,x.time].filter(Boolean).join(' · '))} · ${esc(x.currency||'SGD')} · ${money(num(x.amount))}</div>${window.MGWUnifiedWallet?.choiceFields(x)||''}<div class="mgw-receipt-confidence">Swipe left for actions</div></div></div>`).join('')}`;
  card.querySelectorAll('[data-receipt-id]').forEach(row=>{const item=db.receiptImportQueue.find(x=>x.id===row.dataset.receiptId);if(!item)return;const walletSource=row.querySelector('[data-k="paymentSourceId"]');walletSource?.addEventListener('change',()=>{window.MGWUnifiedWallet.choose(item,walletSource.value);persist()});row.querySelector('[data-accept]')?.addEventListener('click',()=>acceptReceipt(item));row.querySelector('[data-edit]')?.addEventListener('click',()=>editReceipt(item));row.querySelector('[data-delete]')?.addEventListener('click',()=>deleteReceipt(item));bindReceiptSwipe(row)})
 }
 function confidenceSummary(result){
@@ -85,26 +91,21 @@ function confidenceSummary(result){
 }
 async function ocrOne(file,status){
   if(window.MGWReceiptOCR?.readFile){const result=await window.MGWReceiptOCR.readFile(file,{status});return{result,raw:result?.rawText||''}}
-  if(!window.Tesseract||typeof mgwPreprocessReceipt!=='function'||typeof mgwParseReceiptSmart!=='function')throw new Error('OCR unavailable');
-  status(`Preparing ${file.name}…`);const enhanced=await mgwPreprocessReceipt(file),first=await Tesseract.recognize(enhanced,'eng'),result=mgwParseReceiptSmart(first.data.text,first.data.confidence);return{result,raw:first.data.text};
+  throw new Error('Receipt tools unavailable. Reload the app and try again.');
 }
 async function processReceipts(files){
-  ensure();if(processing)return;processing=true;
-  const statusEl=document.querySelector('#mgwStartupImportStatus');const setStatus=t=>{if(statusEl)statusEl.textContent=t};
-  let added=0,duplicates=0,failed=0,zero=0,index=0;
-  try{
-    for(const file of [...files]){
-      index++;setStatus(`Receipt ${index}/${files.length}: processing…`);
-      try{
-        const {result,raw}=await ocrOne(file,setStatus),v=result?.values||{},merchant=String(v.vendor||'').trim(),amountRaw=String(v.amount??'').trim(),hasAmount=amountRaw!==''&&Number.isFinite(Number(amountRaw)),amount=hasAmount?Number(amountRaw):NaN,date=String(v.date||'').slice(0,10),currency='SGD',sourceId=`RCP-${file.lastModified||0}-${file.size||0}-${norm(file.name)}`;
-        if(!merchant||!hasAmount){failed++;continue}
-        const zeroValue=amount===0,item={id:uid('RCP'),source:'receipt_batch',sourceId,merchant,amount,date,time:String(v.time||'').slice(0,5),location:String(v.location||''),currency,category:result.suggestion?.confidence>=80?String(result.suggestion.category||''):'',paymentMethod:String(v.paymentMethod||''),cardLast4:String(v.cardLast4||''),ocrConfidence:Number(result.confidence?.ocr)||0,confidenceSummary:confidenceSummary(result),notes:result.amountEvidence?`OCR amount source: ${result.amountEvidence}`:'',zeroValue,status:'pending'};
-        item.paymentEvidence=result.paymentEvidence||'';Object.assign(item,window.MGWUnifiedWallet?.prepare(item)||item);if(duplicate(item)){duplicates++;continue}db.receiptImportQueue.push(item);added++;if(zeroValue)zero++;
-      }catch{failed++}
-    }
-    if(added)persist();renderQueue();if(added){if(typeof nav==='function')nav('add');setTimeout(()=>document.querySelector('#mgwReceiptBatchQueue')?.scrollIntoView({behavior:'smooth',block:'start'}),100)}
-    setStatus(`${added} receipt${added===1?'':'s'} queued${zero?` · ${zero} zero-value`:''}${duplicates?` · ${duplicates} duplicate${duplicates===1?'':'s'} skipped`:''}${failed?` · ${failed} need manual review`:''}`);if(typeof toast==='function')toast(added?`${added} receipt${added===1?'':'s'} ready for review`:'No receipts were queued');
-  }finally{processing=false}
+ ensure();if(processing)return;processing=true;
+ const statusEl=document.querySelector('#mgwStartupImportStatus');const setStatus=t=>{if(statusEl)statusEl.textContent=t};
+ let added=0,duplicates=0,failed=0,cancelled=0,index=0;
+ try{for(const file of [...files]){index++;setStatus(`Receipt ${index}/${files.length}: prepare and scan…`);
+  try{const {result,raw}=await ocrOne(file,setStatus);if(!result){cancelled++;continue}const v=result.values||{},amountRaw=String(v.amount??'').trim(),hasAmount=amountRaw!==''&&Number.isFinite(Number(amountRaw)),sourceId=`RCP-${file.lastModified||0}-${file.size||0}-${norm(file.name)}-P${result.pageNumber||0}`;
+   const item={id:uid('RCP'),source:'receipt_batch',sourceId,merchant:String(v.vendor||'').trim(),amount:hasAmount?Number(amountRaw):'',date:String(v.date||'').slice(0,10),time:String(v.time||'').slice(0,5),location:String(v.location||''),currency:v.currency||currencyFromText(raw),category:v.category||'',paymentMethod:String(v.paymentMethod||''),cardLast4:String(v.cardLast4||''),ocrConfidence:Number(result.confidence?.ocr)||0,fieldConfidence:result.confidence||{},confidenceSummary:confidenceSummary(result),rawText:String(raw||'').slice(0,100000),reviewWarnings:window.MGWReceiptReview.issues(result).join(' · '),receiptPage:result.pageNumber||0,receiptInputMethod:result.inputMethod||'',notes:result.amountEvidence?`OCR amount source: ${result.amountEvidence}`:'',zeroValue:hasAmount&&Number(amountRaw)===0,status:'pending'};
+   item.paymentEvidence=result.paymentEvidence||'';Object.assign(item,window.MGWUnifiedWallet?.prepare(item)||item);if(duplicate(item)){duplicates++;continue}window.MGWReceiptReview.enqueue([item]);added++;
+  }catch(err){failed++;setStatus(err.message||'Receipt could not be read.')}
+ }
+ renderQueue();if(added){if(typeof nav==='function')nav('add');setTimeout(()=>document.querySelector('#mgwReceiptBatchQueue')?.scrollIntoView({behavior:'smooth',block:'start'}),100)}
+ setStatus(`${added} receipt(s) queued · ${duplicates} duplicates skipped · ${cancelled} cancelled · ${failed} need retry`);toast?.(added?`${added} receipt(s) ready for review`:'No receipts were queued');
+ }finally{processing=false}
 }
 function openApplePay(){
   const dir=document.querySelector('#mgwApplePayFolderInput');if(dir){closePrompt();dir.click();return}
@@ -115,7 +116,7 @@ function showPrompt({manual=false}={}){
   ensure();style();makeReceiptInput();
   if(!manual&&(!db.settings.startupImport.enabled||shownThisLoad)){markStartupImportDone();return}
   let d=document.querySelector('#mgwStartupImportDialog');if(!d){d=document.createElement('dialog');d.id='mgwStartupImportDialog';d.className='mgw-startup-import';document.body.appendChild(d)}
-  d.innerHTML=`<div class="mgw-startup-import-shell"><div class="eyebrow">Quick Import</div><h2>Anything to add?</h2><p>Add several receipt images for calibrated local OCR, scan your MGW Apple Pay folder, or continue without importing.</p><div class="mgw-startup-import-actions"><button class="secondary-btn" data-receipts><b>🧾 Add Receipt Images</b><small>Select multiple receipt photos. MGW checks orientation, totals, dates, merchant and currency before review.</small></button><button class="secondary-btn" data-apple><b>🍎 Scan Apple Pay Folder</b><small>Check MGW JSON/TXT transaction files and queue new transactions.</small></button><button class="primary-btn" data-done><b>Continue to MoneyGoWhere</b></button></div><div class="mgw-startup-import-status" id="mgwStartupImportStatus"></div></div>`;
+  d.innerHTML=`<div class="mgw-startup-import-shell"><div class="eyebrow">Quick Import</div><h2>Anything to add?</h2><p>Add receipt images or PDFs for local scanning, scan your MGW Apple Pay folder, or continue without importing.</p><div class="mgw-startup-import-actions"><button class="secondary-btn" data-receipts><b>🧾 Add Images / PDFs</b><small>Select receipt images or PDFs. Choose a page, crop or rotate, then review extracted details.</small></button><button class="secondary-btn" data-apple><b>🍎 Scan Apple Pay Folder</b><small>Check MGW JSON/TXT transaction files and queue new transactions.</small></button><button class="primary-btn" data-done><b>Continue to MoneyGoWhere</b></button></div><div class="mgw-startup-import-status" id="mgwStartupImportStatus"></div></div>`;
   d.querySelector('[data-receipts]').addEventListener('click',()=>{closePrompt();makeReceiptInput().click()});d.querySelector('[data-apple]').addEventListener('click',openApplePay);d.querySelector('[data-done]').addEventListener('click',()=>d.close());
   if(!manual&&!d.dataset.mgwStartupSequenceBound){d.dataset.mgwStartupSequenceBound='1';d.addEventListener('close',markStartupImportDone,{once:true})}
   shownThisLoad=true;

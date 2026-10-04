@@ -181,6 +181,7 @@ const MGW_IMPORT_MODULES=[
   './apple-pay-inbox.js',
   './ocr-enhance.js',
   './ocr-runtime.js',
+  './receipt-workbench.js',
   './icloud-folder-scanner.js',
   './startup-import-assistant.js',
   './receipt-match-hint.js'
@@ -291,4 +292,3 @@ function mgwBootRuntime(){
   window.MGWLoadDeferredFeatures=()=>mgwLoadDeferredModules().catch(err=>{console.error('MoneyGoWhere deferred feature loading failed',err);return MGW_RUNTIME_HEALTH});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mgwBootRuntime,{once:true});else mgwBootRuntime();
-

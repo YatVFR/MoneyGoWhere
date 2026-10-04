@@ -1,49 +1,18 @@
-// MoneyGoWhere — lazy OCR runtime loader.
-// Tesseract is fetched only when receipt OCR is actually requested, so a slow
-// third-party CDN cannot block MoneyGoWhere startup.
-(()=>{
-  'use strict';
-  const TESSERACT_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-  let loading=null;
-
-  function ensureTesseract(){
-    if(window.Tesseract)return Promise.resolve(window.Tesseract);
-    if(loading)return loading;
-    loading=new Promise((resolve,reject)=>{
-      const existing=document.querySelector('script[data-mgw-tesseract]');
-      if(existing){
-        existing.addEventListener('load',()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR library unavailable')),{once:true});
-        existing.addEventListener('error',()=>reject(new Error('OCR library failed to load')),{once:true});
-        return;
-      }
-      const s=document.createElement('script');
-      s.src=TESSERACT_URL;
-      s.async=true;
-      s.dataset.mgwTesseract='1';
-      s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(new Error('OCR library unavailable'));
-      s.onerror=()=>reject(new Error('OCR library failed to load'));
-      document.head.appendChild(s);
-    }).catch(err=>{loading=null;throw err});
-    return loading;
-  }
-
-  if(window.MGWReceiptOCR?.readFile&&!window.MGWReceiptOCR.readFile.__mgwLazyOcr){
-    const base=window.MGWReceiptOCR.readFile;
-    const wrapped=async(...args)=>{await ensureTesseract();return base(...args)};
-    wrapped.__mgwLazyOcr=true;
-    window.MGWReceiptOCR.readFile=wrapped;
-  }
-
-  if(typeof scanReceipt==='function'&&!scanReceipt.__mgwLazyOcr){
-    const base=scanReceipt;
-    const wrapped=async e=>{
-      const status=document.querySelector('#ocrStatus');
-      try{if(status)status.textContent='Loading receipt reader…';await ensureTesseract();return base(e)}
-      catch(err){if(status)status.textContent='OCR library could not be loaded. You can still enter the receipt details manually.';console.warn('MoneyGoWhere OCR load failed',err)}
-    };
-    wrapped.__mgwLazyOcr=true;
-    scanReceipt=wrapped;
-  }
-
-  window.MGWOCRRuntime={version:window.MGW_RELEASE?.appVersion||'dev',ensureTesseract};
+// Lazy pinned OCR/PDF dependencies, one reusable OCR worker and a serialized queue.
+(()=>{'use strict';
+const OCR_VERSION='7.0.0',PDF_VERSION='6.4.299';
+const BASE='https://cdn.jsdelivr.net/npm/';
+const OCR_SCRIPT='https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js';
+const OCR_WORKER='https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js';
+let library=null,worker=null,workerLoading=null,tail=Promise.resolve(),progress=null,pdfLoading=null;
+function ensureTesseract(){
+ if(window.Tesseract&&library)return Promise.resolve(window.Tesseract);if(library)return library;
+ library=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=OCR_SCRIPT;s.async=true;s.dataset.mgwTesseract=OCR_VERSION;s.onload=()=>window.Tesseract?resolve(window.Tesseract):reject(Error('Receipt reader unavailable'));s.onerror=()=>{s.remove();reject(Error('Could not load the receipt reader. Check your connection or enter details manually.'))};document.head.appendChild(s)}).catch(err=>{library=null;throw err});return library;
+}
+async function ensureWorker(){if(worker)return worker;if(workerLoading)return workerLoading;
+ workerLoading=(async()=>{const t=await ensureTesseract();const w=await t.createWorker('eng',1,{workerPath:OCR_WORKER,corePath:BASE+'tesseract.js-core@7.0.0',logger:m=>{if(progress)progress(m.status==='recognizing text'?'Reading receipt '+Math.round((m.progress||0)*100)+'%':'Preparing receipt reader…')}});worker=w;return w})().finally(()=>{workerLoading=null});return workerLoading;
+}
+function recognize(source,{status}={}){const job=async()=>{progress=status||null;try{const w=await ensureWorker();return await w.recognize(source)}catch(err){if(worker){const bad=worker;worker=null;try{await bad.terminate()}catch{}}throw err}finally{progress=null}};const result=tail.then(job);tail=result.catch(()=>{});return result}
+function ensurePDF(){if(pdfLoading)return pdfLoading;pdfLoading=import(BASE+'pdfjs-dist@'+PDF_VERSION+'/legacy/build/pdf.min.mjs').then(lib=>{lib.GlobalWorkerOptions.workerSrc=BASE+'pdfjs-dist@'+PDF_VERSION+'/legacy/build/pdf.worker.min.mjs';return lib}).catch(err=>{pdfLoading=null;throw Error('Could not load the PDF reader. Check your connection and try again.')});return pdfLoading}
+window.MGWOCRRuntime={version:window.MGW_RELEASE?.appVersion||'dev',ocrVersion:OCR_VERSION,pdfVersion:PDF_VERSION,ensureTesseract,ensurePDF,recognize,pdfAssetBase:BASE+'pdfjs-dist@'+PDF_VERSION+'/'};
 })();
