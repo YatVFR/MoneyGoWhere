@@ -96,7 +96,8 @@
     const f=body.querySelector('form'),providerEl=f.elements.provider,preset=f.elements.durationPreset,ruleEl=f.elements.paymentStartRule,mode=f.elements.installmentMode;
     const refresh=()=>{
       const p=PROVIDER_POLICIES[providerEl.value]||PROVIDER_POLICIES['Other / Custom Provider'];
-      if(!edit||!a.paymentStartRule)ruleEl.value=p.defaultRule;
+      // Defaults are set when opening the form or changing provider only.
+      // Input/change refreshes must preserve the selected rule before preview.
       body.querySelector('#mgwCustomProviderWrap').style.display=providerEl.value==='Other / Custom Provider'?'':'none';
       body.querySelector('#mgwCustomDurationWrap').style.display=preset.value==='custom'?'':'none';
       body.querySelector('#mgwCustomMonthlyWrap').style.display=mode.value==='custom'?'':'none';
@@ -118,3 +119,4 @@
   function boot(){db.payLaterAccounts=Array.isArray(db.payLaterAccounts)?db.payLaterAccounts:[];db.payLaterPayments=Array.isArray(db.payLaterPayments)?db.payLaterPayments:[];syncAccounts();installInterceptors();if(typeof renderAll==='function'&&!renderAll.__mgwPayLaterRecurrence){const base=renderAll;renderAll=function(){syncAccounts();base();queueMicrotask(enhanceRenderedCards)};renderAll.__mgwPayLaterRecurrence=true}queueMicrotask(enhanceRenderedCards);window.MGWPayLater={version:RELEASE,providers:[...PROVIDERS],providerPolicies:PROVIDER_POLICIES,startRules:START_RULES,schedule,currentDue,open:openLater}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+

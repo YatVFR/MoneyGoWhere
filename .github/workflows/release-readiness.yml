@@ -45,3 +45,6 @@ jobs:
 
       - name: Full PDF and dated wallet availability regressions
         run: node scripts/full-pdf-wallet-regression.mjs
+
+      - name: Pay-Later payment start rule regression
+        run: node scripts/paylater-start-rule-regression.mjs
