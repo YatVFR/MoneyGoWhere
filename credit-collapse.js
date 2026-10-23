@@ -76,6 +76,7 @@
     installStyles();
     const host=document.querySelector('#mgwAccountsDashboard');
     if(!host)return;
+    if(host.closest('[data-mgw-dashboard-managed]'))return;
     const originalHead=host.querySelector(':scope > .card-head');
     const grid=host.querySelector(':scope > .mgw-account-grid');
     if(!originalHead||!grid)return;

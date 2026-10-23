@@ -42,6 +42,7 @@
     return explicit;
   }
   function schedule(a){
+    if(window.MGWPayLaterPlanner)return window.MGWPayLaterPlanner.schedule(a);
     const first=resolveFirstDue(a),months=Math.max(1,Math.floor(num(a.durationMonths)||1));if(!first)return[];
     const total=totalRepayable(a),custom=money2(num(a.customMonthlyPayment));
     const regular=a.installmentMode==='custom'&&custom>0?custom:money2(total/months);

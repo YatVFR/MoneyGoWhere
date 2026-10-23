@@ -48,3 +48,6 @@ jobs:
 
       - name: Pay-Later payment start rule regression
         run: node scripts/paylater-start-rule-regression.mjs
+
+      - name: Consolidated dashboard summary regression
+        run: node scripts/dashboard-summary-regression.mjs

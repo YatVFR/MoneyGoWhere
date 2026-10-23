@@ -108,12 +108,13 @@ function recurring(){
 function renderTop(el,cats){
   if(!el)return;
   if(!cats?.length){el.className='category-list empty-state';el.textContent='No spending data yet.';return}
-  const shown=cats.slice(0,5),total=shown.reduce((t,[,v])=>t+num(v),0)||1,max=shown[0][1]||1;
+  const shown=cats,total=shown.reduce((t,[,v])=>t+num(v),0)||1,max=shown[0][1]||1;
   el.className='mgw-top-breakdown';
   el.innerHTML=shown.map(([cat,val])=>{
     const rows=expenses().filter(x=>(x.category||'Other')===cat).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     return `<details class="mgw-spend-detail"><summary><div class="mgw-spend-main"><span class="cat-icon">${MGW.cats[cat]||'📦'}</span><div class="mgw-spend-copy"><b>${esc(cat)}</b><small>${(val/total*100).toFixed(0)}% · ${rows.length} ${rows.length===1?'entry':'entries'}</small></div></div>${side(val)}<div class="mgw-spend-bar"><i style="width:${Math.min(100,val/max*100)}%"></i></div></summary><div class="mgw-spend-body"><div class="mgw-merchant-list">${merchantExpenseRows(rows)}</div></div></details>`
-  }).join('')+recurring()
+  }).join('')+recurring();
+  window.MGWDashboardLayout?.schedule();
 }
 function enforce(){
   styles();if(typeof renderCats!=='function')return;
@@ -124,5 +125,5 @@ function enforce(){
 }
 function boot(){enforce()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
-window.MGWDashboardBreakdown={version:RELEASE,render:()=>renderTop(document.querySelector('#topCategories'),catTotals(expenses()).slice(0,5)),enforce};
+window.MGWDashboardBreakdown={version:RELEASE,render:()=>renderTop(document.querySelector('#topCategories'),catTotals(expenses())),enforce};
 })();

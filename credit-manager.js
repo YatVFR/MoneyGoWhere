@@ -80,9 +80,9 @@
   function installDashboard(){
     const view=document.querySelector('#view-dashboard');if(!view||document.querySelector('#mgwSafeSpendCard'))return;
     const card=document.createElement('article');card.className='card mgw-safe';card.id='mgwSafeSpendCard';
-    const metric=view.querySelector('.metric-grid');if(metric)metric.insertAdjacentElement('afterend',card);else view.prepend(card);
-    const accountsSection=document.createElement('details');accountsSection.className='mgw-dashboard-section';accountsSection.id='mgwAccountsDashboardSection';accountsSection.open=true;
-    accountsSection.innerHTML='<summary><div><span class="section-icon">💳</span><b>Cards & Pay-Later</b></div><span class="mgw-section-chevron">›</span></summary><div class="mgw-dashboard-section-body"><article class="card" id="mgwAccountsDashboard"></article></div>';
+    const metric=view.querySelector('.metric-grid');if(metric)(metric.closest('details.mgw-dashboard-section')||metric).insertAdjacentElement('afterend',card);else view.prepend(card);
+    const accountsSection=document.createElement('details');accountsSection.className='mgw-dashboard-section';accountsSection.id='mgwAccountsDashboardSection';accountsSection.open=false;accountsSection.dataset.mgwDashboardManaged='1';
+    accountsSection.innerHTML='<summary><div><span class="section-icon">💳</span><b>Cards & Wallets</b></div><span class="mgw-section-chevron">›</span></summary><div class="mgw-dashboard-section-body"><article class="card" id="mgwAccountsDashboard"></article></div>';
     card.insertAdjacentElement('afterend',accountsSection);
   }
 
@@ -94,8 +94,8 @@
     }
     const host=document.querySelector('#mgwAccountsDashboard');if(host){
       const cards=db.creditAccounts.map(renderCardSummary).join('');
-      const later=renderLaterGroups(renderLaterSummary);
-      host.innerHTML=`<div class="card-head"><div><b>Account summary</b></div><button class="text-btn" id="mgwManageAccounts">Manage</button></div><div class="mgw-account-grid">${cards||later?cards+later:'<p class="mgw-empty">No cards or pay-later accounts added yet.</p>'}</div>`;
+      const later='';
+      host.innerHTML=`<div class="card-head"><div><b>Cards & Wallets</b></div><button class="text-btn" id="mgwManageAccounts">Manage</button></div><div class="mgw-account-grid">${cards||later?cards+later:'<p class="mgw-empty">No cards added yet. Manage cards and wallets in Settings.</p>'}</div>`;
       host.querySelector('#mgwManageAccounts')?.addEventListener('click',()=>{nav('settings');document.querySelector('#mgwCreditSettings')?.scrollIntoView({behavior:'smooth'})});
     }
   }
@@ -115,8 +115,8 @@
   }
   function renderSettingsCredit(){
     const host=document.querySelector('#mgwCreditSettings');if(!host)return;
-    host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Credit, Debt & Pay-Later</b></div></div><p class="mgw-muted">Track bank credit separately from what you can safely afford to spend. Card repayments are not counted as a second expense.</p><div class="mgw-inline-actions"><button class="primary-btn" id="mgwAddCard">＋ Credit Card</button><button class="primary-btn" id="mgwAddLater">＋ Pay-Later</button></div><div class="mgw-section-gap mgw-account-grid">${db.creditAccounts.map(renderCardManage).join('')}${renderLaterGroups(renderLaterManage)||(!db.creditAccounts.length?'<p class="mgw-empty">Add your cards and installment accounts to begin.</p>':'')}</div><details id="mgwCompletedLater" class="mgw-section-gap"><summary>Completed Payment · Pay-Later (${db.payLaterAccounts.filter(a=>a.archivedAt).length})</summary><div class="mgw-account-grid">${db.payLaterAccounts.filter(a=>a.archivedAt).map(a=>`<div class="mgw-account"><b>${esc(a.name)}</b><p>Closed ${esc(a.archivedAt.slice(0,10))} · Payment history retained</p><button data-later-reopen="${esc(a.id)}">Reopen</button></div>`).join('')||'<p>No completed payments archived yet.</p>'}</div></details>`;
-    host.querySelector('#mgwAddCard')?.addEventListener('click',()=>window.MGWCardsWallets?.open?window.MGWCardsWallets.open():openCard());host.querySelector('#mgwAddLater')?.addEventListener('click',()=>openLater());
+    host.innerHTML=`<div class="card-head"><div><span class="section-icon">💳</span><b>Credit, Debt & Pay-Later</b></div><button class="text-btn" id="mgwEditReserveSettings">Adjust reserve</button></div><p class="mgw-muted">Track bank credit separately from what you can safely afford to spend. Card repayments are not counted as a second expense.</p><div class="mgw-inline-actions"><button class="primary-btn" id="mgwAddCard">＋ Credit Card</button><button class="primary-btn" id="mgwAddLater">＋ Pay-Later</button></div><div class="mgw-section-gap mgw-account-grid">${db.creditAccounts.map(renderCardManage).join('')}${renderLaterGroups(renderLaterManage)||(!db.creditAccounts.length?'<p class="mgw-empty">Add your cards and installment accounts to begin.</p>':'')}</div><details id="mgwCompletedLater" class="mgw-section-gap"><summary>Completed Payment · Pay-Later (${db.payLaterAccounts.filter(a=>a.archivedAt).length})</summary><div class="mgw-account-grid">${db.payLaterAccounts.filter(a=>a.archivedAt).map(a=>`<div class="mgw-account"><b>${esc(a.name)}</b><p>Closed ${esc(a.archivedAt.slice(0,10))} · Payment history retained</p><button data-later-reopen="${esc(a.id)}">Reopen</button></div>`).join('')||'<p>No completed payments archived yet.</p>'}</div></details>`;
+    host.querySelector('#mgwEditReserveSettings')?.addEventListener('click',openReserve);host.querySelector('#mgwAddCard')?.addEventListener('click',()=>window.MGWCardsWallets?.open?window.MGWCardsWallets.open():openCard());host.querySelector('#mgwAddLater')?.addEventListener('click',()=>openLater());
     host.querySelectorAll('[data-card-edit]').forEach(b=>b.addEventListener('click',()=>{const a=db.creditAccounts.find(a=>a.id===b.dataset.cardEdit);if(a)(window.MGWCardsWallets?.open?window.MGWCardsWallets.open(a,'credit'):openCard(a))}));
     host.querySelectorAll('[data-card-pay]').forEach(b=>b.addEventListener('click',()=>openPayment('card',db.creditAccounts.find(a=>a.id===b.dataset.cardPay))));
     host.querySelectorAll('[data-later-edit]').forEach(b=>b.addEventListener('click',()=>openLater(db.payLaterAccounts.find(a=>a.id===b.dataset.laterEdit))));
@@ -144,7 +144,7 @@
     const wrapped=function(type,d={}){let html=base(type,d);const names=[...db.creditAccounts,...db.payLaterAccounts].map(a=>a.name).filter(Boolean);if(!names.length)return html;const list=`<datalist id="mgwPaymentSources">${names.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>`;html=html.replace(/<input name="card"([^>]*)>/,`<input name="card" list="mgwPaymentSources"$1>${list}`);return html};wrapped.__mgwCreditEnhanced=true;expenseForm=wrapped;
   }
 
-  function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit()}
+  function renderCredit(){ensureStore();renderDashboardCredit();renderSettingsCredit();window.MGWDashboardLayout?.schedule()}
   function boot(){ensureStore();addStyles();installDashboard();installSettings();enhanceExpenseForm();const prior=renderAll;if(typeof prior==='function'&&!prior.__mgwCreditWrapped){const wrapped=function(){prior();renderCredit()};wrapped.__mgwCreditWrapped=true;renderAll=wrapped}renderCredit()}
   window.MGWCreditManager={version:RELEASE,payLaterGroups,refresh:renderCredit,openCard,openLater,openPayment};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

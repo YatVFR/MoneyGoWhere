@@ -160,8 +160,9 @@ function renderMetrics(p){
   const grid=document.querySelector('.metric-grid');if(!grid)return;grid.classList.add('mgw-core-metrics');
   const labels=grid.querySelectorAll('.metric>span'),vals=grid.querySelectorAll('.metric>strong');
   if(labels[0])labels[0].textContent='Net Income';if(vals[0])vals[0].textContent=moneyText(p.income);
-  if(labels[1])labels[1].textContent='Commitments';if(vals[1])vals[1].textContent=moneyText(p.commitmentsTotal);
-  if(labels[2])labels[2].textContent='Balance to Spend';if(vals[2])vals[2].textContent=moneyText(p.plannedBalance);
+  const spent=p.activity?.totals?.all??(db.expenses||[]).filter(inCycle).reduce((n,x)=>n+fx(x),0);
+  if(labels[1])labels[1].textContent='Spent';if(vals[1])vals[1].textContent=moneyText(spent);
+  if(labels[2])labels[2].textContent='Remaining';if(vals[2])vals[2].textContent=moneyText(p.income-spent);
 }
 function renderPlanned(p){
   const card=document.querySelector('#mgwBudgetAfterCommitments');if(!card)return;
@@ -248,6 +249,7 @@ function apply(){
     ensure();installStyles();ensureUi();const p=model();
     renderCycleFocus();renderMetrics(p);renderPlanned(p);renderActivity(p);renderSafe(p);renderBudget(p);renderAdvisor(p);renderCommitmentSettings();bind();window.MGWRecurringSwipe?.enhance?.(document.querySelector('#mgwCommitmentSettings'));window.MGWRecurringSwipe?.enhance?.(document.querySelector('#mgwBudgetAfterCommitments'));
     window.MGWDashboardCore.last=p;
+    window.MGWDashboardLayout?.schedule();
   }finally{applying=false}
 }
 function boot(){
@@ -262,4 +264,5 @@ function boot(){
 window.MGWDashboardCore={version:RELEASE,model,refresh:apply,last:null};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
 

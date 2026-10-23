@@ -63,6 +63,7 @@ function stableKey(el,head,index){
 }
 function makeCollapsible(el,index){
   if(!el)return;
+  if(el.closest?.('[data-mgw-dashboard-managed]'))return;
   const head=directHeader(el);if(!head||head.querySelector('.mgw-collapse-btn'))return;
   const key=stableKey(el,head,index);el.dataset.mgwCollapse='1';head.classList.add('mgw-collapse-head');
   const b=document.createElement('button');b.type='button';b.className='mgw-collapse-btn';b.setAttribute('aria-label','Collapse section');
@@ -195,4 +196,5 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
 

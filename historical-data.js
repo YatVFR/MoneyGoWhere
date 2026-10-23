@@ -115,6 +115,7 @@ const MGW_CORE_MODULES=[
   // Only modules required to interpret/render persisted finance data belong
   // on the blocking startup path. Everything else is staged after app-ready.
   './currency-normalization.js',
+  './paylater-planner.js',
   './dashboard-core.js',
   './credit-manager.js',
   './recurring-swipe.js',
@@ -122,7 +123,8 @@ const MGW_CORE_MODULES=[
   './unified-wallet.js',
   './settings-layout.js',
   './recurring-review.js',
-  './salary-trends.js'
+  './salary-trends.js',
+  './dashboard-layout.js'
 ];
 const MGW_DEFERRED_MODULES=[
   // Only genuinely optional modules live here. Settings/import/dashboard modules

@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#6d28d9" />
   <meta name="description" content="MoneyGoWhere — understand where your money went." />
-  <link rel="manifest" href="manifest.json?v=2.0.0-dev.35" />
-    <link rel="icon" href="assets/icons/icon.svg?v=2.0.0-dev.35" type="image/svg+xml" />
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=2.0.0-dev.35" />
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=2.0.0-dev.35" />
+  <link rel="manifest" href="manifest.json?v=2.0.0-dev.36" />
+    <link rel="icon" href="assets/icons/icon.svg?v=2.0.0-dev.36" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=2.0.0-dev.36" />
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=2.0.0-dev.36" />
       <title>MoneyGoWhere</title>
-  <link rel="stylesheet" href="style.css?v=2.0.0-dev.35" />
-  <link rel="stylesheet" href="environment-theme.css?v=2.0.0-dev.35" />
-  <link rel="stylesheet" href="receipt-workbench.css?v=2.0.0-dev.35" />
+  <link rel="stylesheet" href="style.css?v=2.0.0-dev.36" />
+  <link rel="stylesheet" href="environment-theme.css?v=2.0.0-dev.36" />
+  <link rel="stylesheet" href="receipt-workbench.css?v=2.0.0-dev.36" />
   <style id="mgwDashboardSectionStyles">
     #view-dashboard .mgw-dashboard-section{margin:0 0 14px;border:1px solid var(--line);border-radius:20px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
     #view-dashboard .mgw-dashboard-section>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;cursor:pointer;font-weight:800;-webkit-tap-highlight-color:transparent}
@@ -29,7 +29,7 @@
 <body>
   <div class="mgw-loading-screen" id="mgwLoadingScreen" role="status" aria-live="polite" aria-label="MoneyGoWhere is loading">
     <div class="mgw-loading-card mgw-loader-a">
-      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/icons/icon-512.png?v=2.0.0-dev.35" alt="" /></div>
+      <div class="mgw-loading-mark" aria-hidden="true"><img src="assets/icons/icon-512.png?v=2.0.0-dev.36" alt="" /></div>
       <h2>Money<span>Go</span>Where</h2>
       <p class="mgw-loader-tagline">SPEND SMARTER · LIVE BETTER</p>
       <p class="mgw-loader-journey">Preparing your financial journey…</p>
@@ -70,7 +70,7 @@
           <button class="month-chip" id="monthLabel"></button>
           <button class="ghost-btn" id="nextMonth">›</button>
         </div>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwMonthlyOverview" class="mgw-dashboard-section" data-mgw-dashboard-managed="1" open>
           <summary><div><span class="section-icon">📊</span><b>Monthly Overview</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><div class="metric-grid">
             <article class="card metric"><span>Net Income</span><strong id="netIncome">$0.00</strong><small id="incomeDelta">Loading…</small></article>
@@ -79,7 +79,7 @@
             <article class="card metric"><span>Budget Used</span><strong id="budgetUsed">0%</strong><small id="budgetState">Loading…</small></article>
           </div></div>
         </details>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwMonthlyBudget" class="mgw-dashboard-section" data-mgw-dashboard-managed="1">
           <summary><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><article class="card budget-card">
           <div class="card-head"><div><span class="section-icon">🎯</span><b>Monthly Budget</b></div><button class="text-btn" data-open="budget">Edit</button></div>
@@ -87,28 +87,28 @@
           <div class="budget-copy"><span id="budgetCopy">Loading budget data…</span><strong id="budgetRemaining"></strong></div>
         </article></div>
         </details>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwInsightSection" class="mgw-dashboard-section" data-mgw-dashboard-managed="1">
           <summary><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><article class="card" id="budgetAlertCard">
           <div class="card-head"><div><span class="section-icon">💡</span><b>MoneyGoWhere Insight</b></div></div>
           <p id="budgetAlertText">Loading your finance data…</p>
         </article></div>
         </details>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwRecentSection" class="mgw-dashboard-section" data-mgw-dashboard-managed="1">
           <summary><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">🧾</span><b>Recent Transactions</b></div></div>
           <div id="recentTransactions" class="transaction-list empty-state">Loading…</div>
         </article></div>
         </details>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwSpendingOverview" class="mgw-dashboard-section" data-mgw-dashboard-managed="1">
           <summary><div><span class="section-icon">🏆</span><b>Top Spending</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">🏆</span><b>Top Spending</b></div><button class="text-btn" data-nav="insights">View details</button></div>
           <div id="topCategories" class="category-list empty-state">Loading…</div>
         </article></div>
         </details>
-        <details class="mgw-dashboard-section" open>
+        <details id="mgwTrendSection" class="mgw-dashboard-section" data-mgw-dashboard-managed="1">
           <summary><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div><span class="mgw-section-chevron">›</span></summary>
           <div class="mgw-dashboard-section-body"><article class="card">
           <div class="card-head"><div><span class="section-icon">📈</span><b>6-Month Spending Trend</b></div></div>
@@ -204,7 +204,7 @@
         };
       };
       captureLaunch();
-      const BUILD='2.0.0-dev.35';
+      const BUILD='2.0.0-dev.36';
       window.MGW_RELEASE=Object.freeze({appVersion:BUILD,schemaVersion:2,dataVersion:20,cacheVersion:BUILD.replace(/\./g,'-')});
       const btn=document.getElementById('refreshBtn'),status=document.getElementById('updateStatus'),sub=document.getElementById('updateSub'),dot=document.getElementById('updateDot');
       let reg=null,updateReady=false,busy=false,reloading=false;
@@ -222,16 +222,16 @@
       window.addEventListener('load',async()=>{try{reg=await registerWorker();if(reg?.waiting)detectWaiting(reg);else{await reg.update();if(reg?.waiting)detectWaiting(reg);else if(reg?.installing)watchInstalling(reg.installing)}}catch(e){console.warn('MoneyGoWhere service worker unavailable',e)}});
     })();
   </script>
-  <script src="data-stability.js?v=2.0.0-dev.35"></script>
-  <script src="db-schema-v2.js?v=2.0.0-dev.35"></script>
-  <script src="account-registry.js?v=2.0.0-dev.35"></script>
-  <script src="recurring-engine.js?v=2.0.0-dev.35"></script>
-  <script src="masterdb-v1.js?v=2.0.0-dev.35"></script>
-  <script src="wallet-balances.js?v=2.0.0-dev.35"></script>
-  <script src="transaction-engine.js?v=2.0.0-dev.35"></script>
-  <script src="boot-phases.js?v=2.0.0-dev.35"></script>
-  <script src="receipt-review.js?v=2.0.0-dev.35"></script>
-  <script src="app.js?v=2.0.0-dev.35"></script>
+  <script src="data-stability.js?v=2.0.0-dev.36"></script>
+  <script src="db-schema-v2.js?v=2.0.0-dev.36"></script>
+  <script src="account-registry.js?v=2.0.0-dev.36"></script>
+  <script src="recurring-engine.js?v=2.0.0-dev.36"></script>
+  <script src="masterdb-v1.js?v=2.0.0-dev.36"></script>
+  <script src="wallet-balances.js?v=2.0.0-dev.36"></script>
+  <script src="transaction-engine.js?v=2.0.0-dev.36"></script>
+  <script src="boot-phases.js?v=2.0.0-dev.36"></script>
+  <script src="receipt-review.js?v=2.0.0-dev.36"></script>
+  <script src="app.js?v=2.0.0-dev.36"></script>
 </body>
 </html>
 
