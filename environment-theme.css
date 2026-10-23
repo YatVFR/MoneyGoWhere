@@ -1,5 +1,8 @@
 /* All environments share component styling; their palette lives in style.css.
    Attribute scoping overrides late-loaded component styles without changing data. */
+.mgw-later-groups{display:grid;gap:14px;min-width:0}.mgw-later-provider{min-width:0;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--card)}
+.mgw-later-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:var(--text)}.mgw-later-group-head :is(h3,h4){font:inherit;font-weight:800;margin:0;min-width:0;overflow-wrap:anywhere}
+.mgw-later-count{display:inline-flex;justify-content:center;align-items:center;flex:0 0 auto;min-width:30px;min-height:28px;padding:3px 9px;border-radius:999px;background:var(--brand-soft);color:var(--brand);font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
 html[data-mgw-environment] { --accent:var(--brand); }
 html[data-mgw-environment] :is(.mgw-settings-group,.mgw-settings-section,.mgw-dashboard-section,.mgw-history-month,.mgw-history-merchant,.mgw-month-details,.mgw-detail-group,.mgw-income-collapse,.mgw-spend-detail,.mgw-recurring-detail,.mgw-recurring-group,.mgw-merchant-group,.mgw-duplicate-card-group)>summary {
   background:color-mix(in srgb,var(--brand-soft) 65%,var(--card));
