@@ -9,6 +9,7 @@ const CACHE=`${CACHE_PREFIX}${safeVersion}`;
 const SHELL_URL=new URL('index.html',self.registration.scope).href;
 
 const SHELL=[
+  './form-accessibility.js',
   './paylater-planner.js','./dashboard-layout.js',
   './','./index.html','./style.css','./environment-theme.css','./data-stability.js','./db-schema-v2.js','./account-registry.js','./recurring-engine.js','./recurring-swipe.js','./recurring-review.js','./editing-position.js','./unified-wallet.js','./wallet-balances.js','./settings-layout.js','./masterdb-v1.js','./transaction-engine.js','./boot-phases.js','./app.js',
   './import-normalizer.js','./interaction-recovery.js','./version-badge-authority.js','./finance-fix.js',

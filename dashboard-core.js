@@ -151,10 +151,12 @@ function ensureUi(){
   const settings=document.querySelector('#view-settings');
   if(settings&&!document.querySelector('#mgwCommitmentSettings')){const card=document.createElement('article');card.className='card';card.id='mgwCommitmentSettings';settings.insertBefore(card,settings.querySelector(':scope > .privacy-note')||null)}
 }
+function periodBounds(){return typeof mgwCycleBounds==='function'?mgwCycleBounds(MGW.state.month):{start:new Date(MGW.state.month.getFullYear(),MGW.state.month.getMonth(),1),end:new Date(MGW.state.month.getFullYear(),MGW.state.month.getMonth()+1,1)}}
+function periodBounds(){return typeof mgwCycleBounds==='function'?mgwCycleBounds(MGW.state.month):{start:new Date(MGW.state.month.getFullYear(),MGW.state.month.getMonth(),1),end:new Date(MGW.state.month.getFullYear(),MGW.state.month.getMonth()+1,1)}}
 function renderCycleFocus(){
   const el=document.querySelector('#mgwCycleFocus');if(!el)return;
   const c=typeof mgwCycleSettings==='function'?mgwCycleSettings():{mode:'calendar'};
-  el.innerHTML=`<div><b>${c.mode==='payday'?'Current pay cycle':'Current month'}</b><small>${typeof mgwCycleLabel==='function'?mgwCycleLabel(MGW.state.month):''}</small></div><span aria-hidden="true">📅</span>`;
+  el.innerHTML=`<div><b>${new Date()>=periodBounds().start&&new Date()<periodBounds().end?(c.mode==='payday'?'Current pay cycle':'Current month'):'Selected month'}</b><small>${typeof mgwCycleLabel==='function'?mgwCycleLabel(MGW.state.month):''}</small></div><span aria-hidden="true">📅</span>`;
 }
 function renderMetrics(p){
   const grid=document.querySelector('.metric-grid');if(!grid)return;grid.classList.add('mgw-core-metrics');
@@ -172,9 +174,9 @@ function renderSafe(p){
   const card=document.querySelector('#mgwSafeSpendCard');if(!card)return;
   const head=card.querySelector('.card-head b');if(head)head.textContent='Safe to Spend';
   const hero=card.querySelector('.mgw-safe-hero');
-  if(hero){const strong=hero.querySelector('strong'),smalls=hero.querySelectorAll('small');if(smalls[0])smalls[0].textContent='Available now after day-to-day spending';if(strong)strong.textContent=moneyText(p.safe);if(smalls[1])smalls[1].textContent=`${moneyText(p.safe/p.days)}/day · ${p.days} day${p.days===1?'':'s'} remaining`}
+  if(hero){const strong=hero.querySelector('strong'),smalls=hero.querySelectorAll('small');const ended=new Date()>=periodBounds().end;if(smalls[0])smalls[0].textContent=ended?'Period closing remainder':'Available now after day-to-day spending';if(smalls[1])smalls[1].hidden=ended;if(ended){let status=hero.querySelector('[data-period-ended]');if(!status){status=document.createElement('small');status.dataset.periodEnded='1';hero.appendChild(status)}status.textContent='Period ended'}else hero.querySelector('[data-period-ended]')?.remove();if(strong)strong.textContent=moneyText(p.safe);if(smalls[1])smalls[1].textContent=`${moneyText(p.safe/p.days)}/day · ${p.days} day${p.days===1?'':'s'} remaining`}
   const grid=card.querySelector('.mgw-safe-grid');
-  if(grid)grid.innerHTML=`<span>Balance after commitments</span><strong>${moneyText(p.plannedBalance)}</strong><span>Day-to-day spent</span><strong>−${moneyText(p.dayToDay)}</strong>${p.budgetRemaining!==null?`<span>Cycle budget remaining</span><strong>${moneyText(p.budgetRemaining)}</strong>`:''}<span><b>Available now</b></span><strong><b>${moneyText(p.safe)}</b></strong>`;
+  if(grid)grid.innerHTML=`<span>Balance after commitments</span><strong>${moneyText(p.plannedBalance)}</strong><span>Day-to-day spent</span><strong>−${moneyText(p.dayToDay)}</strong>${p.budgetRemaining!==null?`<span>Cycle budget remaining</span><strong>${moneyText(p.budgetRemaining)}</strong>`:''}<span><b>${new Date()>=periodBounds().end?'Closing remainder':'Available now'}</b></span><strong><b>${moneyText(p.safe)}</b></strong>`;
   const note=card.querySelector('.mgw-muted');if(note)note.textContent='Recurring bills already reserved above are excluded from day-to-day spending to prevent double counting.';
 }
 function activityLines(rows,limit=5){
@@ -212,7 +214,8 @@ function renderBudget(p){
 function renderAdvisor(p){
   const card=document.querySelector('#budgetAlertCard'),root=document.querySelector('#budgetAlertText');if(!card||!root)return;
   const title=card.querySelector('.card-head b'),icon=card.querySelector('.section-icon');if(title)title.textContent='Smart Spending Advisor';if(icon)icon.textContent='🧠';
-  const ratio=p.income?p.commitmentsTotal/p.income:0,level=ratio>=.8?'🔴':ratio>=.6?'🟠':'🟢',label=ratio>=.8?'Commitments are very high':ratio>=.6?'Commitment pressure is elevated':'Commitments are manageable';
+  if(!(p.income>0)){root.innerHTML='<p class="mgw-muted">Insufficient income data. Add income for this period to calculate commitment pressure.</p>';return}
+  const ratio=p.commitmentsTotal/p.income,level=ratio>=.8?'🔴':ratio>=.6?'🟠':'🟢',label=ratio>=.8?'Commitments are very high':ratio>=.6?'Commitment pressure is elevated':'Commitments are manageable';
   root.innerHTML=`<div class="mgw-advice"><div class="mgw-advice-item"><b>${level} ${label}</b><span>${p.income?`${Math.round(ratio*100)}% of this cycle’s net income is reserved for commitments.`:'Add net income to calculate commitment pressure.'}</span></div><div class="mgw-advice-item"><b>💰 Available now</b><span>${moneyText(p.safe)} remains after commitments and ${moneyText(p.dayToDay)} of day-to-day spending.</span></div></div><p class="mgw-muted">Local rule-based guidance from your MoneyGoWhere data.</p>`;
 }
 function renderCommitmentSettings(){

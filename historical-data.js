@@ -62,8 +62,10 @@ if(typeof renderInsights==='function'){
     $('#insightSummary').innerHTML=total?`<strong>${money(total)}</strong><p>${n===1?(isPay?'this pay cycle':'this month'):`across the last ${n} ${isPay?'pay cycles':'months'}`}${cats[0]?` · Top: ${MGW.cats[cats[0][0]]||''} ${esc(cats[0][0])}`:''}</p>`:'<p>No expenses in this period yet.</p>';
     renderCats($('#insightCategories'),cats);
     if(window.MGWSalaryTrends?.render)window.MGWSalaryTrends.render(source);else renderTrend($('#salaryTrend'),12,'salary');
-    const byYear={};(Array.isArray(source.income)?source.income:[]).forEach(x=>{const y=String(x.date||'').slice(0,4),b=Number(x.bonus)||0;if(/^\d{4}$/.test(y)&&b)byYear[y]=(byYear[y]||0)+b});
-    $('#bonusHistory').innerHTML=Object.entries(byYear).sort().map(([y,v])=>`<div class="bonus-row"><span>${y} Bonus</span><strong>${money(v)}</strong></div>`).join('')||'<p class="empty-state">No bonus history yet.</p>';
+    window.MGWTransactionEditor?.refresh?.();
+    document.querySelectorAll('#insightRange button').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.range)===MGW.state.range)));
+    const categories=$('#insightCategories');categories.hidden=!list.length;if(!list.length)categories.innerHTML='';
+
   };
 }
 window.MGWRenderInsights=()=>renderInsights();

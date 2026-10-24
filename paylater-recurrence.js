@@ -54,8 +54,8 @@
     }
     return rows;
   }
-  const currentDue=(a,anchor=MGW.state.month)=>money2(Math.max(0,schedule(a).filter(x=>inCycle(x.date,anchor)).reduce((t,x)=>t+x.amount,0)-paidForCycle(a,anchor)));
-  const nextDue=a=>{const now=new Date();now.setHours(0,0,0,0);return schedule(a).find(x=>parseDate(x.date)>=now)?.date||''};
+  const currentDue=(a,anchor=MGW.state.month)=>window.MGWPayLaterPlanner?window.MGWPayLaterPlanner.due(a,anchor,db):money2(Math.max(0,schedule(a).filter(x=>inCycle(x.date,anchor)).reduce((t,x)=>t+x.amount,0)-paidForCycle(a,anchor)));
+  const nextDue=a=>{if(window.MGWPayLaterPlanner)return window.MGWPayLaterPlanner.unpaid(a,db).find(x=>x.remaining>0)?.date||'';const now=new Date();now.setHours(0,0,0,0);return schedule(a).find(x=>parseDate(x.date)>=now)?.date||''};
 
   function syncAccounts(){
     db.payLaterAccounts=Array.isArray(db.payLaterAccounts)?db.payLaterAccounts:[];let changed=false;
