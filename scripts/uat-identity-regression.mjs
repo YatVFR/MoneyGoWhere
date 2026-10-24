@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import crypto from 'node:crypto';
+const read=p=>fs.readFileSync(p,'utf8'), sha=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+const fail=m=>{console.error('UAT identity regression failed:',m);process.exitCode=1};
+const css=read('style.css'),html=read('index.html'),manifest=JSON.parse(read('manifest.json')),badge=read('version-badge-authority.js'),sw=read('service-worker.js');
+for(const token of ['--brand:#92400e','--brand-soft:#fef3c7','--mgw-wallet-end:#713f12','--mgw-wallet-detail:#fff4d6'])if(!css.includes(token))fail(token);
+if(!html.includes('data-mgw-environment="uat"'))fail('HTML UAT environment');
+if(!html.includes('content="#92400e"'))fail('HTML theme-color');
+if(!html.includes("const BUILD='2.0.0-uat.1'"))fail('BUILD');
+if(manifest.name!=='MoneyGoWhere UAT'||manifest.short_name!=='MGW UAT'||manifest.theme_color!=='#92400e'||manifest.background_color!=='#f6f8f7'||manifest.start_url!=='./'||manifest.scope!=='./')fail('manifest identity');
+if(!badge.includes(' · UAT')||badge.includes(' · DEV'))fail('badge identity');
+if(!sw.includes("SCOPE_PATH.includes('/uat/')?'uat'"))fail('UAT cache environment');
+for(const mod of ['paylater-planner.js','dashboard-layout.js','form-accessibility.js'])if(!sw.includes(`./${mod}`))fail('service worker shell '+mod);
+const expected={"assets/icons/icon.svg":"24b2ae7112a9a3ec03de9eb279fcc44f9953881e","assets/icons/icon-192.png":"aa8d3471fc13e1e7a0cc75489e0404a988dc22cc","assets/icons/icon-512.png":"536a1ceb9ad6ffbbd7338206ed9d499b6b473a03","assets/icons/apple-touch-icon.png":"2400dbaccbe1dbef10c4414a4e84e422c0690544"};
+console.log('UAT identity OK; approved Git blob references:',expected);
+console.log('Local asset SHA256:',Object.fromEntries(Object.keys(expected).map(p=>[p,sha(p)])));
+if(!process.exitCode)console.log('UAT identity regression passed.');
