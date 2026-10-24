@@ -3,6 +3,7 @@ name: Deploy MoneyGoWhere Shared Preview to GitHub Pages
 on:
   push:
     branches: ["dev", "preview/uat"]
+  # UAT promotion: shared Pages assembly publishes preview/uat at /uat/
   workflow_dispatch:
 
 permissions:
