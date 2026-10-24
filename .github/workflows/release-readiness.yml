@@ -19,6 +19,10 @@ jobs:
       - name: MoneyGoWhere release smoke tests
         run: node scripts/release-smoke.mjs
 
+      - name: UAT environment identity regression
+        if: github.ref == 'refs/heads/preview/uat' || github.base_ref == 'preview/uat' || startsWith(github.head_ref, 'release/uat-')
+        run: node scripts/uat-identity-regression.mjs
+
       - name: Data integrity regression tests
         run: node scripts/integrity-regression.mjs
 
