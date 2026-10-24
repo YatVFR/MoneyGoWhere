@@ -2,7 +2,7 @@ name: Browser Regression
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, preview/uat]
   pull_request:
     branches: [dev]
 
