@@ -58,7 +58,7 @@ function debtItems(){
 }
 function payLaterItems(){
   return db.payLaterAccounts.map(a=>{
-    const paid=cyclePayment(db.payLaterPayments,a.id),due=a.archivedAt?0:num(a.cycleDue||a.monthlyPayment||a.installmentAmount);
+    const paid=cyclePayment(db.payLaterPayments,a.id),due=a.archivedAt?0:(window.MGWPayLaterPlanner?window.MGWPayLaterPlanner.due(a,MGW.state.month,db):num(a.cycleDue||a.monthlyPayment||a.installmentAmount));
     return {source:'Pay-Later',name:a.name||a.provider||'Pay-Later',amount:Math.max(due,paid),due,paid};
   }).filter(x=>x.amount>0);
 }
