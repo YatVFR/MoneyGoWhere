@@ -2,7 +2,7 @@ name: Release Readiness Smoke
 
 on:
   push:
-    branches: [dev, uat, main]
+    branches: [dev, preview/uat, main]
   pull_request:
 
 permissions:
