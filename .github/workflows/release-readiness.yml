@@ -38,6 +38,9 @@ jobs:
       - name: Shared wallet balance regression tests
         run: node scripts/wallet-balances-regression.mjs
 
+      - name: Card lifecycle and safe deletion regression tests
+        run: node scripts/card-lifecycle-regression.mjs
+
       - name: Wallet balance save-form regression tests
         run: node scripts/wallet-balance-forms-regression.mjs
 
