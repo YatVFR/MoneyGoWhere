@@ -6,7 +6,7 @@ Use the validated UAT work as the implementation reference for further developme
 ## Source baseline
 - Original DEV promotion source: `v2.0.0-dev.38` at `8632925c77053fcd8b149ea104e89328cc4c8e9b`.
 - UAT branch: `preview/uat`.
-- UAT release after cache correction: `v2.0.0-uat.2`.
+- UAT release after cache correction: `v2.0.0-uat.3`.
 - Re-read both branch heads before implementation. Review intervening changes instead of silently replacing them.
 
 ## Non-negotiable data rules
@@ -100,7 +100,7 @@ Remove/avoid the legacy destructive behaviour that deleted `creditPayments` when
 ## 6. Cache/build delivery
 A functional JavaScript change must not ship under a stale client cache identity.
 
-UAT required a build bump from `2.0.0-uat.1` to `2.0.0-uat.2` because iOS was still showing the previous bank-only Pay-Later form.
+UAT progressed from `2.0.0-uat.1` to `2.0.0-uat.3` as functional changes required fresh client cache identities because iOS was still showing the previous bank-only Pay-Later form.
 
 For DEV:
 - Keep DEV branding and cache namespace.
