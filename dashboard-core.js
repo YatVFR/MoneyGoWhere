@@ -58,8 +58,8 @@ function debtItems(){
 }
 function payLaterItems(){
   return db.payLaterAccounts.map(a=>{
-    const paid=cyclePayment(db.payLaterPayments,a.id),due=a.archivedAt?0:num(a.cycleDue||a.monthlyPayment||a.installmentAmount);
-    return {source:'Pay-Later',name:a.name||a.provider||'Pay-Later',amount:Math.max(due,paid),due,paid};
+    const paid=cyclePayment(db.payLaterPayments,a.id),due=a.archivedAt?0:(window.MGWPayLaterPlanner?window.MGWPayLaterPlanner.due(a,MGW.state.month,db):num(a.cycleDue||a.monthlyPayment||a.installmentAmount));
+    return {source:'Pay-Later',name:a.name||a.provider||'Pay-Later',amount:a.recurrenceEnabled?due:Math.max(due,paid),due,paid};
   }).filter(x=>x.amount>0);
 }
 function matchRecurring(items,expenses){
@@ -267,5 +267,6 @@ function boot(){
 window.MGWDashboardCore={version:RELEASE,model,refresh:apply,last:null};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
+
 
 

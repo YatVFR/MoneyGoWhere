@@ -38,9 +38,9 @@ function summary(id,d=window.db,asOf=day()){
  if(!a.balanceTracking||!validDate(a.trackingStartDate)||!finite(a.openingBalance))return {tracked:false,status:'untracked',accountId:a.id,currency:base,balance:finite(credit?a.outstanding:a.balance)?Number(credit?a.outstanding:a.balance):null,pending:0,credit};
  let cents=Math.round(Number(a.openingBalance)*100),pending=0,count=0;
  const eligible=x=>validDate(String(x.date||'').slice(0,10))&&String(x.date).slice(0,10)>=a.trackingStartDate&&String(x.date).slice(0,10)<=asOf;
- const apply=(x,sign)=>{if(!eligible(x))return;const n=amount(x,base,d);if(n===null){pending++;return}cents+=sign*n;count++};
+ const apply=(x,sign)=>{if(x.voided||['pending','deleted','voided'].includes(x.status)||!eligible(x))return;const n=amount(x,base,d);if(n===null){pending++;return}cents+=sign*n;count++};
  for(const x of d.expenses||[]){if(owner(sourceId(x))?.id!==a.id||x.status==='pending'||x.status==='deleted'||x.voided)continue;const refund=x.transactionType==='refund'||x.kind==='refund';apply(x,(credit?1:-1)*(refund?-1:1));}
- if(credit){for(const p of d.creditPayments||[])if(p.accountId===a.id&&!p.voided)apply(p,-1)}
+ if(credit){for(const p of d.creditPayments||[])if(p.accountId===a.id)apply(p,-1);for(const p of [...(d.creditPayments||[]),...(d.payLaterPayments||[])])if(owner(p.fundingAccountId)?.id===a.id)apply(p,1)}
  else{
    for(const x of d.income||[]){if(owner(x.depositAccountId)?.id!==a.id)continue;const income={...x,amount:Number(x.netSalary||0)+Number(x.bonus||0)+Number(x.oneOff||0)};apply(income,1)}
    for(const p of [...(d.creditPayments||[]),...(d.payLaterPayments||[])])if(!p.voided&&owner(p.fundingAccountId)?.id===a.id)apply(p,-1);
@@ -64,7 +64,7 @@ function available(id,d=window.db,asOf=day()){
  let cents=Math.round(Number(a.availableToSpend)*100),pending=0,count=0;
  const apply=(x,sign)=>{const date=String(x.date||'').slice(0,10);if(x.voided||x.status==='pending'||x.status==='deleted'||!validDate(date)||date<=a.availableAsOf||date>asOf)return;const n=amount(x,base,d);if(n===null){pending++;return}cents+=sign*n;count++};
  for(const x of d.expenses||[])if(owner(sourceId(x))?.id===a.id)apply(x,x.transactionType==='refund'||x.kind==='refund'?1:-1);
- if(credit){for(const p of d.creditPayments||[])if(p.accountId===a.id)apply(p,1)}
+ if(credit){for(const p of d.creditPayments||[])if(p.accountId===a.id)apply(p,1);for(const p of [...(d.creditPayments||[]),...(d.payLaterPayments||[])])if(owner(p.fundingAccountId)?.id===a.id)apply(p,-1)}
  else{
   for(const x of d.income||[])if(owner(x.depositAccountId)?.id===a.id)apply({...x,amount:Number(x.netSalary||0)+Number(x.bonus||0)+Number(x.oneOff||0)},1);
   for(const p of [...(d.creditPayments||[]),...(d.payLaterPayments||[])])if(owner(p.fundingAccountId)?.id===a.id)apply(p,-1);

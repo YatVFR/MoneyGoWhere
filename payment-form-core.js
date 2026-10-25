@@ -70,7 +70,7 @@ function paymentFields(d={}){
   return `<div class="field" data-mgw-payment-core-field><label for="mgwPaymentMethodSelect">Payment Method</label><select id="mgwPaymentMethodSelect" name="paymentMethodPicker">${methodOptions(selected)}</select></div>
   <div class="field" id="mgwPaymentSourceField" data-mgw-payment-core-field><label for="mgwPaymentSourceSelect">Payment Source</label><select id="mgwPaymentSourceSelect" name="paymentSourcePicker"></select></div>
   <div class="field full" id="mgwPaymentCustomField" data-mgw-payment-core-field hidden><label for="mgwPaymentCustomInput">Payment Source Details</label><input id="mgwPaymentCustomInput" name="paymentSourceCustom" placeholder="Enter the card, bank, wallet or payment source"></div>
-  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentSourceId"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType"><input type="hidden" name="paymentSelection"><input type="hidden" name="walletMatchStatus">
+  <input type="hidden" name="paymentMethod" value="${esc(methodByCode(selected).label)}"><input type="hidden" name="paymentSource" value="${esc(source)}"><input type="hidden" name="card" value="${esc(source)}"><input type="hidden" name="paymentSourceId" value="${esc(d.paymentSourceId||'')}"><input type="hidden" name="paymentAccountId"><input type="hidden" name="paymentBankAccountId"><input type="hidden" name="paymentSourceType"><input type="hidden" name="paymentSelection"><input type="hidden" name="walletMatchStatus">
   <div class="field full" data-mgw-payment-core-field><small class="mgw-form-note">Choose a payment method, then select your configured account or a known bank/card/wallet. Manual typing is only needed for Other / Custom.</small></div>`;
 }
 function stripLegacyPaymentFields(html){
@@ -140,7 +140,7 @@ function bindPaymentForm(form){
   };
   const tryPrefillSource=()=>{
     if(!oldSource)return;
-    const opt=[...source.options].find(o=>o.textContent.trim()===oldSource||o.textContent.trim().replace(/ Card$/,'')===oldSource);
+    const stable=form.querySelector('[name=paymentSourceId]')?.value;const linked=[...source.options].find(o=>o.value==='acct:'+stable||o.value==='bankacct:'+stable);if(linked){source.value=linked.value;return}const opt=[...source.options].find(o=>o.textContent.trim()===oldSource||o.textContent.trim().replace(/ Card$/,'')===oldSource);
     if(opt)source.value=opt.value;
   };
   const refresh=()=>{

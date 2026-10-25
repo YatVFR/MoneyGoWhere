@@ -51,3 +51,10 @@ jobs:
 
       - name: Consolidated dashboard summary regression
         run: node scripts/dashboard-summary-regression.mjs
+
+      - name: Card lifecycle guards
+        run: node scripts/card-lifecycle-regression.mjs
+
+      - name: DEV identity preservation
+        if: github.ref == 'refs/heads/dev' || github.base_ref == 'dev'
+        run: node scripts/dev-identity-regression.mjs
