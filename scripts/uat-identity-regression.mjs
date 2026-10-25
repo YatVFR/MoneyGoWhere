@@ -6,7 +6,7 @@ const css=read('style.css'),html=read('index.html'),manifest=JSON.parse(read('ma
 for(const token of ['--brand:#92400e','--brand-soft:#fef3c7','--mgw-wallet-end:#713f12','--mgw-wallet-detail:#fff4d6'])if(!css.includes(token))fail(token);
 if(!html.includes('data-mgw-environment="uat"'))fail('HTML UAT environment');
 if(!html.includes('content="#92400e"'))fail('HTML theme-color');
-if(!html.includes("const BUILD='2.0.0-uat.1'"))fail('BUILD');
+if(!html.includes("const BUILD='2.0.0-uat.2'"))fail('BUILD');
 if(manifest.name!=='MoneyGoWhere UAT'||manifest.short_name!=='MGW UAT'||manifest.theme_color!=='#92400e'||manifest.background_color!=='#f6f8f7'||manifest.start_url!=='./'||manifest.scope!=='./')fail('manifest identity');
 if(!badge.includes(' · UAT')||badge.includes(' · DEV'))fail('badge identity');
 if(!sw.includes("SCOPE_PATH.includes('/uat/')?'uat'"))fail('UAT cache environment');
